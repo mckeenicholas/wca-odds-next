@@ -8,6 +8,8 @@ RUN npm install
 
 COPY . .
 
+ENV VITE_API_URL="https://odds.nmckee.org"
+
 RUN npm run build
 
 FROM nginx:1.28.0-alpine-slim

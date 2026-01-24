@@ -197,4 +197,27 @@ const handleKeydown = (event: KeyboardEvent) => {
       </RouterLink>
     </div>
   </div>
+  <div
+    class="mt-4 flex flex-col items-center rounded-xl p-8 text-center shadow-sm"
+  >
+    <h2 class="mb-4 text-xl font-bold">Please consider donating!</h2>
+
+    <p class="mb-6 max-w-xl leading-relaxed">
+      Services like this offering statistical analysis require a considerable
+      amount of compute power, which has costs associated with it. If you enjoy
+      using this tool, please consider donating to help maintain it!
+    </p>
+
+    <a
+      href="https://ko-fi.com/I2I51SX94L"
+      target="_blank"
+      class="transition-transform hover:scale-105"
+    >
+      <img
+        src="https://storage.ko-fi.com/cdn/kofi6.png?v=6"
+        alt="Buy Me a Coffee at ko-fi.com"
+        class="h-10 border-0"
+      />
+    </a>
+  </div>
 </template>
