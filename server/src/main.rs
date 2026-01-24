@@ -1,6 +1,7 @@
 use axum::{
     Router,
     http::Method,
+    middleware,
     routing::{get, post},
 };
 use sqlx::postgres::PgPoolOptions;
@@ -12,7 +13,9 @@ mod routes;
 mod utils;
 
 use routes::{health, history, simulation};
-use utils::key_extractor::ForwardedIpExtractor;
+use utils::middleware::ForwardedIpExtractor;
+
+use crate::utils::middleware::timer_middleware;
 
 const ALLOWED_ORIGINS: &[&str] = &["http://localhost:5173", "https://odds.nmckee.org"];
 
@@ -60,6 +63,7 @@ async fn main() {
         .route("/api/simulation", post(simulation::simulation_handler))
         .route("/api/history", post(history::simulation_history_handler))
         .with_state(pool)
+        .layer(middleware::from_fn(timer_middleware))
         .layer(governor)
         .layer(cors);
 
