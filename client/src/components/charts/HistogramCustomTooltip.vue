@@ -1,9 +1,18 @@
 <script setup lang="ts">
 import ColoredCircle from "@/components/custom/ColoredCircle.vue";
-import { ChartTooltipProps } from "@/lib/types";
 import { renderTime } from "@/lib/utils";
 
-const { title, data, isFmc = false } = defineProps<ChartTooltipProps>();
+export interface ResultChartTooltipProps {
+  title?: string;
+  data: {
+    name: string;
+    color: string;
+    value: number;
+  }[];
+  isFmc?: boolean;
+}
+
+const { title, data, isFmc = false } = defineProps<ResultChartTooltipProps>();
 
 const timeRawValue = parseInt(title ?? "0") * 10;
 const timeDisplayValue = renderTime(timeRawValue, isFmc);

@@ -1,4 +1,6 @@
-import HistogramCustomTooltip from "@/components/charts/HistogramCustomTooltip.vue";
+import HistogramCustomTooltip, {
+  ResultChartTooltipProps,
+} from "@/components/charts/HistogramCustomTooltip.vue";
 import { type ClassValue, clsx } from "clsx";
 import { twMerge } from "tailwind-merge";
 import { computed, h, toRaw } from "vue";
@@ -103,7 +105,7 @@ export const generateDefaultTimesArray = (
 
 export const createFMCTooltip = (event: SupportedWCAEvent) =>
   computed(() => {
-    return (props: object) =>
+    return (props: ResultChartTooltipProps) =>
       h(HistogramCustomTooltip, {
         ...props,
         isFmc: event === "333fm",

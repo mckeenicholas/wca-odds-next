@@ -2,7 +2,7 @@
 import { formatPercentage } from "@/lib/utils";
 import ColoredCircle from "../custom/ColoredCircle.vue";
 
-const { title, data, percent } = defineProps<{
+export interface HistoryTooltipProps {
   title?: string;
   percent?: boolean;
   data: {
@@ -10,7 +10,9 @@ const { title, data, percent } = defineProps<{
     color: string;
     value: string | number;
   }[];
-}>();
+}
+
+const { title, data, percent } = defineProps<HistoryTooltipProps>();
 
 const formatDate = (dateNum: number) => {
   const dateObj = new Date(dateNum);

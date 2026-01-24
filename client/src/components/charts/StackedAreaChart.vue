@@ -1,10 +1,6 @@
 <script setup lang="ts">
 import { ChartCrosshair } from "@/components/ui/chart";
-import {
-  ChartTooltipProps,
-  HistoryChartMetric,
-  HistoryPoint,
-} from "@/lib/types";
+import { HistoryChartMetric, HistoryPoint } from "@/lib/types";
 import {
   Area,
   Axis,
@@ -16,7 +12,7 @@ import { VisArea, VisAxis, VisLine, VisXYContainer } from "@unovis/vue";
 import { useMounted } from "@vueuse/core";
 import { useId } from "radix-vue";
 import { computed, h, ref, watchEffect } from "vue";
-import HistoryTooltip from "./HistoryTooltip.vue";
+import HistoryTooltip, { type HistoryTooltipProps } from "./HistoryTooltip.vue";
 
 const STACKED_OPACITY = 0.8;
 
@@ -139,7 +135,7 @@ const dateFormatter = (timestamp: number) => {
 const tooltip = computed(() => {
   const isPercent = props.metric !== "rank";
 
-  return (tooltipProps: ChartTooltipProps) =>
+  return (tooltipProps: HistoryTooltipProps) =>
     h(HistoryTooltip, {
       ...tooltipProps,
       percent: isPercent,
