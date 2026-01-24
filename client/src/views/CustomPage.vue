@@ -114,7 +114,7 @@ const runSimulation = () => {
         <!-- Popover Content -->
         <div
           v-if="input"
-          class="bg-popover absolute top-full left-0 z-50  max-h-[40vh] w-full overflow-y-scroll rounded-md border shadow-md mt-2"
+          class="bg-popover absolute top-full left-0 z-50 mt-2 max-h-[40vh] w-full overflow-y-scroll rounded-md border shadow-md"
         >
           <div v-if="isFetching" class="px-3">
             <Skeleton v-for="index in 3" class="my-4 h-6" :key="index" />

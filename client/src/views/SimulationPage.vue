@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import FullHistogram from "@/components/charts/FullHistogram.vue";
+import HistoryHistogram from "@/components/charts/HistoryHistogram.vue"; // Added Import
 import RankHistogram from "@/components/charts/RankHistogram.vue";
 import CompetitorList from "@/components/custom/CompetitorList.vue";
 import ErrorDisplay from "@/components/custom/ErrorPanel.vue";
@@ -11,11 +12,11 @@ import {
   eventAttempts,
   eventNames,
   SimulationAPIResultItem,
-  SimulationResult,
   SimulationRouteQuery,
   SupportedWCAEvent,
 } from "@/lib/types";
 import {
+  API_URL,
   ArrEq2D,
   clone2DArr,
   createCSVExport,
@@ -62,7 +63,6 @@ if (
 }
 
 const name = nameParam!;
-const numSimulations = 100_000; // Hardcoded at 100,000
 const startDate = new Date(startDateParam!);
 const endDate = endDateParam ? new Date(endDateParam) : new Date();
 const decayHalfLife = parseInt(decayRateParam!);
@@ -78,7 +78,7 @@ const defaultTimesArray = generateDefaultTimesArray(
 );
 
 const error = ref<string>("");
-const simulationResults = ref<SimulationResult[] | null>(null);
+const simulationResults = ref<SimulationAPIResultItem[] | null>(null);
 const loading = ref<boolean>(true);
 const recalculateLoading = ref<boolean>(false);
 const wcaLiveLoading = ref<boolean>(false);
@@ -97,8 +97,25 @@ const inputtedTimesState = computed(() => {
 const sharedProps = computed(() => ({
   data: simulationResults.value ?? [],
   colors,
-  numSimulations,
   event,
+}));
+
+// --- History Histogram Props ---
+// Zip competitors with their generated colors
+const historyCompetitors = computed(() =>
+  competitorsList.map((id, index) => ({
+    id,
+    color: colors[index],
+  })),
+);
+
+// Format parameters for the history endpoint
+const historyDataParams = computed(() => ({
+  event_id: event,
+  start_date: startDate.toISOString().split("T")[0],
+  end_date: endDate.toISOString().split("T")[0],
+  half_life: decayHalfLife,
+  include_dnf: includeDNF,
 }));
 
 // --- API Service Function ---
@@ -115,7 +132,7 @@ const fetchSimulationResults = async () => {
     include_dnf: includeDNF,
   };
 
-  const response = await fetch("http://localhost:3000/api/simulation", {
+  const response = await fetch(`${API_URL}/api/simulation`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(payload),
@@ -128,21 +145,7 @@ const fetchSimulationResults = async () => {
 
   const rawData = await response.json();
 
-  return rawData.map((item: SimulationAPIResultItem) => ({
-    ...item,
-    hist_values_single: new Map(
-      Object.entries(item.hist_values_single || {}).map(([k, v]) => [
-        Number(k),
-        Number(v),
-      ]),
-    ),
-    hist_values_average: new Map(
-      Object.entries(item.hist_values_average || {}).map(([k, v]) => [
-        Number(k),
-        Number(v),
-      ]),
-    ),
-  })) as SimulationResult[];
+  return rawData as SimulationAPIResultItem[];
 };
 
 const runInitialSimulation = async () => {
@@ -245,7 +248,6 @@ const exportJson = () => {
     currentTimes: inputtedTimes.value,
     startDate,
     endDate,
-    simCount: numSimulations,
     decayRate: decayHalfLife,
     includeDnf: includeDNF,
     event,
@@ -259,7 +261,6 @@ const exportCSV = () => {
     simulationResults.value!,
     competitorsList,
     inputtedTimes.value,
-    numSimulations,
   );
   downloadTextBlob(csvText, `${name}_results.csv`, "text/csv");
 };
@@ -282,7 +283,6 @@ const exportCSV = () => {
       <ResultsSummary
         :data="simulationResults || []"
         :colors="colors"
-        :numSimulations="numSimulations"
         :event="event"
       />
 
@@ -290,13 +290,20 @@ const exportCSV = () => {
         <FullHistogram v-bind="sharedProps" />
       </ExpandableBox>
 
-      <ExpandableBox title="Predicted Ranks">
+      <ExpandableBox title="Predicted Ranks" class="mb-2">
         <RankHistogram v-bind="sharedProps" />
       </ExpandableBox>
+
+      <ExpandableBox title="History">
+        <HistoryHistogram
+          :competitors="historyCompetitors"
+          :data="historyDataParams"
+        />
+      </ExpandableBox>
+
       <CompetitorList
         :simulation-results="simulationResults"
         :colors
-        :num-simulations="numSimulations"
         :event
         v-model="inputtedTimes"
       />

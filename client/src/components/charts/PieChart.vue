@@ -4,13 +4,12 @@ import { SimulationResultProps } from "@/lib/types";
 import { computed } from "vue";
 import PercentageTooltip from "./PercentageTooltip.vue";
 
-const { data, numSimulations, colors } =
-  defineProps<Omit<SimulationResultProps, "event">>();
+const { data, colors } = defineProps<Omit<SimulationResultProps, "event">>();
 
 const chartData = computed(() =>
   data.map((item) => ({
     name: item.name,
-    wins: (item.win_count / numSimulations) * 100,
+    wins: item.win_chance * 100,
   })),
 );
 </script>

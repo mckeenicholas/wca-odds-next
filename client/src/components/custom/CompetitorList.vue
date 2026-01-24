@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { SimulationResult, SupportedWCAEvent } from "@/lib/types";
+import { SimulationAPIResultItem, SupportedWCAEvent } from "@/lib/types";
 import { computed, ref } from "vue";
 import CompetitorDropdown from "./CompetitorDropdown.vue";
 import Chevron from "./RotatableChevron.vue";
@@ -8,17 +8,15 @@ type sortCol = "name" | "win" | "pod" | "rank";
 
 interface groupedResults {
   idx: number;
-  results: SimulationResult;
+  results: SimulationAPIResultItem;
   color: string;
 }
 
-const { simulationResults, colors, numSimulations, event } =
-  defineProps<{
-    simulationResults: SimulationResult[];
-    colors: string[];
-    numSimulations: number;
-    event: SupportedWCAEvent;
-  }>();
+const { simulationResults, colors, event } = defineProps<{
+  simulationResults: SimulationAPIResultItem[];
+  colors: string[];
+  event: SupportedWCAEvent;
+}>();
 
 const sortBy = ref<sortCol>("win");
 const sortAsc = ref<boolean>(false);
@@ -60,10 +58,10 @@ const groupedProps = computed(() => {
       sortBy.value === "name"
         ? -a.results.name.localeCompare(b.results.name) // This is inverted to be consistent as we sort by descending for stats
         : sortBy.value === "win"
-          ? a.results.win_count - b.results.win_count
+          ? a.results.win_chance - b.results.win_chance
           : sortBy.value === "pod"
-            ? a.results.pod_count - b.results.pod_count
-            : -(a.results.total_rank - b.results.total_rank); // This is also inverted for the same reason as above
+            ? a.results.pod_chance - b.results.pod_chance
+            : -(a.results.expected_rank - b.results.expected_rank); // This is also inverted for the same reason as above
 
     return sortAsc.value ? comparison : -comparison;
   };
@@ -111,7 +109,6 @@ const model = defineModel<number[][]>({ required: true });
         <CompetitorDropdown
           :result="person.results"
           :event
-          :num-simulations
           :color="person.color"
           v-model="model[person.idx]"
         />

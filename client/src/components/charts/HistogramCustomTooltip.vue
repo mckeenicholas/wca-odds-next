@@ -11,7 +11,7 @@ const timeDisplayValue = renderTime(timeRawValue, isFmc);
 
 <template>
   <div class="rounded-md p-2">
-    <p class= "font-bold">{{ timeDisplayValue }}</p>
+    <p class="font-bold">{{ timeDisplayValue }}</p>
     <div v-for="(item, key) in data" :key class="flex justify-between text-sm">
       <div class="flex items-center">
         <span class="mr-2 h-2.5 w-2.5">
@@ -25,4 +25,3 @@ const timeDisplayValue = renderTime(timeRawValue, isFmc);
     </div>
   </div>
 </template>
-

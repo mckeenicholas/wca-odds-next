@@ -7,12 +7,12 @@ use std::collections::HashMap;
 
 /// Result type for simulation runs containing all computed statistics
 pub struct SimulationResults {
-    pub win_counts: Vec<u32>,
-    pub pod_counts: Vec<u32>,
-    pub total_ranks: Vec<u32>,
-    pub rank_dists: Vec<Vec<u32>>,
-    pub hist_singles: Vec<HashMap<i32, i32>>,
-    pub hist_averages: Vec<HashMap<i32, i32>>,
+    pub win_chance: Vec<f64>,
+    pub pod_chance: Vec<f64>,
+    pub expected_ranks: Vec<f64>,
+    pub rank_dists: Vec<Vec<f64>>,
+    pub hist_singles: Vec<Vec<(i32, f64)>>,
+    pub hist_averages: Vec<Vec<(i32, f64)>>,
 }
 
 pub fn generate_skewnorm_value(
@@ -116,6 +116,23 @@ pub fn simulate_round(
     }
 }
 
+fn generate_histogram(
+    hist_map: Vec<HashMap<i32, i32>>,
+    simulation_count: u32,
+) -> Vec<Vec<(i32, f64)>> {
+    hist_map
+        .into_iter()
+        .map(|m| {
+            let mut vec: Vec<(i32, f64)> = m
+                .into_iter()
+                .map(|(k, v)| (k, v as f64 / simulation_count as f64))
+                .collect();
+            vec.sort_unstable_by_key(|(k, _)| *k);
+            vec
+        })
+        .collect()
+}
+
 pub fn run_simulations(
     competitors: &[Competitor],
     event_type: &EventType,
@@ -128,9 +145,9 @@ pub fn run_simulations(
     let mut win_counts = vec![0u32; num_competitors];
     let mut pod_counts = vec![0u32; num_competitors];
     let mut total_ranks = vec![0u32; num_competitors];
-    let mut rank_dists = vec![vec![0u32; num_competitors]; num_competitors];
-    let mut hist_averages: Vec<HashMap<i32, i32>> = vec![HashMap::new(); num_competitors];
-    let mut hist_singles: Vec<HashMap<i32, i32>> = vec![HashMap::new(); num_competitors];
+    let mut rank_dist_count = vec![vec![0u32; num_competitors]; num_competitors];
+    let mut hist_average_map: Vec<HashMap<i32, i32>> = vec![HashMap::new(); num_competitors];
+    let mut hist_single_map: Vec<HashMap<i32, i32>> = vec![HashMap::new(); num_competitors];
 
     let mut rng = rand::rng();
 
@@ -145,12 +162,12 @@ pub fn run_simulations(
                     event_type,
                     &mut rng,
                     include_dnf,
-                    &mut hist_singles[idx],
+                    &mut hist_single_map[idx],
                 );
 
                 // Add to AVERAGE histogram
                 if res < DNF_VALUE {
-                    *hist_averages[idx].entry(res / 10).or_insert(0) += 1;
+                    *hist_average_map[idx].entry(res / 10).or_insert(0) += 1;
                 }
 
                 (idx, res)
@@ -169,56 +186,75 @@ pub fn run_simulations(
                 pod_counts[original_idx] += 1;
             }
             total_ranks[original_idx] += (rank as u32) + 1;
-            rank_dists[original_idx][rank] += 1;
+            rank_dist_count[original_idx][rank] += 1;
         }
     }
 
+    let rank_dists = rank_dist_count
+        .into_iter()
+        .map(|counts| {
+            counts
+                .into_iter()
+                .map(|v| v as f64 / simulation_count as f64)
+                .collect()
+        })
+        .collect();
+
+    let hist_singles = generate_histogram(hist_single_map, simulation_count);
+    let hist_averages = generate_histogram(hist_average_map, simulation_count);
+
     SimulationResults {
-        win_counts,
-        pod_counts,
-        total_ranks,
+        win_chance: win_counts
+            .into_iter()
+            .map(|v| v as f64 / simulation_count as f64)
+            .collect(),
+        pod_chance: pod_counts
+            .into_iter()
+            .map(|v| v as f64 / simulation_count as f64)
+            .collect(),
+        expected_ranks: total_ranks
+            .into_iter()
+            .map(|v| v as f64 / simulation_count as f64)
+            .collect(),
         rank_dists,
         hist_singles,
         hist_averages,
     }
 }
-
 pub fn format_results(
     competitors: Vec<Competitor>,
     results: SimulationResults,
 ) -> Vec<CompetitorSimulationResult> {
+    // Destructure everything for flat access
     let SimulationResults {
-        win_counts,
-        pod_counts,
-        total_ranks,
+        win_chance,
+        pod_chance,
+        expected_ranks,
         rank_dists,
         hist_singles,
         hist_averages,
     } = results;
 
+    // We use enumerate to index into the other vectors,
+    // which is much cleaner than chaining .zip().zip().zip()
     competitors
         .into_iter()
-        .zip(rank_dists)
-        .zip(hist_singles)
-        .zip(hist_averages)
         .enumerate()
-        .map(
-            |(i, (((comp, rank_dist), hist_single), hist_average))| CompetitorSimulationResult {
-                name: comp.name,
+        .map(|(i, comp)| {
+            let stats = comp.stats.as_ref();
+
+            CompetitorSimulationResult {
                 id: comp.id,
-                win_count: win_counts[i],
-                pod_count: pod_counts[i],
-                total_rank: total_ranks[i],
-                sample_size: comp
-                    .stats
-                    .as_ref()
-                    .map(|s| s.num_non_dnf_results)
-                    .unwrap_or(0),
-                mean_no_dnf: comp.stats.as_ref().map(|s| s.mean as u32).unwrap_or(0),
-                rank_dist,
-                hist_values_single: hist_single,
-                hist_values_average: hist_average,
-            },
-        )
+                name: comp.name,
+                expected_rank: expected_ranks[i],
+                win_chance: win_chance[i],
+                pod_chance: pod_chance[i],
+                sample_size: stats.map(|s| s.num_non_dnf_results).unwrap_or(0),
+                mean_no_dnf: stats.map(|s| s.mean as u32).unwrap_or(0),
+                rank_dist: rank_dists[i].clone(),
+                hist_values_single: hist_singles[i].clone(),
+                hist_values_average: hist_averages[i].clone(),
+            }
+        })
         .collect()
 }

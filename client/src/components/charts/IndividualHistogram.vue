@@ -11,19 +11,19 @@ interface DataPoint {
   average: number;
 }
 
-const { histAverage, histSingle, color, event } = defineProps<{
-  histAverage: Map<number, number>;
-  histSingle: Map<number, number>;
+const props = defineProps<{
+  histAverage: [number, number][];
+  histSingle: [number, number][];
   color: string;
   event: SupportedWCAEvent;
 }>();
 
-const histogramTooltip = createFMCTooltip(event);
+const histogramTooltip = createFMCTooltip(props.event);
 
 const isCDF = ref<boolean>(false);
 
-const solveCount = computed(() => totalSolves(histSingle));
-const avgCount = computed(() => totalSolves(histAverage));
+const solveCount = computed(() => totalSolves(props.histSingle));
+const avgCount = computed(() => totalSolves(props.histAverage));
 
 const padChartData = (data: DataPoint[]): DataPoint[] => {
   if (data.length === 0) return [];
@@ -58,60 +58,64 @@ const padChartData = (data: DataPoint[]): DataPoint[] => {
 };
 
 const data = computed(() => {
-  const dataFormatted = [
-    ...new Set([...histSingle.keys(), ...histAverage.keys()]),
-  ]
-    .sort((a, b) => a - b)
-    .reduce((acc: DataPoint[], time, idx) => {
-      const prevTimeSingle = isCDF.value
-        ? idx === 0
-          ? 0
-          : acc[idx - 1].single
-        : 0;
-      const prevTimeAverage = isCDF.value
-        ? idx === 0
-          ? 0
-          : acc[idx - 1].average
-        : 0;
+  const singleMap = Object.fromEntries(props.histSingle);
+  const averageMap = Object.fromEntries(props.histAverage);
 
-      const single = parseFloat(
-        (
-          (histSingle.get(time) || 0) / (solveCount.value / 100) +
-          prevTimeSingle
-        ).toFixed(4),
-      );
-      const average = parseFloat(
-        (
-          (histAverage.get(time) || 0) / (avgCount.value / 100) +
-          prevTimeAverage
-        ).toFixed(4),
-      );
+  const allTimes = [
+    ...new Set([
+      ...props.histSingle.map(([time]) => time),
+      ...props.histAverage.map(([time]) => time),
+    ]),
+  ].sort((a, b) => a - b);
 
-      if (single > 0.0001 || average > 0.0001) {
-        return [...acc, { time, single, average }];
-      }
+  const dataFormatted = allTimes.reduce((acc: DataPoint[], time, idx) => {
+    const prevTimeSingle = isCDF.value
+      ? idx === 0
+        ? 0
+        : acc[idx - 1].single
+      : 0;
+    const prevTimeAverage = isCDF.value
+      ? idx === 0
+        ? 0
+        : acc[idx - 1].average
+      : 0;
 
-      return acc;
-    }, []);
+    const singleCount = singleMap[time] || 0;
+    const averageCount = averageMap[time] || 0;
+
+    const single = parseFloat(
+      (singleCount / (solveCount.value / 100) + prevTimeSingle).toFixed(4),
+    );
+    const average = parseFloat(
+      (averageCount / (avgCount.value / 100) + prevTimeAverage).toFixed(4),
+    );
+
+    if (single > 0.0001 || average > 0.0001 || isCDF.value) {
+      acc.push({ time, single, average });
+    }
+
+    return acc;
+  }, []);
 
   if (dataFormatted.length >= 5) {
     return dataFormatted;
   }
 
-  // It appears that there is undefined behavior if the chart has fewer than 5 data points
-  // Pad the beginning and end with 0 values to ensure this
   return padChartData(dataFormatted);
 });
 
-const xFormatter = (value: number | Date) =>
-  renderTime(data.value[value as number].time * 10, event === "333fm");
+const xFormatter = (value: number | Date) => {
+  const time = data.value[value as number]?.time;
+  if (time === undefined) return "";
+  return renderTime(time * 10, props.event === "333fm");
+};
 </script>
 
 <template>
   <div class="ms-4 -me-6 mt-2 mb-4">
     <AreaChart
       class="-ms-6"
-      :data
+      :data="data"
       index="time"
       :categories="['single', 'average']"
       :colors="[color, `${color}88`]"

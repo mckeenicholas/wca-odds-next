@@ -8,15 +8,12 @@ use crate::utils::database;
 use crate::utils::simulation;
 use crate::utils::types::{
     CompetitorHistoryStat, DatedCompetitionResult, EventType, HistoryPoint,
-    SimulationHistoryRequest, SimulationHistoryResponse,
+    SimulationHistoryRequest,
 };
 use crate::utils::validation::clean_and_validate_wca_id;
 
-// --- CONFIGURATION CONSTANTS ---
-// How many data points to generate (e.g., 12 = 1 year of history, 24 = 2 years)
 const HISTORY_STEPS: u32 = 12;
-// Number of simulations per point (Lower is faster)
-const NUM_SIMULATIONS: u32 = 5_000;
+const NUM_SIMULATIONS: u32 = 10_000;
 
 pub async fn simulation_history_handler(
     State(pool): State<PgPool>,
@@ -60,20 +57,12 @@ pub async fn simulation_history_handler(
         }
     };
 
-    // 2. Determine Data Fetching Range
-    // The "Latest" window ends at payload.end_date.
-    // The "Oldest" window ends at payload.end_date - HISTORY_STEPS months.
-    // The "Oldest" window starts at (Oldest End) - window_duration.
-    // Therefore, we need to fetch data starting from roughly:
-    // payload.start_date - HISTORY_STEPS months.
-
-    // We add a small safety buffer (e.g., 2 extra months) to ensure we don't miss data on boundaries.
+    // We add a small safety buffer (2 extra months) to ensure we don't miss data on boundaries.
     let fetch_start_limit = payload
         .start_date
         .checked_sub_months(Months::new(HISTORY_STEPS + 2))
         .unwrap_or(payload.start_date);
 
-    // --- Data Fetching ---
     let (result_rows, name_rows) = tokio::join!(
         database::fetch_competitor_results(
             &pool,
@@ -97,105 +86,75 @@ pub async fn simulation_history_handler(
         }
     };
 
-    // Group raw rows by Person -> Date -> Values
     let grouped_raw = database::group_results_by_date(all_results);
 
-    // 3. Run History Loop (in blocking task to prevent server stall)
-    let history_response = tokio::task::spawn_blocking(move || {
-        let mut history_points = Vec::with_capacity(HISTORY_STEPS as usize);
+    let mut history_points = Vec::with_capacity(HISTORY_STEPS as usize);
 
-        // Start from the user's requested end date
-        let mut curr_end_date = payload.end_date;
-        let mut curr_start_date = payload.start_date;
+    let mut curr_end_date = payload.end_date;
+    let mut curr_start_date = payload.start_date;
 
-        for _ in 0..HISTORY_STEPS {
-            // --- A. Prepare Competitors for this specific point in time ---
-            let mut competitors: Vec<Competitor> = Vec::new();
+    for _ in 0..HISTORY_STEPS {
+        let mut competitors: Vec<Competitor> = Vec::new();
 
-            for id in &competitor_ids_upper {
-                let raw_competitor_data = grouped_raw.get(id);
+        for id in &competitor_ids_upper {
+            let raw_competitor_data = grouped_raw.get(id);
 
-                // Filter results to fit in [curr_start, curr_end]
-                // AND convert 'days_since' relative to 'curr_end_date'
-                let dated_results = if let Some(data) = raw_competitor_data {
-                    filter_and_convert_relative(data, curr_start_date, curr_end_date)
-                } else {
-                    Vec::new()
-                };
+            let dated_results = if let Some(data) = raw_competitor_data {
+                filter_and_convert_relative(data, curr_start_date, curr_end_date)
+            } else {
+                Vec::new()
+            };
 
-                let name = names_map.get(id).cloned().unwrap_or_else(|| id.clone());
+            let name = names_map.get(id).cloned().unwrap_or_else(|| id.clone());
 
-                // Create competitor
-                let comp = Competitor::new(name, id.clone(), dated_results, payload.half_life);
-                competitors.push(comp);
-            }
-
-            // --- B. Run Simulation ---
-            let include_dnf = payload.include_dnf.unwrap_or(false);
-            // Ensure run_simulations accepts the count param, or update this call
-            let sim_results = simulation::run_simulations(
-                &competitors,
-                &event_type,
-                include_dnf,
-                NUM_SIMULATIONS,
-            );
-
-            // --- C. Extract Stats ---
-            let stats: Vec<CompetitorHistoryStat> = competitors
-                .iter()
-                .enumerate()
-                .map(|(i, comp)| CompetitorHistoryStat {
-                    id: comp.id.clone(),
-                    name: comp.name.clone(),
-                    win_count: sim_results.win_counts[i],
-                    pod_count: sim_results.pod_counts[i],
-                    total_rank: sim_results.total_ranks[i],
-                    sample_size: comp
-                        .stats
-                        .as_ref()
-                        .map(|s| s.num_non_dnf_results)
-                        .unwrap_or(0),
-                })
-                .collect();
-
-            history_points.push(HistoryPoint {
-                date: curr_end_date,
-                competitors: stats,
-            });
-
-            // --- D. Shift Window Backwards (1 Month) ---
-            let next_end = curr_end_date.checked_sub_months(Months::new(1));
-            let next_start = curr_start_date.checked_sub_months(Months::new(1));
-
-            match (next_end, next_start) {
-                (Some(ne), Some(ns)) => {
-                    curr_end_date = ne;
-                    curr_start_date = ns;
-                }
-                _ => break, // Stop if dates underflow (very unlikely with modern dates)
-            }
+            let comp = Competitor::new(name, id.clone(), dated_results, payload.half_life);
+            competitors.push(comp);
         }
 
-        // REVERSE: Output Oldest -> Newest
-        history_points.reverse();
+        let include_dnf = payload.include_dnf.unwrap_or(false);
+        let sim_results =
+            simulation::run_simulations(&competitors, &event_type, include_dnf, NUM_SIMULATIONS);
 
-        SimulationHistoryResponse {
-            history: history_points,
-        }
-    })
-    .await;
+        let stats: Vec<CompetitorHistoryStat> = competitors
+            .iter()
+            .enumerate()
+            .map(|(i, comp)| CompetitorHistoryStat {
+                id: comp.id.clone(),
+                name: comp.name.clone(),
+                win_chance: sim_results.win_chance[i],
+                pod_chance: sim_results.pod_chance[i],
+                expected_rank: sim_results.expected_ranks[i],
+                sample_size: comp
+                    .stats
+                    .as_ref()
+                    .map(|s| s.num_non_dnf_results)
+                    .unwrap_or(0),
+            })
+            .collect();
 
-    // Handle JoinHandle errors
-    match history_response {
-        Ok(response) => Json(response).into_response(),
-        Err(e) => {
-            eprintln!("Simulation task join error: {}", e);
-            StatusCode::INTERNAL_SERVER_ERROR.into_response()
+        history_points.push(HistoryPoint {
+            date: curr_end_date,
+            competitors: stats,
+        });
+
+        let next_end = curr_end_date.checked_sub_months(Months::new(1));
+        let next_start = curr_start_date.checked_sub_months(Months::new(1));
+
+        match (next_end, next_start) {
+            (Some(ne), Some(ns)) => {
+                curr_end_date = ne;
+                curr_start_date = ns;
+            }
+            _ => break,
         }
     }
+
+    // Order by oldest to newest
+    history_points.reverse();
+
+    Json(history_points).into_response()
 }
 
-/// Helper to filter raw dates to a window and calculate days_since relative to the end of that window
 fn filter_and_convert_relative(
     raw_data: &HashMap<NaiveDate, Vec<i32>>,
     window_start: NaiveDate,
@@ -204,9 +163,7 @@ fn filter_and_convert_relative(
     let mut results = Vec::new();
 
     for (date, times) in raw_data {
-        // 1. Filter: Must be within the current window
         if *date >= window_start && *date <= window_end {
-            // 2. Relative Time: Days since the 'window_end' (the simulation date)
             let days_since = (window_end - *date).num_days() as i32;
 
             results.push(DatedCompetitionResult {

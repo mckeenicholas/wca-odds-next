@@ -2,7 +2,7 @@
 import { AreaChart } from "@/components/ui/chart-area";
 import { Select, SelectContent, SelectTrigger } from "@/components/ui/select";
 import {
-  SimulationResult,
+  SimulationAPIResultItem,
   SimulationResultProps,
   SupportedWCAEvent,
 } from "@/lib/types";
@@ -14,8 +14,7 @@ import Checkbox from "../ui/checkbox/Checkbox.vue";
 import { Label } from "../ui/label";
 import MultiLabelSwitch from "./MultiLabelSwitch.vue";
 
-const { data, event, colors } =
-  defineProps<Omit<SimulationResultProps, "numSimulations">>();
+const { data, event, colors } = defineProps<SimulationResultProps>();
 
 const histogramTooltip = createFMCTooltip(event);
 
@@ -91,7 +90,7 @@ const reduceDataPoints = (
 };
 
 const findTimeRange = (
-  data: SimulationResult[],
+  data: SimulationAPIResultItem[],
   isAverage: boolean,
 ): [number, number] => {
   return data.reduce(
@@ -119,7 +118,7 @@ const findTimeRange = (
 
 const generateHistogramData = useMemoize(
   (
-    data: SimulationResult[],
+    data: SimulationAPIResultItem[],
     minTime: number,
     maxTime: number,
     isAverage: boolean,
@@ -147,7 +146,7 @@ const generateHistogramData = useMemoize(
         }
 
         const timesMap = resultTimes.get(i)!;
-        const numOccurrences = results.get(i) ?? 0;
+        const numOccurrences = (results.find((r) => r[0] == i) ?? [0, 0])[1];
 
         let value: number;
         if (isCDF) {
@@ -214,13 +213,24 @@ const names = data.map((person) => person.name) as unknown as "time"[];
       :colors
       :showLegend="false"
       :customTooltip="histogramTooltip"
-      :showXAxis="true"
+      showXAxis
       :yFormatter="(value) => `${value}%`"
       :xFormatter
+      showYAxis
     />
     <div class="lg:flex lg:pe-10">
-      <MultiLabelSwitch left="Single" right="Average" v-model="isAverage" />
-      <MultiLabelSwitch left="Probability" right="Cumulative" v-model="isCDF" />
+      <MultiLabelSwitch
+        class="ms-8"
+        left="Single"
+        right="Average"
+        v-model="isAverage"
+      />
+      <MultiLabelSwitch
+        class="ms-8"
+        left="Probability"
+        right="Cumulative"
+        v-model="isCDF"
+      />
       <div class="ms-4 flex grow justify-end">
         <Select>
           <SelectTrigger class="mt-2 min-w-36"> Competitors </SelectTrigger>

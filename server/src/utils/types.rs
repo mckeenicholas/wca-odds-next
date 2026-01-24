@@ -1,7 +1,6 @@
 use chrono::NaiveDate;
 use serde::{Deserialize, Serialize};
 use sqlx::FromRow;
-use std::collections::HashMap;
 
 // --- DOMAIN TYPES ---
 #[derive(Debug, Clone, PartialEq)]
@@ -75,19 +74,14 @@ pub struct CompetitorRow {
 pub struct CompetitorSimulationResult {
     pub name: String,
     pub id: String,
-    pub win_count: u32,
-    pub pod_count: u32,
-    pub total_rank: u32,
+    pub win_chance: f64,
+    pub pod_chance: f64,
+    pub expected_rank: f64,
     pub sample_size: u32,
     pub mean_no_dnf: u32,
-    pub rank_dist: Vec<u32>,
-    pub hist_values_single: HashMap<i32, i32>, // <Time/10, Count>
-    pub hist_values_average: HashMap<i32, i32>, // <Time/10, Count>
-}
-
-#[derive(Serialize)]
-pub struct SimulationHistoryResponse {
-    pub history: Vec<HistoryPoint>,
+    pub rank_dist: Vec<f64>,
+    pub hist_values_single: Vec<(i32, f64)>, // <Time/10, Chance>
+    pub hist_values_average: Vec<(i32, f64)>, // <Time/10, Chance>
 }
 
 #[derive(Serialize)]
@@ -100,8 +94,8 @@ pub struct HistoryPoint {
 pub struct CompetitorHistoryStat {
     pub id: String,
     pub name: String,
-    pub win_count: u32,
-    pub pod_count: u32,
-    pub total_rank: u32,
+    pub win_chance: f64,
+    pub pod_chance: f64,
+    pub expected_rank: f64,
     pub sample_size: u32,
 }

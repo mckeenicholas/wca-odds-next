@@ -21,19 +21,9 @@ import type { BaseChartProps } from ".";
 const props = withDefaults(
   defineProps<
     BaseChartProps<T> & {
-      /**
-       * Render custom tooltip component.
-       */
       customTooltip?: Component;
-      /**
-       * Type of curve
-       */
       curveType?: CurveType;
-      /**
-       * Controls the visibility of gradient.
-       * @default true
-       */
-      showGradiant?: boolean;
+      showGradient?: boolean;
     }
   >(),
   {
@@ -45,7 +35,7 @@ const props = withDefaults(
     showTooltip: true,
     showLegend: true,
     showGridLine: true,
-    showGradiant: true,
+    showGradient: true,
   },
 );
 
@@ -81,6 +71,7 @@ function handleLegendItemClick(d: BulletLegendItemInterface, i: number) {
 <template>
   <div
     :class="cn('flex h-100 w-full flex-col items-end', $attrs.class ?? '')"
+    style="--vis-text-color: #888888; --vis-axis-grid-color: #e5e7eb"
   >
     <ChartLegend
       v-if="showLegend"
@@ -104,7 +95,7 @@ function handleLegendItemClick(d: BulletLegendItemInterface, i: number) {
             x2="0"
             y2="1"
           >
-            <template v-if="showGradiant">
+            <template v-if="showGradient">
               <stop offset="5%" :stop-color="color" stop-opacity="0.4" />
               <stop offset="95%" :stop-color="color" stop-opacity="0" />
             </template>
@@ -165,7 +156,7 @@ function handleLegendItemClick(d: BulletLegendItemInterface, i: number) {
         :tick-format="xFormatter ?? ((v: number) => data[v]?.[index])"
         :grid-line="false"
         :tick-line="false"
-        tick-text-color="hsl(var(--vis-text-color))"
+        tick-text-color="var(--vis-text-color)"
       />
       <VisAxis
         v-if="showYAxis"
@@ -177,9 +168,10 @@ function handleLegendItemClick(d: BulletLegendItemInterface, i: number) {
         :attributes="{
           [Axis.selectors.grid]: {
             class: 'text-muted',
+            stroke: 'var(--vis-axis-grid-color)',
           },
         }"
-        tick-text-color="hsl(var(--vis-text-color))"
+        tick-text-color="var(--vis-text-color)"
       />
 
       <slot />

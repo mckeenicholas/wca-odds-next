@@ -4,8 +4,7 @@ import { SimulationResultProps } from "@/lib/types";
 import { computed } from "vue";
 import PercentageTooltip from "./PercentageTooltip.vue";
 
-const { data, colors, numSimulations } =
-  defineProps<Omit<SimulationResultProps, "event">>();
+const { data, colors } = defineProps<Omit<SimulationResultProps, "event">>();
 
 const chartData = computed(() =>
   Array.from({ length: data.length }, (_, idx) => ({
@@ -13,7 +12,7 @@ const chartData = computed(() =>
     ...Object.fromEntries(
       data.map((person) => [
         person.name,
-        parseFloat(((person.rank_dist[idx] / numSimulations) * 100).toFixed(2)),
+        parseFloat((person.rank_dist[idx] * 100).toFixed(2)),
       ]),
     ),
   })),
@@ -32,6 +31,7 @@ const names = data.map((person) => person.name) as "name"[];
       :type="'stacked'"
       :showLegend="false"
       :customTooltip="PercentageTooltip"
+      :yFormatter="(tick) => `${tick}%`"
     />
   </div>
 </template>

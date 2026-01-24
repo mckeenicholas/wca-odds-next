@@ -86,6 +86,7 @@ const selectorsBar = computed(() =>
 <template>
   <div
     :class="cn('flex h-100 w-full flex-col items-end', $attrs.class ?? '')"
+    style="--vis-text-color: #888888; --vis-axis-grid-color: #e5e7eb"
   >
     <ChartLegend
       v-if="showLegend"
@@ -128,7 +129,7 @@ const selectorsBar = computed(() =>
         :tick-format="xFormatter ?? ((v: number) => data[v]?.[index])"
         :grid-line="false"
         :tick-line="false"
-        tick-text-color="hsl(var(--vis-text-color))"
+        tick-text-color="var(--vis-text-color)"
       />
       <VisAxis
         v-if="showYAxis"
@@ -140,9 +141,10 @@ const selectorsBar = computed(() =>
         :attributes="{
           [Axis.selectors.grid]: {
             class: 'text-muted',
+            stroke: 'var(--vis-axis-grid-color)',
           },
         }"
-        tick-text-color="hsl(var(--vis-text-color))"
+        tick-text-color="var(--vis-text-color)"
       />
 
       <slot />

@@ -8,8 +8,6 @@ RUN npm install
 
 COPY . .
 
-RUN node setup/cache_comp.js setup/cache_list.json
-
 RUN npm run build
 
 FROM nginx:1.28.0-alpine-slim

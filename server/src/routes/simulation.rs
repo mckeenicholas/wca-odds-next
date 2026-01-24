@@ -56,7 +56,6 @@ pub async fn simulation_handler(
         }
     };
 
-    // --- Data Fetching ---
     let (result_rows, name_rows) = tokio::join!(
         database::fetch_competitor_results(
             &pool,
@@ -83,11 +82,9 @@ pub async fn simulation_handler(
         }
     };
 
-    // --- Group and convert results ---
     let grouped = database::group_results_by_date(results);
     let mut raw_data = database::convert_to_dated_results(grouped);
 
-    // Initialize Competitors
     let mut competitors: Vec<Competitor> = Vec::new();
     for (i, id) in competitor_ids_upper.iter().enumerate() {
         let results = raw_data.remove(id).unwrap_or_default();
@@ -102,7 +99,6 @@ pub async fn simulation_handler(
 
         let mut comp = Competitor::new(competitor_name, id.clone(), results, payload.half_life);
 
-        // Add manual entered times if provided
         if let Some(entered) = &payload.entered_times
             && let Some(times) = entered.get(i)
         {

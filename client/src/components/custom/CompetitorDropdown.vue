@@ -8,7 +8,7 @@ import {
 } from "@/components/ui/tooltip";
 import {
   eventAttempts,
-  SimulationResult,
+  SimulationAPIResultItem,
   SupportedWCAEvent,
 } from "@/lib/types";
 import { formatPercentage } from "@/lib/utils";
@@ -26,10 +26,9 @@ import ResultEntryField from "./TimeEntryField.vue";
 
 const lowDataWarningThreshold = 12 as const;
 
-const { result, color, numSimulations, event } = defineProps<{
-  result: SimulationResult;
+const { result, color, event } = defineProps<{
+  result: SimulationAPIResultItem;
   color: string;
-  numSimulations: number;
   event: SupportedWCAEvent;
 }>();
 
@@ -37,13 +36,11 @@ const model = defineModel<number[]>({ required: true });
 
 const isOpen = ref<boolean>(false);
 
-const winPercentage = computed(() =>
-  formatPercentage((result.win_count * 100) / numSimulations),
-);
+const winPercentage = computed(() => formatPercentage(result.win_chance * 100));
 const podiumPercentage = computed(() =>
-  formatPercentage((result.pod_count * 100) / numSimulations),
+  formatPercentage(result.pod_chance * 100),
 );
-const expectedRank = computed(() => result.total_rank / numSimulations);
+const expectedRank = computed(() => result.expected_rank);
 
 const ariaId = computed(() => `dropdown-${result.id}`);
 </script>
@@ -101,7 +98,6 @@ const ariaId = computed(() => `dropdown-${result.id}`);
         :color="color"
         :histSingle="result.hist_values_single"
         :histAverage="result.hist_values_average"
-        :simulations="numSimulations * eventAttempts[event]"
         :event
       />
       <div class="flex flex-col items-center px-2 lg:ms-2 lg:flex-row lg:gap-4">

@@ -4,27 +4,24 @@ import { SimulationResultProps, eventNames } from "@/lib/types";
 import { formatPercentage, toClockFormat } from "@/lib/utils";
 import { computed } from "vue";
 
-const { data, colors, numSimulations, event } =
-  defineProps<SimulationResultProps>();
+const { data, colors, event } = defineProps<SimulationResultProps>();
 
 const topCompetitor = computed(() =>
   data.reduce(
     (max, competitor) =>
-      competitor.win_count > max.win_count ? competitor : max,
+      competitor.win_chance > max.win_chance ? competitor : max,
     data[0],
   ),
 );
 
-const avgRank = computed(() =>
-  (topCompetitor.value.total_rank / numSimulations).toFixed(2),
-);
+const avgRank = computed(() => topCompetitor.value.expected_rank.toFixed(2));
 
 const winChance = computed(() =>
-  formatPercentage(topCompetitor.value.win_count / numSimulations, true),
+  formatPercentage(topCompetitor.value.win_chance, true),
 );
 
 const podiumChance = computed(() =>
-  formatPercentage(topCompetitor.value.pod_count / numSimulations, true),
+  formatPercentage(topCompetitor.value.pod_chance, true),
 );
 
 const expectedAvg = computed(() =>
@@ -52,7 +49,7 @@ const expectedAvg = computed(() =>
       </div>
     </div>
     <div class="rounded-md border p-2">
-      <PieChart :data :num-simulations :colors />
+      <PieChart :data :colors />
     </div>
   </div>
 </template>

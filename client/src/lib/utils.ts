@@ -3,12 +3,13 @@ import { type ClassValue, clsx } from "clsx";
 import { twMerge } from "tailwind-merge";
 import { computed, h, toRaw } from "vue";
 import {
-  ChartTooltipProps,
-  SimulationResult,
+  SimulationAPIResultItem,
   SimulationRouteQuery,
   SupportedWCAEvent,
   wcif,
 } from "./types";
+
+export const API_URL = import.meta.env.VITE_API_URL || "http://localhost";
 
 export const BREAKPOINT = 1255 as const;
 
@@ -17,12 +18,7 @@ export function cn(...inputs: ClassValue[]) {
 }
 
 export const fetchWCIF = async (id: string): Promise<wcif> => {
-  const cachedComps = ["WC2025", "CubingUSAAllStars2025"];
-
-  const wcaURL = cachedComps.includes(id)
-    ? `/wcif/${id}.json`
-    : `https://api.worldcubeassociation.org/competitions/${id}/wcif/public`;
-
+  const wcaURL = `https://api.worldcubeassociation.org/competitions/${id}/wcif/public`;
   return fetchWCAInfo<wcif>(wcaURL);
 };
 
@@ -55,8 +51,8 @@ export const generateColors = (num: number) => {
   return hexCodes;
 };
 
-export const totalSolves = (results: Map<number, number>) => {
-  return Array.from(results.values()).reduce((sum, count) => sum + count, 0);
+export const totalSolves = (results: [number, number][]) => {
+  return results.reduce((sum, [, count]) => sum + count, 0);
 };
 
 export const toClockFormat = (centiseconds: number): string => {
@@ -107,7 +103,7 @@ export const generateDefaultTimesArray = (
 
 export const createFMCTooltip = (event: SupportedWCAEvent) =>
   computed(() => {
-    return (props: ChartTooltipProps) =>
+    return (props: object) =>
       h(HistogramCustomTooltip, {
         ...props,
         isFmc: event === "333fm",
@@ -208,18 +204,16 @@ export const createJSONExport = ({
   currentTimes,
   startDate,
   endDate,
-  simCount,
   decayRate,
   includeDnf,
   event,
 }: {
   competitionName: string;
-  results: SimulationResult[];
+  results: SimulationAPIResultItem[];
   ids: string[];
   currentTimes: number[][];
   startDate: Date;
   endDate: Date;
-  simCount: number;
   decayRate: number;
   includeDnf: boolean;
   event: SupportedWCAEvent;
@@ -228,7 +222,6 @@ export const createJSONExport = ({
     startDate,
     endDate,
     competitionName,
-    simCount,
     decayRate,
     includeDnf,
     event,
@@ -238,10 +231,10 @@ export const createJSONExport = ({
   const personResults = results.map((result, index) => ({
     id: ids[index],
     name: result.name,
-    winChance: result.win_count / simCount,
-    podiumChance: result.pod_count / simCount,
+    winChance: result.win_chance,
+    podiumChance: result.pod_chance,
     globalMean: result.mean_no_dnf,
-    expectedRank: result.total_rank / simCount,
+    expectedRank: result.expected_rank,
     rankCount: Object.fromEntries(
       result.rank_dist.map((count, rank) => [rank + 1, count]),
     ),
@@ -257,10 +250,9 @@ export const createJSONExport = ({
 };
 
 export const createCSVExport = (
-  results: SimulationResult[],
+  results: SimulationAPIResultItem[],
   ids: string[],
   currentTimes: number[][],
-  simCount: number,
 ) => {
   const headers = [
     "id",
@@ -280,10 +272,10 @@ export const createCSVExport = (
     return [
       ids[idx],
       result.name,
-      result.win_count / simCount,
-      result.pod_count / simCount,
+      result.win_chance,
+      result.pod_chance,
       result.mean_no_dnf,
-      result.total_rank / simCount,
+      result.expected_rank,
       ...currentTimes[idx],
     ].join(",");
   });

@@ -92,57 +92,6 @@ export interface wcif {
   };
 }
 
-export interface SimulationResult {
-  name: string;
-  id: string;
-  sample_size: number;
-  win_count: number;
-  pod_count: number;
-  total_rank: number;
-  mean_no_dnf: number;
-  rank_dist: number[];
-  hist_values_single: Map<number, number>;
-  hist_values_average: Map<number, number>;
-}
-
-// Payloads for worker messages
-export interface RunSimulationPayload {
-  competitorList: string[];
-  event: SupportedWCAEvent;
-  startDate: Date;
-  endDate: Date;
-  numSimulations: number;
-  includeDNF: boolean;
-  decayHalfLife: number;
-  inputtedTimes: number[][];
-}
-
-export interface RecalculateSimulationPayload {
-  numSimulations: number;
-  includeDNF: boolean;
-  inputtedTimes: number[][];
-}
-
-// Messages from Main Thread to Worker
-export type WorkerMessage =
-  | { type: "RUN_SIMULATION"; payload: RunSimulationPayload }
-  | { type: "RECALCULATE_SIMULATION"; payload: RecalculateSimulationPayload };
-
-// Messages from Worker to Main Thread
-export type MainThreadMessage =
-  | { type: "SIMULATION_COMPLETE"; results: SimulationResult[] }
-  | { type: "SIMULATION_ERROR"; error: string };
-
-export interface ChartTooltipProps {
-  title?: string;
-  data: {
-    name: string;
-    color: string;
-    value: number;
-  }[];
-  isFmc?: boolean;
-}
-
 export interface SimulationRouteQuery {
   competitors?: string;
   eventId?: string;
@@ -156,9 +105,8 @@ export interface SimulationRouteQuery {
 }
 
 export interface SimulationResultProps {
-  data: SimulationResult[];
+  data: SimulationAPIResultItem[];
   colors: string[];
-  numSimulations: number;
   event: SupportedWCAEvent;
 }
 
@@ -234,12 +182,28 @@ export interface Competitor {
 export interface SimulationAPIResultItem {
   name: string;
   id: string;
-  win_count: number;
-  pod_count: number;
-  total_rank: number;
+  win_chance: number;
+  pod_chance: number;
+  expected_rank: number;
   sample_size: number;
   mean_no_dnf: number;
   rank_dist: number[];
-  hist_values_single: Record<string, number>;
-  hist_values_average: Record<string, number>;
+  hist_values_single: [number, number][];
+  hist_values_average: [number, number][];
 }
+
+export interface CompetitorHistoryStat {
+  id: string;
+  name: string;
+  win_chance: number;
+  pod_chance: number;
+  expected_rank: number;
+  color?: string;
+}
+
+export interface HistoryPoint {
+  date: string;
+  competitors: CompetitorHistoryStat[];
+}
+
+export type HistoryChartMetric = "win" | "podium" | "rank";
