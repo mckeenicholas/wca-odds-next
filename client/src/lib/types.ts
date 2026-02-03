@@ -105,7 +105,7 @@ export interface SimulationRouteQuery {
 }
 
 export interface SimulationResultProps {
-  data: SimulationAPIResultItem[];
+  data: SimulationAPIResults;
   colors: string[];
   event: SupportedWCAEvent;
 }
@@ -179,7 +179,7 @@ export interface Competitor {
   selected: boolean;
 }
 
-export interface SimulationAPIResultItem {
+export interface CompetitorSimulationResult {
   name: string;
   id: string;
   win_chance: number;
@@ -187,9 +187,28 @@ export interface SimulationAPIResultItem {
   expected_rank: number;
   sample_size: number;
   mean_no_dnf: number;
-  rank_dist: number[];
-  hist_values_single: [number, number][];
-  hist_values_average: [number, number][];
+  histogram: ChartData;
+}
+
+export interface FullHistogramChartData {
+  single: ChartData;
+  average: ChartData;
+}
+
+export interface SimulationAPIResults {
+  competitor_results: CompetitorSimulationResult[];
+  full_histogram: FullHistogramChartData;
+  rank_histogram: ChartData;
+}
+
+export interface ChartPoint {
+  name: string;
+  values: number[];
+}
+
+export interface ChartData {
+  labels: string[];
+  data: ChartPoint[];
 }
 
 export interface CompetitorHistoryStat {

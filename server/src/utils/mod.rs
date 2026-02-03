@@ -1,4 +1,5 @@
 pub mod calc;
+pub mod charts;
 pub mod competitor;
 pub mod constants;
 pub mod database;

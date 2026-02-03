@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { SimulationAPIResultItem, SupportedWCAEvent } from "@/lib/types";
+import { CompetitorSimulationResult, SupportedWCAEvent } from "@/lib/types";
 import { computed, ref } from "vue";
 import CompetitorDropdown from "./CompetitorDropdown.vue";
 import Chevron from "./RotatableChevron.vue";
@@ -8,12 +8,12 @@ type sortCol = "name" | "win" | "pod" | "rank";
 
 interface groupedResults {
   idx: number;
-  results: SimulationAPIResultItem;
+  results: CompetitorSimulationResult;
   color: string;
 }
 
 const { simulationResults, colors, event } = defineProps<{
-  simulationResults: SimulationAPIResultItem[];
+  simulationResults: CompetitorSimulationResult[];
   colors: string[];
   event: SupportedWCAEvent;
 }>();

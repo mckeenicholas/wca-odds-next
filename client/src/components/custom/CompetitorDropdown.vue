@@ -7,8 +7,8 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import {
+  CompetitorSimulationResult,
   eventAttempts,
-  SimulationAPIResultItem,
   SupportedWCAEvent,
 } from "@/lib/types";
 import { formatPercentage } from "@/lib/utils";
@@ -27,7 +27,7 @@ import ResultEntryField from "./TimeEntryField.vue";
 const lowDataWarningThreshold = 12 as const;
 
 const { result, color, event } = defineProps<{
-  result: SimulationAPIResultItem;
+  result: CompetitorSimulationResult;
   color: string;
   event: SupportedWCAEvent;
 }>();
@@ -94,12 +94,7 @@ const ariaId = computed(() => `dropdown-${result.id}`);
       </button>
     </CollapsibleTrigger>
     <CollapsibleContent class="space-y-2" :id="ariaId">
-      <IndividualHistogram
-        :color="color"
-        :histSingle="result.hist_values_single"
-        :histAverage="result.hist_values_average"
-        :event
-      />
+      <IndividualHistogram :color="color" :data="result.histogram" :event />
       <div class="flex flex-col items-center px-2 lg:ms-2 lg:flex-row lg:gap-4">
         <div
           v-for="attemptIdx in eventAttempts[event]"

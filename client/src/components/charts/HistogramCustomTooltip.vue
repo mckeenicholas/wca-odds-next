@@ -14,7 +14,8 @@ export interface ResultChartTooltipProps {
 
 const { title, data, isFmc = false } = defineProps<ResultChartTooltipProps>();
 
-const timeRawValue = parseInt(title ?? "0") * 10;
+const timeRawValue = parseInt(title ?? "0");
+
 const timeDisplayValue = renderTime(timeRawValue, isFmc);
 </script>
 
@@ -22,15 +23,19 @@ const timeDisplayValue = renderTime(timeRawValue, isFmc);
   <div class="rounded-md p-2">
     <p class="font-bold">{{ timeDisplayValue }}</p>
     <div v-for="(item, key) in data" :key class="flex justify-between text-sm">
-      <div class="flex items-center">
-        <span class="mr-2 h-2.5 w-2.5">
-          <ColoredCircle :color="item.color" />
-        </span>
-        <span>{{ item.name }}</span>
-      </div>
-      <span class="ml-4 font-semibold"
-        >{{ item.value >= 0.01 ? item.value.toFixed(2) : "<0.01" }}%</span
+      <template
+        v-if="!isFmc || item.name != 'single' || timeRawValue % 100 == 0"
       >
+        <div class="flex items-center">
+          <span class="mr-2 h-2.5 w-2.5">
+            <ColoredCircle :color="item.color" />
+          </span>
+          <span>{{ item.name }}</span>
+        </div>
+        <span class="ml-4 font-semibold"
+          >{{ item.value >= 0.01 ? item.value.toFixed(2) : "<0.01" }}%</span
+        >
+      </template>
     </div>
   </div>
 </template>

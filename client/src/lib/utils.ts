@@ -5,13 +5,14 @@ import { type ClassValue, clsx } from "clsx";
 import { twMerge } from "tailwind-merge";
 import { computed, h, toRaw } from "vue";
 import {
-  SimulationAPIResultItem,
+  ChartPoint,
+  SimulationAPIResults,
   SimulationRouteQuery,
   SupportedWCAEvent,
   wcif,
 } from "./types";
 
-export const API_URL = import.meta.env.VITE_API_URL || "http://localhost";
+export const API_URL = import.meta.env.VITE_API_URL || "http://localhost:3000";
 
 export const BREAKPOINT = 1255 as const;
 
@@ -211,7 +212,7 @@ export const createJSONExport = ({
   event,
 }: {
   competitionName: string;
-  results: SimulationAPIResultItem[];
+  results: SimulationAPIResults;
   ids: string[];
   currentTimes: number[][];
   startDate: Date;
@@ -230,20 +231,17 @@ export const createJSONExport = ({
     generatedOn: new Date(),
   };
 
-  const personResults = results.map((result, index) => ({
+  const personResults = results.competitor_results.map((result, index) => ({
     id: ids[index],
     name: result.name,
     winChance: result.win_chance,
     podiumChance: result.pod_chance,
     globalMean: result.mean_no_dnf,
     expectedRank: result.expected_rank,
-    rankCount: Object.fromEntries(
-      result.rank_dist.map((count, rank) => [rank + 1, count]),
-    ),
-    histSingle: Object.fromEntries(result.hist_values_single),
-    histAverage: Object.fromEntries(result.hist_values_average),
     enteredTimes: currentTimes[index].filter((time) => time !== 0),
   }));
+
+  // TODO: rebuilt hist data from this
 
   return JSON.stringify({
     config,
@@ -252,7 +250,7 @@ export const createJSONExport = ({
 };
 
 export const createCSVExport = (
-  results: SimulationAPIResultItem[],
+  results: SimulationAPIResults,
   ids: string[],
   currentTimes: number[][],
 ) => {
@@ -270,7 +268,7 @@ export const createCSVExport = (
     "time_5",
   ];
 
-  const rows = results.map((result, idx) => {
+  const rows = results.competitor_results.map((result, idx) => {
     return [
       ids[idx],
       result.name,
@@ -316,4 +314,27 @@ export const formatInputtedTimes = (
   }
 
   return timesArray.map((person) => person.map((time) => time * 100));
+};
+
+export const computeCDF = (data: ChartPoint[]): ChartPoint[] => {
+  if (data.length === 0) {
+    return [];
+  }
+
+  const runningTotals: number[] = Array.from(
+    { length: data[0].values.length },
+    () => 0,
+  );
+
+  return data.map((point) => {
+    const newValues = point.values.map((val, j) => {
+      runningTotals[j] += val;
+      return runningTotals[j];
+    });
+
+    return {
+      ...point,
+      values: newValues,
+    };
+  });
 };

@@ -32,7 +32,9 @@ pub async fn simulation_handler(
             .into_response();
     }
 
-    let event_type = match EventType::from_id(&payload.event_id) {
+    let event_id = payload.event_id.to_lowercase();
+
+    let event_type = match EventType::from_id(&event_id) {
         Some(e) => e,
         None => {
             return (
@@ -112,6 +114,7 @@ pub async fn simulation_handler(
     let results =
         simulation::run_simulations(&competitors, &event_type, include_dnf, SIMULATION_COUNT);
 
-    let response_data = simulation::format_results(competitors, results);
+    let response_data =
+        simulation::format_results(competitors, results, matches!(event_type, EventType::Fmc));
     Json(response_data).into_response()
 }

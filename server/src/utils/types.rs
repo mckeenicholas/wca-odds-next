@@ -2,13 +2,15 @@ use chrono::NaiveDate;
 use serde::{Deserialize, Serialize};
 use sqlx::FromRow;
 
-// --- DOMAIN TYPES ---
-#[derive(Debug, Clone, PartialEq)]
+use crate::utils::charts::ChartData;
+
+#[derive(Debug, Clone, PartialEq, Copy)]
 pub enum EventType {
     Ao5,
     Bo5,
     Mo3,
     Bo3,
+    Fmc,
 }
 
 impl EventType {
@@ -17,7 +19,8 @@ impl EventType {
             "222" | "333" | "444" | "555" | "333oh" | "minx" | "pyram" | "clock" | "skewb"
             | "sq1" => Some(Self::Ao5),
             "333bf" => Some(Self::Bo5),
-            "666" | "777" | "333fm" => Some(Self::Mo3),
+            "666" | "777" => Some(Self::Mo3),
+            "333fm" => Some(Self::Fmc),
             "444bf" | "555bf" => Some(Self::Bo3),
             _ => None,
         }
@@ -79,9 +82,7 @@ pub struct CompetitorSimulationResult {
     pub expected_rank: f64,
     pub sample_size: u32,
     pub mean_no_dnf: u32,
-    pub rank_dist: Vec<f64>,
-    pub hist_values_single: Vec<(i32, f64)>, // <Time/10, Chance>
-    pub hist_values_average: Vec<(i32, f64)>, // <Time/10, Chance>
+    pub histogram: ChartData,
 }
 
 #[derive(Serialize)]
@@ -98,4 +99,17 @@ pub struct CompetitorHistoryStat {
     pub pod_chance: f64,
     pub expected_rank: f64,
     pub sample_size: u32,
+}
+
+#[derive(Serialize)]
+pub struct FullHistogramChartData {
+    pub single: ChartData,
+    pub average: ChartData,
+}
+
+#[derive(Serialize)]
+pub struct SimulationEndpointResults {
+    pub competitor_results: Vec<CompetitorSimulationResult>,
+    pub full_histogram: FullHistogramChartData,
+    pub rank_histogram: ChartData,
 }

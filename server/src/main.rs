@@ -45,7 +45,7 @@ async fn main() {
         .finish()
         .unwrap();
 
-    let governor = GovernorLayer::new(governor_conf);
+    // let governor = GovernorLayer::new(governor_conf);
 
     let cors = CorsLayer::new()
         .allow_origin(
@@ -64,7 +64,7 @@ async fn main() {
         .route("/api/history", post(history::simulation_history_handler))
         .with_state(pool)
         .layer(middleware::from_fn(timer_middleware))
-        .layer(governor)
+        // .layer(governor)
         .layer(cors);
 
     let addr = format!("0.0.0.0:{}", port_num);

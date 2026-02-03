@@ -1,17 +1,15 @@
 <script setup lang="ts">
 import FullHistogram from "@/components/charts/FullHistogram.vue";
 import HistoryHistogram from "@/components/charts/HistoryHistogram.vue"; // Added Import
-import RankHistogram from "@/components/charts/RankHistogram.vue";
 import CompetitorList from "@/components/custom/CompetitorList.vue";
 import ErrorDisplay from "@/components/custom/ErrorPanel.vue";
 import ExpandableBox from "@/components/custom/ExpandableBox.vue";
 import LoadingMessage from "@/components/custom/LoadingMessage.vue";
-import ResultsSummary from "@/components/custom/ResultsSummary.vue";
 import { Button } from "@/components/ui/button";
 import {
   eventAttempts,
   eventNames,
-  SimulationAPIResultItem,
+  SimulationAPIResults,
   SimulationRouteQuery,
   SupportedWCAEvent,
 } from "@/lib/types";
@@ -78,7 +76,7 @@ const defaultTimesArray = generateDefaultTimesArray(
 );
 
 const error = ref<string>("");
-const simulationResults = ref<SimulationAPIResultItem[] | null>(null);
+const simulationResults = ref<SimulationAPIResults | null>(null);
 const loading = ref<boolean>(true);
 const recalculateLoading = ref<boolean>(false);
 const wcaLiveLoading = ref<boolean>(false);
@@ -95,7 +93,7 @@ const inputtedTimesState = computed(() => {
 });
 
 const sharedProps = computed(() => ({
-  data: simulationResults.value ?? [],
+  data: simulationResults.value!,
   colors,
   event,
 }));
@@ -145,7 +143,7 @@ const fetchSimulationResults = async () => {
 
   const rawData = await response.json();
 
-  return rawData as SimulationAPIResultItem[];
+  return rawData as SimulationAPIResults;
 };
 
 const runInitialSimulation = async () => {
@@ -280,19 +278,19 @@ const exportCSV = () => {
       v-else-if="simulationResults"
       class="border-lg md:min-w-full lg:min-w-250"
     >
-      <ResultsSummary
-        :data="simulationResults || []"
+      <!-- <ResultsSummary
+        :data="simulationResults"
         :colors="colors"
         :event="event"
-      />
+      /> -->
 
       <ExpandableBox title="Results Histogram" class="mb-2">
         <FullHistogram v-bind="sharedProps" />
       </ExpandableBox>
 
-      <ExpandableBox title="Predicted Ranks" class="mb-2">
+      <!-- <ExpandableBox title="Predicted Ranks" class="mb-2">
         <RankHistogram v-bind="sharedProps" />
-      </ExpandableBox>
+      </ExpandableBox> -->
 
       <ExpandableBox title="History">
         <HistoryHistogram
@@ -302,7 +300,7 @@ const exportCSV = () => {
       </ExpandableBox>
 
       <CompetitorList
-        :simulation-results="simulationResults"
+        :simulation-results="simulationResults.competitor_results"
         :colors
         :event
         v-model="inputtedTimes"
