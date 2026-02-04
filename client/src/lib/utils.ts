@@ -54,10 +54,6 @@ export const generateColors = (num: number) => {
   return hexCodes;
 };
 
-export const totalSolves = (results: [number, number][]) => {
-  return results.reduce((sum, [, count]) => sum + count, 0);
-};
-
 export const toClockFormat = (centiseconds: number): string => {
   if (centiseconds === -1) return "DNF";
   if (centiseconds === -2) return "DNS";

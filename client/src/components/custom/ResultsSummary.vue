@@ -1,32 +1,33 @@
 <script setup lang="ts">
 import PieChart from "@/components/charts/PieChart.vue";
-import { SimulationResultProps, eventNames } from "@/lib/types";
+import {
+  SimulationAPIResults,
+  SupportedWCAEvent,
+  eventNames,
+} from "@/lib/types";
 import { formatPercentage, toClockFormat } from "@/lib/utils";
 import { computed } from "vue";
 
-const { data, colors, event } = defineProps<SimulationResultProps>();
+const { data, colors, event } = defineProps<{
+  data: SimulationAPIResults;
+  colors: string[];
+  event: SupportedWCAEvent;
+}>();
 
 const topCompetitor = computed(() =>
-  data.reduce(
+  data.competitor_results.reduce(
     (max, competitor) =>
       competitor.win_chance > max.win_chance ? competitor : max,
-    data[0],
+    data.competitor_results[0],
   ),
 );
 
-const avgRank = computed(() => topCompetitor.value.expected_rank.toFixed(2));
-
-const winChance = computed(() =>
-  formatPercentage(topCompetitor.value.win_chance, true),
-);
-
-const podiumChance = computed(() =>
-  formatPercentage(topCompetitor.value.pod_chance, true),
-);
-
-const expectedAvg = computed(() =>
-  toClockFormat(topCompetitor.value.mean_no_dnf),
-);
+const topCompetitorStats = computed(() => ({
+  avgRank: topCompetitor.value.expected_rank.toFixed(2),
+  winChance: formatPercentage(topCompetitor.value.win_chance, true),
+  podiumChance: formatPercentage(topCompetitor.value.pod_chance, true),
+  expectedAvg: toClockFormat(topCompetitor.value.mean_no_dnf),
+}));
 </script>
 
 <template>
@@ -40,10 +41,12 @@ const expectedAvg = computed(() =>
             highest odds of winning with:
           </p>
           <ul class="ml-4 list-inside list-disc text-sm">
-            <li>{{ winChance }} chance of winning</li>
-            <li>{{ podiumChance }} chance of podium finish</li>
-            <li>Average rank of {{ avgRank }}</li>
-            <li>Expected average of {{ expectedAvg }}</li>
+            <li>{{ topCompetitorStats.winChance }} chance of winning</li>
+            <li>
+              {{ topCompetitorStats.podiumChance }} chance of podium finish
+            </li>
+            <li>Average rank of {{ topCompetitorStats.avgRank }}</li>
+            <li>Expected average of {{ topCompetitorStats.expectedAvg }}</li>
           </ul>
         </div>
       </div>

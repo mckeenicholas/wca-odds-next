@@ -6,6 +6,7 @@ use std::collections::HashMap;
 use crate::utils::competitor::Competitor;
 use crate::utils::database;
 use crate::utils::simulation;
+use crate::utils::simulation::SimulationResult;
 use crate::utils::types::{EventType, SimulationRequest};
 use crate::utils::validation::clean_and_validate_wca_id;
 
@@ -114,7 +115,22 @@ pub async fn simulation_handler(
     let results =
         simulation::run_simulations(&competitors, &event_type, include_dnf, SIMULATION_COUNT);
 
-    let response_data =
-        simulation::format_results(competitors, results, matches!(event_type, EventType::Fmc));
+    let mut reordered: Vec<(SimulationResult, Competitor)> =
+        results.into_iter().zip(competitors).collect();
+    reordered.sort_by(|a, b| {
+        a.0.win_chance
+            .partial_cmp(&b.0.win_chance)
+            .unwrap_or(std::cmp::Ordering::Equal)
+            .reverse()
+    });
+
+    let (competitors_reordered, results_reordered): (Vec<_>, Vec<_>) =
+        reordered.into_iter().unzip();
+
+    let response_data = simulation::format_results(
+        results_reordered,
+        competitors_reordered,
+        matches!(event_type, EventType::Fmc),
+    );
     Json(response_data).into_response()
 }

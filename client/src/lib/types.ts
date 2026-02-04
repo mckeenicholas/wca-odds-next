@@ -36,8 +36,6 @@ export const eventAttempts: Record<SupportedWCAEvent, number> = {
   "555bf": 3,
 };
 
-export type SupportedWCAEvent = string; // Placeholder, use your actual type
-
 export const supportedWCAEvents = [
   "222",
   "333",
@@ -56,6 +54,8 @@ export const supportedWCAEvents = [
   "444bf",
   "555bf",
 ] as const;
+
+export type SupportedWCAEvent = (typeof supportedWCAEvents)[number];
 
 interface Registration {
   wcaRegistrationId: number;

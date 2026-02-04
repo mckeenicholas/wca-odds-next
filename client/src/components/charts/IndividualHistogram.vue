@@ -5,23 +5,21 @@ import { computeCDF, createFMCTooltip, renderTime } from "@/lib/utils";
 import { computed, ref } from "vue";
 import MultiLabelSwitch from "./MultiLabelSwitch.vue";
 
-const props = defineProps<{
+const { data, color, event } = defineProps<{
   data: ChartData;
   color: string;
   event: SupportedWCAEvent;
 }>();
 
-const histogramTooltip = createFMCTooltip(props.event);
+const histogramTooltip = createFMCTooltip(event);
 const isCDF = ref<boolean>(false);
 
 const histData = computed(() => {
-  const chartValues = isCDF.value
-    ? computeCDF(props.data.data)
-    : props.data.data;
+  const chartValues = isCDF.value ? computeCDF(data.data) : data.data;
   return chartValues.map((point) => {
     const result: Record<string, string | number> = { name: point.name };
 
-    props.data.labels.forEach((label, index) => {
+    data.labels.forEach((label, index) => {
       result[label] = point.values[index];
     });
 
@@ -31,7 +29,7 @@ const histData = computed(() => {
 
 const xFormatter = (value: number | Date) => {
   let timeVal = parseInt(histData.value[value as number].name as string);
-  return renderTime(timeVal, props.event === "333fm");
+  return renderTime(timeVal, event === "333fm");
 };
 </script>
 

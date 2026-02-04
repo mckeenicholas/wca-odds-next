@@ -41,10 +41,20 @@ const competitorMeta = computed(() => {
   const lastEntry = props.history[props.history.length - 1];
 
   const meta = lastEntry.competitors.map((c) => {
-    let finalVal = 0;
-    if (props.metric === "win") finalVal = c.win_chance;
-    else if (props.metric === "podium") finalVal = c.pod_chance;
-    else if (props.metric === "rank") finalVal = -c.expected_rank;
+    let finalVal;
+    switch (props.metric) {
+      case "win":
+        finalVal = c.win_chance;
+        break;
+      case "podium":
+        finalVal = c.pod_chance;
+        break;
+      case "rank":
+        finalVal = -c.expected_rank;
+        break;
+      default:
+        finalVal = 0;
+    }
 
     return {
       id: c.id,
@@ -54,10 +64,7 @@ const competitorMeta = computed(() => {
     };
   });
 
-  if (props.stacked) {
-    return meta.sort((a, b) => a.finalVal - b.finalVal);
-  }
-
+  meta.sort((a, b) => a.finalVal - b.finalVal);
   return meta;
 });
 
@@ -187,7 +194,7 @@ const tooltip = computed(() => {
         :x="x"
         :y="yStacked"
         :color="stackedColorAccessor"
-        :curve-type="CurveType.Basis"
+        :curve-type="CurveType.MonotoneX"
         :opacity="STACKED_OPACITY"
         :attributes="{
           [Area.selectors.area]: (_d: unknown, i: number) => ({
@@ -202,7 +209,7 @@ const tooltip = computed(() => {
             :x="x"
             :y="(d: Record<string, number>) => d[comp.name]"
             color="auto"
-            :curve-type="CurveType.Basis"
+            :curve-type="CurveType.MonotoneX"
             :attributes="{
               [Area.selectors.area]: {
                 fill: `url(#${chartRef}-color-${i})`,
@@ -210,11 +217,14 @@ const tooltip = computed(() => {
             }"
             :opacity="isCategoryActive(i) ? 1 : filterOpacity"
           />
+        </template>
+
+        <template v-for="(comp, i) in competitorMeta" :key="comp.id">
           <VisLine
             :x="x"
             :y="(d: Record<string, number>) => d[comp.name]"
             :color="comp.color"
-            :curve-type="CurveType.Basis"
+            :curve-type="CurveType.MonotoneX"
             :attributes="{
               [Line.selectors.line]: {
                 opacity: isCategoryActive(i) ? 1 : filterOpacity,

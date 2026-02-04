@@ -19,12 +19,10 @@ pub async fn simulation_history_handler(
     State(pool): State<PgPool>,
     Json(payload): Json<SimulationHistoryRequest>,
 ) -> impl IntoResponse {
-    // 1. Validation
     if payload.competitor_ids.len() > 32 {
         return (StatusCode::BAD_REQUEST, "Max 32 competitors").into_response();
     }
 
-    // Check window validity
     let window_duration_days = (payload.end_date - payload.start_date).num_days();
     if window_duration_days < 28 {
         return (StatusCode::BAD_REQUEST, "Window too short (min 28 days)").into_response();
@@ -112,18 +110,19 @@ pub async fn simulation_history_handler(
         }
 
         let include_dnf = payload.include_dnf.unwrap_or(false);
+
         let sim_results =
             simulation::run_simulations(&competitors, &event_type, include_dnf, NUM_SIMULATIONS);
 
         let stats: Vec<CompetitorHistoryStat> = competitors
             .iter()
-            .enumerate()
-            .map(|(i, comp)| CompetitorHistoryStat {
+            .zip(sim_results)
+            .map(|(comp, res)| CompetitorHistoryStat {
                 id: comp.id.clone(),
                 name: comp.name.clone(),
-                win_chance: sim_results.win_chance[i],
-                pod_chance: sim_results.pod_chance[i],
-                expected_rank: sim_results.expected_ranks[i],
+                win_chance: res.win_chance,
+                pod_chance: res.pod_chance,
+                expected_rank: res.expected_ranks,
                 sample_size: comp
                     .stats
                     .as_ref()
@@ -149,7 +148,6 @@ pub async fn simulation_history_handler(
         }
     }
 
-    // Order by oldest to newest
     history_points.reverse();
 
     Json(history_points).into_response()

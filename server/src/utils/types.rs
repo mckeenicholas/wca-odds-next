@@ -40,11 +40,9 @@ pub struct CompetitorStats {
     pub skew: f32,
     pub dnf_rate: f32,
     pub mean: f32,
-    // pub stdev: f32,
     pub num_non_dnf_results: u32,
 }
 
-// --- REQUEST/RESPONSE TYPES ---
 #[derive(Debug, Deserialize)]
 pub struct SimulationRequest {
     pub competitor_ids: Vec<String>,
@@ -52,7 +50,7 @@ pub struct SimulationRequest {
     pub start_date: NaiveDate,
     pub end_date: NaiveDate,
     pub half_life: f32,
-    pub entered_times: Option<Vec<Vec<i32>>>, // Optional manual overrides
+    pub entered_times: Option<Vec<Vec<i32>>>,
     pub include_dnf: Option<bool>,
 }
 

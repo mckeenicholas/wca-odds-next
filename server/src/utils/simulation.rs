@@ -8,7 +8,6 @@ use super::competitor::Competitor;
 use super::constants::*;
 use super::types::{CompetitorSimulationResult, CompetitorStats, EventType};
 
-use itertools::izip;
 use rand::prelude::*;
 use rand_distr::Normal;
 use std::collections::HashMap;
@@ -19,21 +18,16 @@ fn truncate_num(input: i32, is_fmc: bool) -> i32 {
     if is_fmc { input } else { (input / 10) * 10 }
 }
 
-/// Result type for simulation runs containing all computed statistics
-pub struct SimulationResults {
-    pub win_chance: Vec<f64>,
-    pub pod_chance: Vec<f64>,
-    pub expected_ranks: Vec<f64>,
-    pub rank_dists: Vec<Vec<f64>>,
-    pub hist_singles: Vec<HashMap<i32, f64>>,
-    pub hist_averages: Vec<HashMap<i32, f64>>,
+pub struct SimulationResult {
+    pub win_chance: f64,
+    pub pod_chance: f64,
+    pub expected_ranks: f64,
+    pub rank_dist: Vec<f64>,
+    pub hist_single: HashMap<i32, f64>,
+    pub hist_average: HashMap<i32, f64>,
 }
 
-pub fn generate_skewnorm_value(
-    stats: &CompetitorStats,
-    rng: &mut ThreadRng,
-    include_dnf: bool,
-) -> i32 {
+fn generate_skewnorm_value(stats: &CompetitorStats, rng: &mut ThreadRng, include_dnf: bool) -> i32 {
     let normal = Normal::new(0.0, 1.0).unwrap();
 
     if stats.location.is_nan() || stats.shape.is_nan() {
@@ -63,7 +57,7 @@ pub fn generate_skewnorm_value(
     (result as i32).max(1)
 }
 
-pub fn num_solves(event_type: EventType) -> usize {
+fn num_solves(event_type: EventType) -> usize {
     match event_type {
         EventType::Ao5 => AO5_SOLVE_COUNT,
         EventType::Bo5 => BO5_SOLVE_COUNT,
@@ -73,7 +67,7 @@ pub fn num_solves(event_type: EventType) -> usize {
     }
 }
 
-pub fn simulate_round(
+fn simulate_round(
     competitor: &Competitor,
     event_type: &EventType,
     rng: &mut ThreadRng,
@@ -143,11 +137,11 @@ pub fn simulate_round(
 }
 
 fn generate_histogram(
-    hist_map: Vec<HashMap<i32, i32>>,
+    hist_map: HashMap<i32, i32>,
     simulation_count: u32,
     event_type: EventType,
     is_single: bool,
-) -> Vec<HashMap<i32, f64>> {
+) -> HashMap<i32, f64> {
     let min_needed = (HIST_INCLUDE_THRESHOLD * simulation_count as f64) as i32;
 
     let scale_amount = if is_single {
@@ -158,18 +152,24 @@ fn generate_histogram(
 
     hist_map
         .into_iter()
-        .map(|m| {
-            m.into_iter()
-                .filter_map(|(k, v)| {
-                    if v < min_needed {
-                        None
-                    } else {
-                        Some((k, (v * scale_amount) as f64 / simulation_count as f64)) // Multiply by 100 to convert to percent
-                    }
-                })
-                .collect()
+        .filter_map(|(k, v)| {
+            if v < min_needed {
+                None
+            } else {
+                Some((k, (v * scale_amount) as f64 / simulation_count as f64))
+            }
         })
         .collect()
+}
+
+#[derive(Clone)]
+struct SimulationAccumulator {
+    wins: u32,
+    pods: u32,
+    rank_sum: u32,
+    rank_counts: Vec<u32>,
+    hist_single_counts: HashMap<i32, i32>,
+    hist_average_counts: HashMap<i32, i32>,
 }
 
 pub fn run_simulations(
@@ -177,123 +177,114 @@ pub fn run_simulations(
     event_type: &EventType,
     include_dnf: bool,
     simulation_count: u32,
-) -> SimulationResults {
+) -> Vec<SimulationResult> {
     let num_competitors = competitors.len();
-
-    // Output structures
-    let mut win_counts = vec![0u32; num_competitors];
-    let mut pod_counts = vec![0u32; num_competitors];
-    let mut total_ranks = vec![0u32; num_competitors];
-    let mut rank_dist_count = vec![vec![0u32; num_competitors]; num_competitors];
-    let mut hist_average_map: Vec<HashMap<i32, i32>> = vec![HashMap::new(); num_competitors];
-    let mut hist_single_map: Vec<HashMap<i32, i32>> = vec![HashMap::new(); num_competitors];
-
     let mut rng = rand::rng();
 
+    let mut accumulators: Vec<SimulationAccumulator> = vec![
+        SimulationAccumulator {
+            wins: 0,
+            pods: 0,
+            rank_sum: 0,
+            rank_counts: vec![0; num_competitors],
+            hist_single_counts: HashMap::new(),
+            hist_average_counts: HashMap::new(),
+        };
+        num_competitors
+    ];
+
     for _ in 0..simulation_count {
-        // Run one round for everyone
-        let mut round_results: Vec<(usize, i32)> = competitors
-            .iter()
-            .enumerate()
-            .map(|(idx, comp)| {
-                let res = simulate_round(
-                    comp,
-                    event_type,
-                    &mut rng,
-                    include_dnf,
-                    &mut hist_single_map[idx],
-                );
+        let mut round_results: Vec<(usize, i32)> = Vec::with_capacity(num_competitors);
 
-                // Add to AVERAGE histogram
-                if res != DNF_VALUE {
-                    *hist_average_map[idx]
-                        .entry(truncate_num(res, matches!(event_type, EventType::Fmc)))
-                        .or_default() += 1;
-                }
+        for (idx, comp) in competitors.iter().enumerate() {
+            let acc = &mut accumulators[idx];
 
-                (idx, res)
-            })
-            .collect();
+            let res = simulate_round(
+                comp,
+                event_type,
+                &mut rng,
+                include_dnf,
+                &mut acc.hist_single_counts,
+            );
 
-        // Sort to determine ranks (Low time wins)
+            if res != DNF_VALUE {
+                *acc.hist_average_counts
+                    .entry(truncate_num(res, matches!(event_type, EventType::Fmc)))
+                    .or_default() += 1;
+            }
+
+            round_results.push((idx, res));
+        }
+
         round_results.sort_unstable_by_key(|&(_, time)| time);
 
-        // Update Stats
         for (rank, &(original_idx, _)) in round_results.iter().enumerate() {
+            let acc = &mut accumulators[original_idx];
+
             if rank == 0 {
-                win_counts[original_idx] += 1;
+                acc.wins += 1;
             }
             if rank < 3 {
-                pod_counts[original_idx] += 1;
+                acc.pods += 1;
             }
-            total_ranks[original_idx] += (rank as u32) + 1;
-            rank_dist_count[original_idx][rank] += 1;
+            acc.rank_sum += (rank as u32) + 1;
+            acc.rank_counts[rank] += 1;
         }
     }
 
-    let rank_dists = rank_dist_count
+    accumulators
         .into_iter()
-        .map(|counts| {
-            counts
+        .map(|acc| {
+            let hist_single =
+                generate_histogram(acc.hist_single_counts, simulation_count, *event_type, true);
+
+            let hist_average = generate_histogram(
+                acc.hist_average_counts,
+                simulation_count,
+                *event_type,
+                false,
+            );
+
+            let rank_dist: Vec<f64> = acc
+                .rank_counts
                 .into_iter()
-                .map(|v| v as f64 / simulation_count as f64)
-                .collect()
+                .map(|c| c as f64 / simulation_count as f64)
+                .collect();
+
+            SimulationResult {
+                win_chance: acc.wins as f64 / simulation_count as f64,
+                pod_chance: acc.pods as f64 / simulation_count as f64,
+                expected_ranks: acc.rank_sum as f64 / simulation_count as f64,
+                rank_dist,
+                hist_single,
+                hist_average,
+            }
         })
-        .collect();
-
-    let hist_singles = generate_histogram(hist_single_map, simulation_count, *event_type, true);
-    let hist_averages = generate_histogram(hist_average_map, simulation_count, *event_type, false);
-
-    SimulationResults {
-        win_chance: win_counts
-            .into_iter()
-            .map(|v| v as f64 / simulation_count as f64)
-            .collect(),
-        pod_chance: pod_counts
-            .into_iter()
-            .map(|v| v as f64 / simulation_count as f64)
-            .collect(),
-        expected_ranks: total_ranks
-            .into_iter()
-            .map(|v| v as f64 / simulation_count as f64)
-            .collect(),
-        rank_dists,
-        hist_singles,
-        hist_averages,
-    }
+        .collect()
 }
 
 pub fn format_results(
     competitors: Vec<Competitor>,
-    results: SimulationResults,
+    results: Vec<SimulationResult>,
     is_fmc: bool,
 ) -> SimulationEndpointResults {
-    let SimulationResults {
-        win_chance,
-        pod_chance,
-        expected_ranks,
-        rank_dists,
-        hist_singles,
-        hist_averages,
-    } = results;
-
-    let hist_single_data = hist_singles
+    let hist_single_data = results
         .iter()
         .zip(&competitors)
-        .map(|(results, competitor)| CompetitorHistData {
+        .map(|(res, competitor)| CompetitorHistData {
             name: &competitor.name,
-            results,
+            results: &res.hist_single,
         })
         .collect::<Vec<_>>();
 
     let full_histogram_single = create_full_histogram_chart(&hist_single_data, is_fmc, false);
 
-    let hist_average_data = hist_averages
+    let hist_average_data = results
         .iter()
         .zip(&competitors)
-        .map(|(results, competitor)| CompetitorHistData {
+        .map(|(res, competitor)| CompetitorHistData {
             name: &competitor.name,
-            results,
+            results: &res.hist_average,
         })
         .collect::<Vec<_>>();
 
@@ -306,37 +297,33 @@ pub fn format_results(
 
     let rank_histogram_data = competitors
         .iter()
-        .zip(&rank_dists)
-        .map(|(c, rd)| (c.name.as_str(), rd.as_slice()))
+        .zip(&results)
+        .map(|(c, res)| (c.name.as_str(), &res.rank_dist[..]))
         .collect::<Vec<_>>();
 
     let rank_histogram = generate_rank_chart(&rank_histogram_data);
 
-    let competitor_results = izip!(
-        competitors,
-        expected_ranks,
-        win_chance,
-        pod_chance,
-        &hist_singles,
-        &hist_averages
-    )
-    .map(|(comp, exp_rank, win, pod, h_single, h_avg)| {
-        let stats = comp.stats.as_ref();
+    let competitor_results = competitors
+        .into_iter()
+        .zip(results)
+        .map(|(comp, res)| {
+            let stats = comp.stats.as_ref();
 
-        let histogram = create_invidual_histogram_chart(h_single, h_avg, is_fmc);
+            let histogram =
+                create_invidual_histogram_chart(&res.hist_single, &res.hist_average, is_fmc);
 
-        CompetitorSimulationResult {
-            id: comp.id,
-            name: comp.name,
-            expected_rank: exp_rank,
-            win_chance: win,
-            pod_chance: pod,
-            sample_size: stats.map(|s| s.num_non_dnf_results).unwrap_or(0),
-            mean_no_dnf: stats.map(|s| s.mean as u32).unwrap_or(0),
-            histogram,
-        }
-    })
-    .collect();
+            CompetitorSimulationResult {
+                id: comp.id,
+                name: comp.name,
+                expected_rank: res.expected_ranks,
+                win_chance: res.win_chance,
+                pod_chance: res.pod_chance,
+                sample_size: stats.map(|s| s.num_non_dnf_results).unwrap_or(0),
+                mean_no_dnf: stats.map(|s| s.mean as u32).unwrap_or(0),
+                histogram,
+            }
+        })
+        .collect();
 
     SimulationEndpointResults {
         competitor_results,

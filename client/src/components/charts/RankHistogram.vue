@@ -1,24 +1,24 @@
 <script setup lang="ts">
 import { BarChart } from "@/components/ui/chart-bar";
-import { SimulationResultProps } from "@/lib/types";
+import { ChartData } from "@/lib/types";
 import { computed } from "vue";
 import PercentageTooltip from "./PercentageTooltip.vue";
 
-const { data, colors } = defineProps<Omit<SimulationResultProps, "event">>();
+const { data, colors } = defineProps<{ data: ChartData; colors: string[] }>();
 
 const chartData = computed(() =>
-  Array.from({ length: data.length }, (_, idx) => ({
-    name: idx + 1,
-    ...Object.fromEntries(
-      data.map((person) => [
-        person.name,
-        parseFloat((person.rank_dist[idx] * 100).toFixed(2)),
-      ]),
-    ),
-  })),
+  data.data.map((point) => {
+    const result: Record<string, string | number> = { name: point.name };
+
+    data.labels.forEach((label, index) => {
+      result[label] = point.values[index];
+    });
+
+    return result;
+  }),
 );
 
-const names = data.map((person) => person.name) as "name"[];
+console.log(chartData);
 </script>
 
 <template>
@@ -26,7 +26,7 @@ const names = data.map((person) => person.name) as "name"[];
     <BarChart
       :data="chartData"
       index="name"
-      :categories="names"
+      :categories="data.labels"
       :colors
       :type="'stacked'"
       :showLegend="false"

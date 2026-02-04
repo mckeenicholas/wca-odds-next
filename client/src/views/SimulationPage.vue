@@ -1,10 +1,12 @@
 <script setup lang="ts">
 import FullHistogram from "@/components/charts/FullHistogram.vue";
-import HistoryHistogram from "@/components/charts/HistoryHistogram.vue"; // Added Import
+import HistoryHistogram from "@/components/charts/HistoryHistogram.vue";
+import RankHistogram from "@/components/charts/RankHistogram.vue";
 import CompetitorList from "@/components/custom/CompetitorList.vue";
 import ErrorDisplay from "@/components/custom/ErrorPanel.vue";
 import ExpandableBox from "@/components/custom/ExpandableBox.vue";
 import LoadingMessage from "@/components/custom/LoadingMessage.vue";
+import ResultsSummary from "@/components/custom/ResultsSummary.vue";
 import { Button } from "@/components/ui/button";
 import {
   eventAttempts,
@@ -98,16 +100,14 @@ const sharedProps = computed(() => ({
   event,
 }));
 
-// --- History Histogram Props ---
-// Zip competitors with their generated colors
-const historyCompetitors = computed(() =>
-  competitorsList.map((id, index) => ({
-    id,
-    color: colors[index],
-  })),
+const historyCompetitors = computed(
+  () =>
+    simulationResults.value?.competitor_results.map((c, index) => ({
+      id: c.id,
+      color: colors[index],
+    })) ?? [],
 );
 
-// Format parameters for the history endpoint
 const historyDataParams = computed(() => ({
   event_id: event,
   start_date: startDate.toISOString().split("T")[0],
@@ -116,7 +116,6 @@ const historyDataParams = computed(() => ({
   include_dnf: includeDNF,
 }));
 
-// --- API Service Function ---
 const fetchSimulationResults = async () => {
   const formatDate = (d: Date) => d.toISOString().split("T")[0];
 
@@ -278,19 +277,19 @@ const exportCSV = () => {
       v-else-if="simulationResults"
       class="border-lg md:min-w-full lg:min-w-250"
     >
-      <!-- <ResultsSummary
+      <ResultsSummary
         :data="simulationResults"
         :colors="colors"
         :event="event"
-      /> -->
+      />
 
       <ExpandableBox title="Results Histogram" class="mb-2">
         <FullHistogram v-bind="sharedProps" />
       </ExpandableBox>
 
-      <!-- <ExpandableBox title="Predicted Ranks" class="mb-2">
-        <RankHistogram v-bind="sharedProps" />
-      </ExpandableBox> -->
+      <ExpandableBox title="Predicted Ranks" class="mb-2">
+        <RankHistogram :data="simulationResults.rank_histogram" :colors />
+      </ExpandableBox>
 
       <ExpandableBox title="History">
         <HistoryHistogram

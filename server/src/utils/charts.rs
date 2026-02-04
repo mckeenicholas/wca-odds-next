@@ -207,15 +207,21 @@ fn average_chunks(
 }
 
 pub fn generate_rank_chart(input_data: &[(&str, &[f64])]) -> ChartData {
-    let labels = (1..=input_data.len()).map(|v| v.to_string()).collect();
+    let labels: Vec<String> = input_data.iter().map(|v| v.0.to_string()).collect();
 
-    let data = input_data
-        .iter()
-        .map(|comp| ChartPoint {
-            name: comp.0.to_string(),
-            values: comp.1.iter().map(|v| *v * 100.0).collect(),
-        })
-        .collect();
+    let mut data = Vec::new();
+
+    for rank_idx in 0..input_data.len() {
+        let values: Vec<f64> = input_data
+            .iter()
+            .map(|(_, probs)| probs[rank_idx] * 100.0)
+            .collect();
+
+        data.push(ChartPoint {
+            name: (rank_idx + 1).to_string(),
+            values,
+        });
+    }
 
     ChartData { labels, data }
 }

@@ -4,8 +4,9 @@ use axum::{
     middleware,
     routing::{get, post},
 };
+use moka::future::Cache;
 use sqlx::postgres::PgPoolOptions;
-use std::env;
+use std::{env, time::Duration};
 use tower_governor::{GovernorLayer, governor::GovernorConfigBuilder};
 use tower_http::cors::CorsLayer;
 
@@ -15,9 +16,12 @@ mod utils;
 use routes::{health, history, simulation};
 use utils::middleware::ForwardedIpExtractor;
 
-use crate::utils::middleware::timer_middleware;
+use crate::utils::middleware::{ResponseCache, caching_middleware, timer_middleware};
 
 const ALLOWED_ORIGINS: &[&str] = &["http://localhost:5173", "https://odds.nmckee.org"];
+
+const CACHE_TIMEOUT_SECNODS: u64 = 60 * 60; // 1 Hour Cache 
+const CACHE_MAX_ITEMS: u64 = 10_000;
 
 #[tokio::main]
 async fn main() {
@@ -31,6 +35,11 @@ async fn main() {
         .unwrap_or(3000);
 
     let database_url = format!("postgres://{}:{}@{}:{}/{}", user, pass, host, port, db_name);
+
+    let cache: ResponseCache = Cache::builder()
+        .max_capacity(CACHE_MAX_ITEMS) 
+        .time_to_live(Duration::from_secs(CACHE_TIMEOUT_SECNODS)) 
+        .build();
 
     let pool = PgPoolOptions::new()
         .max_connections(5)
@@ -63,6 +72,7 @@ async fn main() {
         .route("/api/simulation", post(simulation::simulation_handler))
         .route("/api/history", post(history::simulation_history_handler))
         .with_state(pool)
+        .layer(middleware::from_fn_with_state(cache.clone(), caching_middleware))
         .layer(middleware::from_fn(timer_middleware))
         // .layer(governor)
         .layer(cors);
