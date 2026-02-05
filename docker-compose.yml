@@ -45,6 +45,24 @@ services:
     depends_on:
       - db
 
+  odds-server-debug:
+      build:
+        context: server
+        dockerfile: Dockerfile
+        args:
+          - ENABLE_CACHE=false
+          - ENABLE_GOVERNOR=false
+      ports:
+        - "3000:3000"
+      env_file:
+        - .env
+      networks:
+        - app-network
+      depends_on:
+        - db
+      profiles:
+        - debug
+
   results-loader:
     build:
       context: results_loader

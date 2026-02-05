@@ -1,11 +1,19 @@
-use super::types::{CompetitorRow, DatedCompetitionResult};
+use crate::utils::competitor::DatedCompetitionResult;
 use chrono::{NaiveDate, Utc};
-use sqlx::PgPool;
+use sqlx::{FromRow, PgPool};
 use std::collections::HashMap;
 
-pub async fn fetch_competitor_results(
+/// Database row for competitor results.
+#[derive(Debug, FromRow)]
+pub struct CompetitorRow {
+    pub person_id: String,
+    pub competition_date: NaiveDate,
+    pub value: i32,
+}
+
+pub async fn fetch_competitor_results<T: AsRef<str>>(
     pool: &PgPool,
-    competitor_ids: &[String],
+    competitor_ids: &[T],
     event_id: &str,
     start_date: NaiveDate,
     end_date: NaiveDate,
@@ -19,7 +27,12 @@ pub async fn fetch_competitor_results(
         AND competition_date BETWEEN $3 AND $4
         "#,
     )
-    .bind(competitor_ids)
+    .bind(
+        competitor_ids
+            .iter()
+            .map(|s| s.as_ref())
+            .collect::<Vec<_>>(),
+    )
     .bind(event_id)
     .bind(start_date)
     .bind(end_date)
@@ -27,14 +40,19 @@ pub async fn fetch_competitor_results(
     .await
 }
 
-pub async fn fetch_competitor_names(
+pub async fn fetch_competitor_names<T: AsRef<str>>(
     pool: &PgPool,
-    competitor_ids: &[String],
+    competitor_ids: &[T],
 ) -> Result<Vec<(String, String)>, sqlx::Error> {
     sqlx::query_as::<_, (String, String)>(
         r#"SELECT person_id, name from persons WHERE person_id = ANY($1)"#,
     )
-    .bind(competitor_ids)
+    .bind(
+        competitor_ids
+            .iter()
+            .map(|s| s.as_ref())
+            .collect::<Vec<_>>(),
+    )
     .fetch_all(pool)
     .await
 }
@@ -60,19 +78,23 @@ pub fn convert_to_dated_results(
     grouped: HashMap<String, HashMap<NaiveDate, Vec<i32>>>,
 ) -> HashMap<String, Vec<DatedCompetitionResult>> {
     let today = Utc::now().date_naive();
-    let mut raw_data: HashMap<String, Vec<DatedCompetitionResult>> = HashMap::new();
 
-    for (name, dates) in grouped {
-        let mut results = Vec::new();
-        for (date, times) in dates {
-            let days_since = (today - date).num_days() as i32;
-            results.push(DatedCompetitionResult {
-                days_since,
-                results: times,
-            });
-        }
-        raw_data.insert(name, results);
-    }
+    let raw_data: HashMap<String, Vec<DatedCompetitionResult>> = grouped
+        .into_iter()
+        .map(|(name, dates)| {
+            let results = dates
+                .into_iter()
+                .map(|(date, times)| {
+                    let days_since = (today - date).num_days() as i32;
+                    DatedCompetitionResult {
+                        days_since,
+                        results: times,
+                    }
+                })
+                .collect();
+            (name, results)
+        })
+        .collect();
 
     raw_data
 }

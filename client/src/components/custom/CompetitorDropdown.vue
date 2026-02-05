@@ -40,7 +40,7 @@ const winPercentage = computed(() => formatPercentage(result.win_chance * 100));
 const podiumPercentage = computed(() =>
   formatPercentage(result.pod_chance * 100),
 );
-const expectedRank = computed(() => result.expected_rank);
+const expectedRank = computed(() => result.expected_rank.toFixed(4));
 
 const ariaId = computed(() => `dropdown-${result.id}`);
 </script>

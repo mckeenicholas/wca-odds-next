@@ -1,136 +1,50 @@
-use axum::{Json, extract::State, http::StatusCode, response::IntoResponse};
-use chrono::Days;
+use axum::{Json, extract::State, response::IntoResponse};
 use sqlx::PgPool;
-use std::collections::HashMap;
 
-use crate::utils::competitor::Competitor;
-use crate::utils::database;
+use crate::utils::competitor::{CompetitorContext, validate_request_constraints};
+use crate::utils::http::AppError;
 use crate::utils::simulation;
-use crate::utils::simulation::SimulationResult;
-use crate::utils::types::{EventType, SimulationRequest};
-use crate::utils::validation::clean_and_validate_wca_id;
+use crate::utils::types::SimulationRequest;
+use crate::utils::wca::EventType;
 
-const SIMULATION_COUNT: u32 = 100_000; // Seems to run pretty fast for now, can tune down if needed
+const SIMULATION_COUNT: u32 = 100_000;
 
 pub async fn simulation_handler(
     State(pool): State<PgPool>,
     Json(payload): Json<SimulationRequest>,
-) -> impl IntoResponse {
-    if payload.competitor_ids.len() > 32 {
-        return (StatusCode::BAD_REQUEST, "Max 32 competitors").into_response();
-    }
+) -> Result<impl IntoResponse, AppError> {
+    validate_request_constraints(
+        payload.competitor_ids.len(),
+        payload.start_date,
+        payload.end_date,
+    )?;
 
-    let is_too_short = payload
-        .start_date
-        .checked_add_days(Days::new(28))
-        .is_none_or(|min_end_date| min_end_date > payload.end_date);
+    let mut ctx = CompetitorContext::load(
+        &pool,
+        &payload.competitor_ids,
+        &payload.event_id,
+        payload.start_date,
+        payload.end_date,
+        payload.half_life,
+    )
+    .await?;
 
-    if is_too_short {
-        return (
-            StatusCode::BAD_REQUEST,
-            "Start date must be at least 28 days before end date (or dates are invalid)",
-        )
-            .into_response();
-    }
-
-    let event_id = payload.event_id.to_lowercase();
-
-    let event_type = match EventType::from_id(&event_id) {
-        Some(e) => e,
-        None => {
-            return (
-                StatusCode::BAD_REQUEST,
-                format!("Invalid event ID: {}.", payload.event_id),
-            )
-                .into_response();
-        }
-    };
-
-    let competitor_ids_upper: Vec<String> = match payload
-        .competitor_ids
-        .iter()
-        .map(|id| clean_and_validate_wca_id(id).ok_or_else(|| id.clone()))
-        .collect::<Result<Vec<String>, String>>()
-    {
-        Ok(ids) => ids,
-        Err(invalid_id) => {
-            let error_msg = format!("Invalid competitor ID: {}", invalid_id);
-            return (StatusCode::BAD_REQUEST, error_msg).into_response();
-        }
-    };
-
-    let (result_rows, name_rows) = tokio::join!(
-        database::fetch_competitor_results(
-            &pool,
-            &competitor_ids_upper,
-            &payload.event_id,
-            payload.start_date,
-            payload.end_date
-        ),
-        database::fetch_competitor_names(&pool, &competitor_ids_upper)
-    );
-
-    let (results, mut names_map) = match (result_rows, name_rows) {
-        (Ok(r), Ok(n)) => {
-            let map: HashMap<String, String> = n.into_iter().collect();
-            (r, map)
-        }
-        (Err(e), _) => {
-            eprintln!("DB Error (results): {}", e);
-            return StatusCode::INTERNAL_SERVER_ERROR.into_response();
-        }
-        (_, Err(e)) => {
-            eprintln!("DB Error (names): {}", e);
-            return StatusCode::INTERNAL_SERVER_ERROR.into_response();
-        }
-    };
-
-    let grouped = database::group_results_by_date(results);
-    let mut raw_data = database::convert_to_dated_results(grouped);
-
-    let mut competitors: Vec<Competitor> = Vec::new();
-    for (i, id) in competitor_ids_upper.iter().enumerate() {
-        let results = raw_data.remove(id).unwrap_or_default();
-
-        let competitor_name = match names_map.remove(id) {
-            Some(n) => n,
-            None => {
-                eprintln!("DB fetch missing competitor with id: {}.", id);
-                return StatusCode::INTERNAL_SERVER_ERROR.into_response();
-            }
-        };
-
-        let mut comp = Competitor::new(competitor_name, id.clone(), results, payload.half_life);
-
-        if let Some(entered) = &payload.entered_times
-            && let Some(times) = entered.get(i)
-        {
-            comp.entered_results = times.clone();
-        }
-
-        competitors.push(comp);
+    if let Some(entries) = payload.entered_times {
+        ctx = ctx.with_manual_entries(entries);
     }
 
     let include_dnf = payload.include_dnf.unwrap_or(false);
-    let results =
-        simulation::run_simulations(&competitors, &event_type, include_dnf, SIMULATION_COUNT);
-
-    let mut reordered: Vec<(SimulationResult, Competitor)> =
-        results.into_iter().zip(competitors).collect();
-    reordered.sort_by(|a, b| {
-        a.0.win_chance
-            .partial_cmp(&b.0.win_chance)
-            .unwrap_or(std::cmp::Ordering::Equal)
-            .reverse()
-    });
-
-    let (competitors_reordered, results_reordered): (Vec<_>, Vec<_>) =
-        reordered.into_iter().unzip();
-
-    let response_data = simulation::format_results(
-        results_reordered,
-        competitors_reordered,
-        matches!(event_type, EventType::Fmc),
+    let results = simulation::run_simulations(
+        &ctx.competitors,
+        &ctx.event_type,
+        include_dnf,
+        SIMULATION_COUNT,
     );
-    Json(response_data).into_response()
+
+    let response = simulation::format_results(
+        ctx.competitors,
+        results,
+        matches!(ctx.event_type, EventType::Fmc),
+    );
+    Ok(Json(response).into_response())
 }
