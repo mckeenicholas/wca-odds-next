@@ -8,9 +8,8 @@ COPY . .
 
 RUN FEATURES=""; \
     if [ "$ENABLE_CACHE" = "true" ]; then FEATURES="$FEATURES enable_cache"; fi; \
-    if [ "$ENABLE_GOVERNOR" = "true" ]; then FEATURES="$FEATURES enable_governor"; fi;
-
-RUN cargo build --release --no-default-features --features "${FEATURES# }";
+    if [ "$ENABLE_GOVERNOR" = "true" ]; then FEATURES="$FEATURES enable_governor"; fi; \
+    cargo build --release --no-default-features --features "${FEATURES# }";
 
 FROM debian:bookworm-slim AS runtime
 

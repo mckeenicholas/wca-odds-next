@@ -12,14 +12,13 @@ set -e
     echo "POSTGRES_PORT=${POSTGRES_PORT:-5432}"
     echo "PYTHONUNBUFFERED=1"
     echo ""
-    echo "0 2 * * * root cd /app/results_loader && python3 pull_results.py -s 2>&1 | logger -t wca-pull"
+    echo "0 2 * * * root python3 /app/pull_results.py -s 2>&1 | logger -t wca-pull"
 } > /etc/cron.d/wca-pull-results
 
 chmod 0644 /etc/cron.d/wca-pull-results
 
 echo "Running initial WCA data sync..."
-cd /app/results_loader
-python3 pull_results.py -s
+python3 /app/pull_results.py -s
 
 echo "Starting cron daemon..."
 exec cron -f
