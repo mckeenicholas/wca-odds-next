@@ -2,7 +2,6 @@ import io
 import logging
 import math
 import os
-import shutil
 import sys
 import time
 import zipfile
@@ -38,13 +37,27 @@ MIN_SOLVES_FOR_RANKING = 10
 EWMA_DECAY_RATE = math.log(2) / EWMA_HALF_LIFE_DAYS
 
 ALL_EVENTS = [
-    "222", "333", "333bf", "333fm", "333oh",
-    "444", "444bf", "555", "555bf", "666", "777",
-    "clock", "minx", "pyram", "skewb", "sq1",
+    "222",
+    "333",
+    "333bf",
+    "333fm",
+    "333oh",
+    "444",
+    "444bf",
+    "555",
+    "555bf",
+    "666",
+    "777",
+    "clock",
+    "minx",
+    "pyram",
+    "skewb",
+    "sq1",
 ]
 
 
 # --- DB Connection ---
+
 
 def get_db_params():
     required = ["POSTGRES_DB", "POSTGRES_USER", "POSTGRES_PASSWORD"]
@@ -69,13 +82,16 @@ def connect_with_retry(db_params, retries=5, delay=5):
             return conn
         except psycopg2.OperationalError:
             remaining = retries - attempt - 1
-            logger.warning(f"Database not ready. Retrying in {delay}s ({remaining} left)")
+            logger.warning(
+                f"Database not ready. Retrying in {delay}s ({remaining} left)"
+            )
             time.sleep(delay)
     logger.error("Could not connect to database.")
     sys.exit(1)
 
 
 # --- DB Utilities ---
+
 
 def table_exists(cursor, table_name):
     cursor.execute(
@@ -101,12 +117,15 @@ def copy_to_db(cursor, df, table_name):
 
 # --- WCA Data Download ---
 
+
 def download_and_extract():
     logger.info(f"Downloading data from {WCA_RESULTS_ENDPOINT}...")
     os.makedirs(TARGET_DIR, exist_ok=True)
     response = requests.get(WCA_RESULTS_ENDPOINT, stream=True)
     if response.status_code != 200:
-        raise RuntimeError(f"Failed to download WCA data. Status: {response.status_code}")
+        raise RuntimeError(
+            f"Failed to download WCA data. Status: {response.status_code}"
+        )
 
     with zipfile.ZipFile(io.BytesIO(response.content)) as z:
         logger.info(f"Extracting needed files to {TARGET_DIR}...")
@@ -137,7 +156,9 @@ def load_results_to_db(cursor):
 
     persons_df = pl.read_csv(
         f"{TARGET_DIR}/WCA_export_persons.tsv",
-        separator="\t", encoding="utf8-lossy", quote_char=None,
+        separator="\t",
+        encoding="utf8-lossy",
+        quote_char=None,
     ).select([pl.col("wca_id").alias("person_id"), pl.col("name")])
     copy_to_db(cursor, persons_df, "persons_new")
     cursor.execute(
@@ -148,18 +169,28 @@ def load_results_to_db(cursor):
 
     comp_lf = pl.scan_csv(
         f"{TARGET_DIR}/WCA_export_competitions.tsv",
-        separator="\t", encoding="utf8-lossy", quote_char=None,
-    ).select([
-        pl.col("id").alias("competition_id"),
-        pl.date(pl.col("year"), pl.col("month"), pl.col("day")).alias("competition_date"),
-    ])
+        separator="\t",
+        encoding="utf8-lossy",
+        quote_char=None,
+    ).select(
+        [
+            pl.col("id").alias("competition_id"),
+            pl.date(pl.col("year"), pl.col("month"), pl.col("day")).alias(
+                "competition_date"
+            ),
+        ]
+    )
     res_lf = pl.scan_csv(
         f"{TARGET_DIR}/WCA_export_results.tsv",
-        separator="\t", encoding="utf8-lossy", quote_char=None,
+        separator="\t",
+        encoding="utf8-lossy",
+        quote_char=None,
     ).select(["id", "person_id", "event_id", "competition_id"])
     att_lf = pl.scan_csv(
         f"{TARGET_DIR}/WCA_export_result_attempts.tsv",
-        separator="\t", encoding="utf8-lossy", quote_char=None,
+        separator="\t",
+        encoding="utf8-lossy",
+        quote_char=None,
     ).select(["result_id", "value"])
 
     final_df = (
@@ -182,12 +213,11 @@ def load_results_to_db(cursor):
         "ALTER TABLE results_new RENAME TO results;"
         " ALTER TABLE persons_new RENAME TO persons;"
     )
-    cursor.execute(
-        "ALTER INDEX idx_results_person_new RENAME TO idx_results_person;"
-    )
+    cursor.execute("ALTER INDEX idx_results_person_new RENAME TO idx_results_person;")
 
 
 # --- Snapshot Schema ---
+
 
 def create_ranking_snapshots_table(cursor):
     cursor.execute("""
@@ -213,6 +243,7 @@ def create_ranking_snapshots_table(cursor):
 
 # --- Snapshot Computation ---
 
+
 def compute_snapshot_for_date(cursor, snapshot_date):
     lookback_date = snapshot_date - timedelta(days=EWMA_LOOKBACK_DAYS)
     cursor.execute(
@@ -236,6 +267,7 @@ def compute_snapshot_for_date(cursor, snapshot_date):
 
     df = pl.DataFrame(
         rows,
+        orient="row",
         schema={
             "person_id": pl.String,
             "event_id": pl.String,
@@ -273,9 +305,10 @@ def compute_snapshot_for_date(cursor, snapshot_date):
         .alias("rank")
     )
 
-    per_event_df = (
-        ewma_df.with_columns(pl.lit(snapshot_date).alias("snapshot_date"))
-        .select([
+    per_event_df = ewma_df.with_columns(
+        pl.lit(snapshot_date).alias("snapshot_date")
+    ).select(
+        [
             pl.col("snapshot_date"),
             pl.col("person_id"),
             pl.col("event_id"),
@@ -285,7 +318,7 @@ def compute_snapshot_for_date(cursor, snapshot_date):
             .cast(pl.Float32)
             .alias("value"),
             pl.col("rank"),
-        ])
+        ]
     )
     copy_to_db(cursor, per_event_df, "ranking_snapshots")
 
@@ -328,22 +361,19 @@ def _compute_global_rankings(cursor, snapshot_date, ewma_df):
     copy_to_db(cursor, all_df, "ranking_snapshots")
 
     # Kinch
-    wr_df = (
-        ewma_df.filter(pl.col("rank") == 1)
-        .select(["event_id", pl.col("ewma").alias("wr_ewma")])
+    wr_df = ewma_df.filter(pl.col("rank") == 1).select(
+        ["event_id", pl.col("ewma").alias("wr_ewma")]
     )
     kinch_base = (
         cross.filter(pl.col("ewma").is_not_null())
         .join(wr_df, on="event_id", how="left")
         .filter(pl.col("wr_ewma").is_not_null())
-        .with_columns(
-            (100.0 * pl.col("wr_ewma") / pl.col("ewma")).alias("kinch_score")
-        )
+        .with_columns((100.0 * pl.col("wr_ewma") / pl.col("ewma")).alias("kinch_score"))
     )
 
     n_events = len(ALL_EVENTS)
     for metric_key, agg_expr in [
-        ("kinch",        pl.col("kinch_score").mean()),
+        ("kinch", pl.col("kinch_score").mean()),
         ("kinch_strict", pl.col("kinch_score").sum() / n_events),
     ]:
         metric_df = (
@@ -362,6 +392,7 @@ def _compute_global_rankings(cursor, snapshot_date, ewma_df):
 
 
 # --- Date Helpers ---
+
 
 def first_of_month(d):
     return date(d.year, d.month, 1)

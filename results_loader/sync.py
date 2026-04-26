@@ -9,16 +9,15 @@ Subsequent runs:
     python sync.py
 """
 
-import io
 import shutil
 from argparse import ArgumentParser
 from datetime import date
 
 import polars as pl
-import psycopg2
 
 from common import (
     TARGET_DIR,
+    compute_snapshot_for_date,
     connect_with_retry,
     copy_to_db,
     create_ranking_snapshots_table,
@@ -27,7 +26,6 @@ from common import (
     get_db_params,
     load_results_to_db,
     logger,
-    compute_snapshot_for_date,
 )
 
 
@@ -38,14 +36,21 @@ def import_snapshots(cursor, path):
     expected = {"snapshot_date", "person_id", "event_id", "value", "rank"}
     if not expected.issubset(set(df.columns)):
         raise ValueError(f"CSV is missing columns. Expected: {expected}")
-    copy_to_db(cursor, df.select(["snapshot_date", "person_id", "event_id", "value", "rank"]), "ranking_snapshots")
+    copy_to_db(
+        cursor,
+        df.select(["snapshot_date", "person_id", "event_id", "value", "rank"]),
+        "ranking_snapshots",
+    )
     logger.info(f"Imported {len(df):,} rows.")
 
 
 def main():
-    parser = ArgumentParser(description="Sync WCA results and update current-month snapshot.")
+    parser = ArgumentParser(
+        description="Sync WCA results and update current-month snapshot."
+    )
     parser.add_argument(
-        "--import-snapshots", metavar="FILE",
+        "--import-snapshots",
+        metavar="FILE",
         help="On first deploy: import a bootstrapped ranking_snapshots CSV before syncing",
     )
     args = parser.parse_args()

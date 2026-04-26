@@ -9,27 +9,24 @@ Usage:
     python bootstrap.py --export snapshots.csv  # also export after computing
 """
 
-import sys
+import shutil
 from argparse import ArgumentParser
 from datetime import date, timedelta
 
 import polars as pl
-import psycopg2
 
 from common import (
     TARGET_DIR,
+    compute_snapshot_for_date,
     connect_with_retry,
     create_ranking_snapshots_table,
     download_and_extract,
+    first_of_month,
     get_db_params,
     load_results_to_db,
     logger,
-    compute_snapshot_for_date,
     subtract_month,
-    first_of_month,
 )
-
-import shutil
 
 
 def bootstrap_snapshots(cursor, start_date):
@@ -56,6 +53,12 @@ def bootstrap_snapshots(cursor, start_date):
             cursor.connection.commit()
 
 
+def delete_snapshots(cursor):
+    cursor.execute("TRUNCATE TABLE ranking_snapshots")
+    cursor.connection.commit()
+    logger.info("Cleared all ranking snapshots.")
+
+
 def export_snapshots(path):
     logger.info(f"Exporting ranking_snapshots to {path}...")
     db_params = get_db_params()
@@ -72,21 +75,32 @@ def export_snapshots(path):
 def main():
     parser = ArgumentParser(description="Bootstrap WCA ranking snapshots locally.")
     parser.add_argument(
-        "--months", type=int, default=240,
+        "--months",
+        type=int,
+        default=240,
         help="How many months of history to compute (default: 240)",
     )
     parser.add_argument(
-        "--export", metavar="FILE",
+        "--export",
+        metavar="FILE",
         help="After computing, export ranking_snapshots to this CSV path",
     )
     parser.add_argument(
-        "--skip-download", action="store_true",
+        "--skip-download",
+        action="store_true",
         help="Skip WCA download if results table already populated",
+    )
+    parser.add_argument(
+        "--overwrite", action="store_true", help="Clear and re-generate all snapshots"
     )
     args = parser.parse_args()
 
     db_params = get_db_params()
     conn = connect_with_retry(db_params)
+
+    if args.overwrite:
+        with conn.cursor() as cursor:
+            delete_snapshots(cursor)
 
     try:
         if not args.skip_download:
