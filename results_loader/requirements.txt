@@ -4,5 +4,6 @@ idna==3.11
 polars==1.37.1
 polars-runtime-32==1.37.1
 psycopg2-binary==2.9.11
+python-dotenv==1.2.2
 requests==2.32.5
 urllib3==2.6.3
