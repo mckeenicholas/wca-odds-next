@@ -5,8 +5,10 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { fetchWCAInfo, formatDate } from "@/lib/utils";
 import { useQuery } from "@tanstack/vue-query";
 import { useDebounceFn } from "@vueuse/core";
-import { nextTick, onMounted, ref, useTemplateRef, watch } from "vue";
+import { computed, onMounted, ref, useTemplateRef, watch } from "vue";
 import { RouterLink, useRoute, useRouter } from "vue-router";
+
+import { useListNavigation } from "@/lib/composables/useListNavigation";
 
 interface Competition {
   start_date: string;
@@ -17,7 +19,6 @@ interface Competition {
 const route = useRoute();
 const router = useRouter();
 const input = ref<string>((route.query.q as string) || "");
-const selectedResult = ref<number>(-1);
 const listContainerRef = useTemplateRef<HTMLDivElement>("listContainer");
 
 onMounted(() => {
@@ -42,7 +43,7 @@ watch(
 );
 
 const { isFetching, isError, data, error, refetch } = useQuery({
-  queryKey: ["competitionSearch", input.value],
+  queryKey: computed(() => ["competitionSearch", input.value]),
   queryFn: () => {
     if (!input.value.trim()) return Promise.resolve([]);
     return fetchWCAInfo<Competition[]>(
@@ -52,73 +53,15 @@ const { isFetching, isError, data, error, refetch } = useQuery({
   enabled: false,
 });
 
-watch(data, () => {
-  selectedResult.value = -1;
+const { selectedResult, handleKeydown, resetSelection } = useListNavigation({
+  data,
+  listContainerRef,
+  onSelectPath: (item) => `/competition/${item.id}`,
 });
 
-const scrollToSelected = () => {
-  nextTick(() => {
-    if (listContainerRef.value && selectedResult.value !== -1) {
-      const olElement = listContainerRef.value.querySelector("ol");
-      if (
-        olElement &&
-        data.value &&
-        selectedResult.value >= 0 &&
-        selectedResult.value < data.value.length &&
-        olElement.children[selectedResult.value]
-      ) {
-        const selectedItemEl = olElement.children[
-          selectedResult.value
-        ] as HTMLElement;
-        selectedItemEl.scrollIntoView({ block: "nearest", behavior: "smooth" });
-      }
-    }
-  });
-};
-
-const handleKeydown = (event: KeyboardEvent) => {
-  if (!data.value || data.value.length === 0) {
-    if (event.key === "ArrowUp" || event.key === "ArrowDown") {
-      event.preventDefault();
-    }
-    return;
-  }
-
-  switch (event.key) {
-    case "ArrowDown":
-      event.preventDefault();
-      selectedResult.value =
-        selectedResult.value === -1
-          ? 0
-          : (selectedResult.value + 1) % data.value.length;
-      scrollToSelected();
-      break;
-    case "ArrowUp":
-      event.preventDefault();
-      selectedResult.value =
-        selectedResult.value === -1
-          ? data.value.length - 1
-          : selectedResult.value === 0
-            ? data.value.length - 1
-            : selectedResult.value - 1;
-      scrollToSelected();
-      break;
-    case "Enter":
-      if (
-        selectedResult.value !== -1 &&
-        selectedResult.value < data.value.length
-      ) {
-        event.preventDefault();
-        const competition = data.value[selectedResult.value];
-        router.push(`/competition/${competition.id}`);
-      }
-      break;
-    case "Escape":
-      event.preventDefault();
-      selectedResult.value = -1;
-      break;
-  }
-};
+watch(data, () => {
+  resetSelection();
+});
 </script>
 
 <template>
@@ -191,9 +134,12 @@ const handleKeydown = (event: KeyboardEvent) => {
       </div>
       <div v-else-if="input" class="m-4 text-center">No competitions found</div>
     </div>
-    <div class="mt-8 items-center justify-center">
+    <div class="mt-8 flex items-center justify-center space-x-4">
       <RouterLink to="/custom">
         <Button> Or select competitors manually </Button>
+      </RouterLink>
+      <RouterLink to="/rankings">
+        <Button variant="secondary"> View Global Rankings </Button>
       </RouterLink>
     </div>
   </div>

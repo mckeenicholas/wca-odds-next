@@ -37,17 +37,17 @@ const forwarded = useForwardPropsEmits(delegatedProps, emits);
     :class="cn('p-3', props.class)"
     v-bind="forwarded"
   >
-<CalendarHeader>
-  <div class="flex items-center gap-0.5">
-    <CalendarPrevYearButton />
-    <CalendarPrevButton />
-  </div>
-  <CalendarHeading />
-  <div class="flex items-center gap-0.5">
-    <CalendarNextButton />
-    <CalendarNextYearButton />
-  </div>
-</CalendarHeader>
+    <CalendarHeader>
+      <div class="flex items-center gap-0.5">
+        <CalendarPrevYearButton />
+        <CalendarPrevButton />
+      </div>
+      <CalendarHeading />
+      <div class="flex items-center gap-0.5">
+        <CalendarNextButton />
+        <CalendarNextYearButton />
+      </div>
+    </CalendarHeader>
 
     <div class="mt-4 flex flex-col gap-y-4 sm:flex-row sm:gap-x-4 sm:gap-y-0">
       <CalendarGrid v-for="month in grid" :key="month.value.toString()">

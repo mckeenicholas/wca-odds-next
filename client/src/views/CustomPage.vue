@@ -4,11 +4,11 @@ import FlagIcon from "@/components/custom/FlagIcon.vue";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
 import { supportedWCAEvents } from "@/lib/types";
-import { buildSimulationQuery, fetchWCAInfo } from "@/lib/utils";
+import { buildSimulationQuery, fetchWCAInfo, WCA_API_BASE } from "@/lib/utils";
 import { useQuery } from "@tanstack/vue-query";
 import { useDebounceFn } from "@vueuse/core";
 import { Search, X } from "lucide-vue-next";
-import { ref, watch } from "vue";
+import { computed, ref, watch } from "vue";
 import { useRouter } from "vue-router";
 
 interface Person {
@@ -21,32 +21,31 @@ interface SearchResult {
   result: Person[];
 }
 
+import { useCompSettingsStore } from "@/lib/stores/compSettings";
+import { storeToRefs } from "pinia";
+
 const router = useRouter();
 const input = ref<string>("");
 const competitors = ref<Person[]>(
   JSON.parse(localStorage.getItem("competitors") || "[]"),
 );
 
-const selectedEventId = ref<string>("333");
-const includeDnf = ref<boolean>(true);
-const decayHalfLife = ref<number>(180);
-const startDate = ref<Date>(
-  new Date(new Date().setFullYear(new Date().getFullYear() - 1)),
-);
-const endDate = ref<Date>(new Date());
+const store = useCompSettingsStore();
+const { selectedEventId, includeDnf, decayHalfLife, startDate, endDate } =
+  storeToRefs(store);
 
 const searchPersons = async (): Promise<Person[]> => {
   if (!input.value.trim()) return [];
 
   const response = await fetchWCAInfo<SearchResult>(
-    `https://api.worldcubeassociation.org/search/users?q=${input.value}`,
+    `${WCA_API_BASE}/search/users?q=${input.value}`,
   );
 
   return response.result.filter((person) => person.wca_id);
 };
 
 const { isFetching, isError, data, error, refetch } = useQuery({
-  queryKey: ["userSearch", input.value],
+  queryKey: computed(() => ["userSearch", input.value]),
   queryFn: searchPersons,
   enabled: false,
 });

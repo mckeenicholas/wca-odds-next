@@ -1,13 +1,4 @@
 <script setup lang="ts">
-import {
-  CalendarDate,
-  type DateValue,
-  isEqualMonth,
-} from "@internationalized/date";
-
-import { Calendar, ChevronLeft, ChevronRight } from "lucide-vue-next";
-import { type DateRange, RangeCalendarRoot, useDateFormatter } from "reka-ui";
-
 import { Button, buttonVariants } from "@/components/ui/button";
 import {
   Popover,
@@ -24,10 +15,32 @@ import {
   RangeCalendarHeadCell,
 } from "@/components/ui/range-calendar";
 import { cn } from "@/lib/utils";
+import {
+  CalendarDate,
+  type DateValue,
+  isEqualMonth,
+} from "@internationalized/date";
+import {
+  Calendar,
+  ChevronLeft,
+  ChevronRight,
+  ChevronsLeft,
+  ChevronsRight,
+} from "lucide-vue-next";
+import { type DateRange, RangeCalendarRoot, useDateFormatter } from "reka-ui";
 import { createMonth, type Grid, toDate } from "reka-ui/date";
 import { computed, type Ref, ref, watch } from "vue";
 
-const props = defineProps<{ startDate?: Date; endDate?: Date }>();
+const props = withDefaults(
+  defineProps<{
+    startDate?: Date;
+    endDate?: Date;
+  }>(),
+  {
+    startDate: () => new Date(),
+    endDate: () => new Date(),
+  },
+);
 
 const emit = defineEmits<{
   "update:startDate": [date?: Date];
@@ -101,6 +114,14 @@ const updateMonth = (reference: "first" | "second", months: number) => {
     secondMonthPlaceholder.value = secondMonthPlaceholder.value.add({
       months,
     });
+  }
+};
+
+const updateYear = (reference: "first" | "second", years: number) => {
+  if (reference === "first") {
+    placeholder.value = placeholder.value.add({ years });
+  } else {
+    secondMonthPlaceholder.value = secondMonthPlaceholder.value.add({ years });
   }
 };
 
@@ -206,35 +227,63 @@ watch(
         >
           <div class="flex flex-col gap-4">
             <div class="flex items-center justify-between">
-              <button
-                :class="
-                  cn(
-                    buttonVariants({ variant: 'outline' }),
-                    'h-7 w-7 bg-transparent p-0 opacity-50 hover:opacity-100',
-                  )
-                "
-                @click="updateMonth('first', -1)"
-              >
-                <ChevronLeft class="h-4 w-4" />
-              </button>
-              <div :class="cn('text-sm font-medium')">
+              <div class="flex items-center gap-0.5">
+                <button
+                  :class="
+                    cn(
+                      buttonVariants({ variant: 'outline' }),
+                      'h-7 w-7 bg-transparent p-0 opacity-50 hover:opacity-100',
+                    )
+                  "
+                  @click="updateYear('first', -1)"
+                >
+                  <ChevronsLeft class="h-4 w-4" />
+                </button>
+                <button
+                  :class="
+                    cn(
+                      buttonVariants({ variant: 'outline' }),
+                      'h-7 w-7 bg-transparent p-0 opacity-50 hover:opacity-100',
+                    )
+                  "
+                  @click="updateMonth('first', -1)"
+                >
+                  <ChevronLeft class="h-4 w-4" />
+                </button>
+              </div>
+
+              <div class="text-sm font-medium">
                 {{
                   formatter.fullMonthAndYear(
                     toDate(firstMonth.value as DateValue),
                   )
                 }}
               </div>
-              <button
-                :class="
-                  cn(
-                    buttonVariants({ variant: 'outline' }),
-                    'h-7 w-7 bg-transparent p-0 opacity-50 hover:opacity-100',
-                  )
-                "
-                @click="updateMonth('first', 1)"
-              >
-                <ChevronRight class="h-4 w-4" />
-              </button>
+
+              <div class="flex items-center gap-0.5">
+                <button
+                  :class="
+                    cn(
+                      buttonVariants({ variant: 'outline' }),
+                      'h-7 w-7 bg-transparent p-0 opacity-50 hover:opacity-100',
+                    )
+                  "
+                  @click="updateMonth('first', 1)"
+                >
+                  <ChevronRight class="h-4 w-4" />
+                </button>
+                <button
+                  :class="
+                    cn(
+                      buttonVariants({ variant: 'outline' }),
+                      'h-7 w-7 bg-transparent p-0 opacity-50 hover:opacity-100',
+                    )
+                  "
+                  @click="updateYear('first', 1)"
+                >
+                  <ChevronsRight class="h-4 w-4" />
+                </button>
+              </div>
             </div>
             <RangeCalendarGrid>
               <RangeCalendarGridHead>
@@ -255,6 +304,7 @@ watch(
                   class="mt-2 w-full"
                 >
                   <RangeCalendarCell
+                    class="cursor-pointer"
                     v-for="weekDate in weekDates"
                     :key="weekDate.toString()"
                     :date="weekDate as DateValue"
@@ -270,18 +320,32 @@ watch(
           </div>
           <div class="flex flex-col gap-4">
             <div class="flex items-center justify-between">
-              <button
-                :class="
-                  cn(
-                    buttonVariants({ variant: 'outline' }),
-                    'h-7 w-7 bg-transparent p-0 opacity-50 hover:opacity-100',
-                  )
-                "
-                @click="updateMonth('second', -1)"
-              >
-                <ChevronLeft class="h-4 w-4" />
-              </button>
-              <div :class="cn('text-sm font-medium')">
+              <div class="flex items-center gap-0.5">
+                <button
+                  :class="
+                    cn(
+                      buttonVariants({ variant: 'outline' }),
+                      'h-7 w-7 bg-transparent p-0 opacity-50 hover:opacity-100',
+                    )
+                  "
+                  @click="updateYear('second', -1)"
+                >
+                  <ChevronsLeft class="h-4 w-4" />
+                </button>
+                <button
+                  :class="
+                    cn(
+                      buttonVariants({ variant: 'outline' }),
+                      'h-7 w-7 bg-transparent p-0 opacity-50 hover:opacity-100',
+                    )
+                  "
+                  @click="updateMonth('second', -1)"
+                >
+                  <ChevronLeft class="h-4 w-4" />
+                </button>
+              </div>
+
+              <div class="text-sm font-medium">
                 {{
                   formatter.fullMonthAndYear(
                     toDate(secondMonth.value as DateValue),
@@ -289,17 +353,30 @@ watch(
                 }}
               </div>
 
-              <button
-                :class="
-                  cn(
-                    buttonVariants({ variant: 'outline' }),
-                    'h-7 w-7 bg-transparent p-0 opacity-50 hover:opacity-100',
-                  )
-                "
-                @click="updateMonth('second', 1)"
-              >
-                <ChevronRight class="h-4 w-4" />
-              </button>
+              <div class="flex items-center gap-0.5">
+                <button
+                  :class="
+                    cn(
+                      buttonVariants({ variant: 'outline' }),
+                      'h-7 w-7 bg-transparent p-0 opacity-50 hover:opacity-100',
+                    )
+                  "
+                  @click="updateMonth('second', 1)"
+                >
+                  <ChevronRight class="h-4 w-4" />
+                </button>
+                <button
+                  :class="
+                    cn(
+                      buttonVariants({ variant: 'outline' }),
+                      'h-7 w-7 bg-transparent p-0 opacity-50 hover:opacity-100',
+                    )
+                  "
+                  @click="updateYear('second', 1)"
+                >
+                  <ChevronsRight class="h-4 w-4" />
+                </button>
+              </div>
             </div>
             <RangeCalendarGrid>
               <RangeCalendarGridHead>
@@ -320,6 +397,7 @@ watch(
                   class="mt-2 w-full"
                 >
                   <RangeCalendarCell
+                    class="cursor-pointer"
                     v-for="weekDate in weekDates"
                     :key="weekDate.toString()"
                     :date="weekDate as DateValue"

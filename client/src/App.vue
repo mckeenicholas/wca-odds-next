@@ -7,7 +7,7 @@ import "./style.css";
 
 const route = useRoute();
 
-const versionNum = "1.0.0";
+const versionNum = "1.1.0";
 </script>
 
 <template>

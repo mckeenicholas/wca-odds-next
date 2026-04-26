@@ -1,10 +1,12 @@
 <script setup lang="ts">
-import { formatPercentage } from "@/lib/utils";
+import { formatPercentage, renderTime } from "@/lib/utils";
 import ColoredCircle from "../custom/ColoredCircle.vue";
 
 export interface HistoryTooltipProps {
   title?: string;
   percent?: boolean;
+  isTime?: boolean;
+  isFMC?: boolean;
   data: {
     name: string;
     color: string;
@@ -12,7 +14,8 @@ export interface HistoryTooltipProps {
   }[];
 }
 
-const { title, data, percent } = defineProps<HistoryTooltipProps>();
+const { title, data, percent, isTime, isFMC } =
+  defineProps<HistoryTooltipProps>();
 
 const formatDate = (dateNum: number) => {
   const dateObj = new Date(dateNum);
@@ -27,6 +30,14 @@ const formatValue = (val: string | number) => {
 
   if (percent) {
     return formatPercentage(num);
+  }
+
+  if (isTime) {
+    return renderTime(num, isFMC);
+  }
+
+  if (Number.isInteger(num)) {
+    return num.toFixed(0);
   }
 
   return num.toFixed(2);

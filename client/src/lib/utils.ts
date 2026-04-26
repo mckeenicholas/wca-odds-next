@@ -13,6 +13,7 @@ import {
 } from "./types";
 
 export const API_URL = import.meta.env.VITE_API_URL || "http://localhost:3000";
+export const WCA_API_BASE = "https://api.worldcubeassociation.org";
 
 export const BREAKPOINT = 1255 as const;
 
@@ -80,7 +81,7 @@ export const toFMC = (result: number): string => {
     return ((result + 7) / 100).toString();
   }
 
-  return (result / 100).toString();
+  return (result / 100).toFixed(2);
 };
 
 export const renderTime = (time: number, isFMC: boolean) => {
