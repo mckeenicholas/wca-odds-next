@@ -4,7 +4,7 @@ import FlagIcon from "@/components/custom/FlagIcon.vue";
 import LoadingMessage from "@/components/custom/LoadingMessage.vue";
 import { Checkbox } from "@/components/ui/checkbox";
 import { useCompSettingsStore } from "@/lib/stores/compSettings";
-import { Competitor, Person, SupportedWCAEvent } from "@/lib/types";
+
 import { BREAKPOINT, buildSimulationQuery, fetchWCIF } from "@/lib/utils";
 import { useQuery } from "@tanstack/vue-query";
 import { useWindowSize } from "@vueuse/core";
@@ -12,10 +12,7 @@ import { storeToRefs } from "pinia";
 import { computed, watch, watchEffect } from "vue";
 import { useRoute, useRouter } from "vue-router";
 
-type EventRegistration = Partial<Record<SupportedWCAEvent, Competitor[]>>;
-
-const MAX_COMPETITORS = 64 as const;
-const DEFAULT_SELECTED = 16 as const;
+import { useCompetitionData } from "@/lib/composables/useCompetitionData";
 
 const route = useRoute();
 const router = useRouter();
@@ -54,76 +51,17 @@ const eventIds = computed(
   () => data.value?.events.map((event) => event.id) ?? [],
 );
 
-const processCompetitor = (
-  person: Person,
-  event: SupportedWCAEvent,
-): Competitor | null => {
-  const worldRank = person.personalBests.find(
-    (pb) => pb.eventId === event,
-  )?.worldRanking;
-  if (!worldRank) return null;
-
-  return {
-    id: person.wcaId,
-    country: person.countryIso2,
-    name: person.name,
-    rank: worldRank,
-    selected: false,
-  };
-};
-
-const getCompetitorData = () => {
-  if (isError.value || !data.value) return {};
-
-  const competitorAcc: EventRegistration = {};
-
-  data.value.persons
-    .filter(
-      (person) =>
-        person.registration?.status === "accepted" &&
-        person.registration?.isCompeting &&
-        person.wcaId,
-    )
-    .forEach((person) => {
-      person.registration.eventIds.forEach((event: SupportedWCAEvent) => {
-        if (!competitorAcc[event]) {
-          competitorAcc[event] = [];
-        }
-
-        const competitor = processCompetitor(person, event);
-        if (competitor) {
-          competitorAcc[event]!.push(competitor);
-        }
-      });
-    });
-
-  Object.keys(competitorAcc).forEach((eventId) => {
-    const competitors = competitorAcc[eventId as SupportedWCAEvent];
-    if (competitors && competitors.length > 0) {
-      competitors.sort((a, b) => a.rank - b.rank);
-      competitors.forEach((c, i) => (c.selected = i < DEFAULT_SELECTED));
-
-      if (competitors.length > MAX_COMPETITORS) {
-        competitorAcc[eventId as SupportedWCAEvent] = competitors.slice(
-          0,
-          MAX_COMPETITORS,
-        );
-      }
-    }
-  });
-
-  if (!("333" in competitorAcc)) {
-    selectedEventId.value = Object.keys(competitorAcc)[0] as SupportedWCAEvent;
-  }
-
-  return competitorAcc;
-};
+const { getCompetitorData } = useCompetitionData();
 
 watchEffect(() => {
   // Only populate competitor data if we have data from the API
   // and the store hasn't been populated for this competition yet.
   if (data.value && Object.keys(competitorsByEvent.value).length === 0) {
-    competitorsByEvent.value = getCompetitorData();
+    competitorsByEvent.value = getCompetitorData(
+      data.value,
+      isError.value,
+      selectedEventId,
+    );
   }
 });
 

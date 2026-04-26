@@ -23,7 +23,7 @@ chmod 0600 /etc/wca-env
 chmod 0644 /etc/cron.d/wca-pull-results
 
 echo "Running initial WCA data sync..."
-python3 /app/pull_results.py -s
+python3 /app/sync.py
 
 echo "Starting cron daemon..."
 exec cron -f

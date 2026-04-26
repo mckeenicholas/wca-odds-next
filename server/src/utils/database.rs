@@ -1,5 +1,6 @@
 use crate::utils::competitor::DatedCompetitionResult;
 use chrono::{NaiveDate, Utc};
+use serde::Serialize;
 use sqlx::{FromRow, PgPool};
 use std::collections::HashMap;
 
@@ -97,4 +98,76 @@ pub fn convert_to_dated_results(
         .collect();
 
     raw_data
+}
+
+/// Database row for ranking snapshots.
+#[derive(Debug, FromRow, Serialize)]
+pub struct RankingSnapshotRow {
+    pub person_id: String,
+    pub name: String,
+    pub value: f32,
+    pub rank: i32,
+}
+
+pub async fn fetch_ranks_by_date(
+    pool: &PgPool,
+    event_id: &str,
+    limit: i32,
+    date: Option<NaiveDate>,
+) -> Result<Vec<RankingSnapshotRow>, sqlx::Error> {
+    sqlx::query_as::<_, RankingSnapshotRow>(
+        r#"
+        SELECT rs.person_id, p.name, rs.value, rs.rank
+        FROM ranking_snapshots rs
+        JOIN persons p ON p.person_id = rs.person_id
+        WHERE rs.event_id = $1
+          AND rs.snapshot_date = (
+              SELECT snapshot_date 
+              FROM ranking_snapshots 
+              WHERE snapshot_date <= COALESCE($3, CURRENT_DATE)
+              ORDER BY snapshot_date DESC 
+              LIMIT 1
+          )
+          AND rs.rank <= $2
+        ORDER BY rs.rank
+        "#,
+    )
+    .bind(event_id)
+    .bind(limit)
+    .bind(date) // sqlx handles Option<NaiveDate> as a nullable Date
+    .fetch_all(pool)
+    .await
+}
+
+#[derive(Debug, FromRow, Serialize)]
+pub struct RankingSnapshotHistoryRow {
+    pub snapshot_date: NaiveDate,
+    pub value: f32,
+    pub rank: i32,
+}
+
+pub async fn fetch_competitor_ranking_history(
+    pool: &PgPool,
+    competitor_id: &str,
+    event_id: &str,
+    start_date: NaiveDate,
+    end_date: NaiveDate,
+) -> Result<Vec<RankingSnapshotHistoryRow>, sqlx::Error> {
+    sqlx::query_as::<_, RankingSnapshotHistoryRow>(
+        r#"
+        SELECT rs.snapshot_date, rs.value, rs.rank
+        FROM ranking_snapshots rs
+        JOIN persons p ON p.person_id = rs.person_id
+        WHERE rs.event_id = $1
+          AND rs.snapshot_date BETWEEN $2 AND $3
+          AND rs.person_id = $4
+        ORDER BY rs.snapshot_date
+        "#,
+    )
+    .bind(event_id)
+    .bind(start_date)
+    .bind(end_date)
+    .bind(competitor_id)
+    .fetch_all(pool)
+    .await
 }

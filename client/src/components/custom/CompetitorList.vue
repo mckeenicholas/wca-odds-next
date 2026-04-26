@@ -85,7 +85,6 @@ const model = defineModel<number[][]>({ required: true });
         v-for="option in headerOptions"
         :key="option.id"
         @click="setSortBy(option.id)"
-        class="hover:bg-secondary flex-1 rounded-md px-2 py-1"
         :class="option.padding"
       >
         <div class="flex items-center" :class="option.justify">

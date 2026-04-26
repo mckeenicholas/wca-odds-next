@@ -8,28 +8,22 @@ import ExpandableBox from "@/components/custom/ExpandableBox.vue";
 import LoadingMessage from "@/components/custom/LoadingMessage.vue";
 import ResultsSummary from "@/components/custom/ResultsSummary.vue";
 import { Button } from "@/components/ui/button";
+import { useSimulation } from "@/lib/composables/useSimulation";
 import {
   eventAttempts,
   eventNames,
-  SimulationAPIResults,
   SimulationRouteQuery,
   SupportedWCAEvent,
 } from "@/lib/types";
 import {
-  API_URL,
-  ArrEq2D,
-  clone2DArr,
   createCSVExport,
   createJSONExport,
   downloadTextBlob,
-  formatInputtedTimes,
   generateColors,
-  generateDefaultTimesArray,
   getParentPath,
 } from "@/lib/utils";
-import fetchWCALiveResults from "@/lib/wcaLive";
 import { LoaderCircle } from "lucide-vue-next";
-import { computed, onMounted, ref } from "vue";
+import { computed, onMounted } from "vue";
 import { RouteParams, useRoute, useRouter } from "vue-router";
 
 const router = useRouter();
@@ -70,28 +64,27 @@ const competitorsList = competitorsParam!.split(",");
 const includeDNF = includeDnfParam === "true";
 const event = eventIdParam! as SupportedWCAEvent;
 const colors = generateColors(competitorsList.length);
-
 const attemptsCount = eventAttempts[event];
-const defaultTimesArray = generateDefaultTimesArray(
-  competitorsList.length,
+
+const {
+  error,
+  simulationResults,
+  recalculateLoading,
+  wcaLiveLoading,
+  inputtedTimes,
+  inputtedTimesState,
+  runInitialSimulation,
+  handleRecalculation,
+  reset,
+  syncResultsWithWCALive: syncResultsWithWCALiveBase,
+} = useSimulation({
+  event,
+  competitorsList,
+  decayHalfLife,
+  includeDNF,
+  startDate,
+  endDate,
   attemptsCount,
-);
-
-const error = ref<string>("");
-const simulationResults = ref<SimulationAPIResults | null>(null);
-const loading = ref<boolean>(true);
-const recalculateLoading = ref<boolean>(false);
-const wcaLiveLoading = ref<boolean>(false);
-const inputtedTimes = ref<number[][]>(clone2DArr(defaultTimesArray));
-const inputtedTimesPrev = ref<number[][]>(clone2DArr(defaultTimesArray));
-
-const inputtedTimesState = computed(() => {
-  const hasNonZero = inputtedTimes.value.some((competitor: number[]) =>
-    competitor.some((time) => time !== 0),
-  );
-  const isModified = !ArrEq2D(inputtedTimes.value, inputtedTimesPrev.value);
-
-  return { hasNonZero, isModified };
 });
 
 const sharedProps = computed(() => ({
@@ -116,106 +109,17 @@ const historyDataParams = computed(() => ({
   include_dnf: includeDNF,
 }));
 
-const fetchSimulationResults = async () => {
-  const formatDate = (d: Date) => d.toISOString().split("T")[0];
-
-  const payload = {
-    competitor_ids: competitorsList,
-    event_id: event,
-    start_date: formatDate(startDate),
-    end_date: formatDate(endDate),
-    half_life: decayHalfLife,
-    entered_times: formatInputtedTimes(inputtedTimes.value, event),
-    include_dnf: includeDNF,
-  };
-
-  const response = await fetch(`${API_URL}/api/simulation`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(payload),
-  });
-
-  if (!response.ok) {
-    const errorText = await response.text();
-    throw new Error(`Simulation failed: ${response.statusText} - ${errorText}`);
-  }
-
-  const rawData = await response.json();
-
-  return rawData as SimulationAPIResults;
-};
-
-const runInitialSimulation = async () => {
-  try {
-    const results = await fetchSimulationResults();
-
-    if (results) {
-      simulationResults.value = results;
-      inputtedTimesPrev.value = clone2DArr(inputtedTimes.value);
-    }
-  } catch (err) {
-    console.error("Error in initial simulation:", err);
-    error.value =
-      err instanceof Error
-        ? err.message
-        : "Unknown error occurred during initial simulation";
-  }
-};
-
-const handleRecalculation = async () => {
-  try {
-    const results = await fetchSimulationResults();
-
-    if (results) {
-      simulationResults.value = results;
-      inputtedTimesPrev.value = clone2DArr(inputtedTimes.value);
-    }
-  } catch (err) {
-    console.error("Error in recalculation:", err);
-    error.value =
-      err instanceof Error
-        ? err.message
-        : "Unknown error occurred during recalculation";
-  }
-};
-
-onMounted(async () => {
-  loading.value = true;
-  await runInitialSimulation();
-  loading.value = false;
+onMounted(() => {
+  runInitialSimulation();
 });
-
-const recalculate = async () => {
-  recalculateLoading.value = true;
-  error.value = "";
-  await handleRecalculation();
-  recalculateLoading.value = false;
-};
-
-const reset = async () => {
-  inputtedTimes.value = clone2DArr(defaultTimesArray);
-  await recalculate();
-};
 
 const syncResultsWithWCALive = async () => {
   if (!showWCALiveImport()) {
     return;
   }
 
-  wcaLiveLoading.value = true;
-  try {
-    const results = await fetchWCALiveResults(
-      competitionIdParam!,
-      event,
-      competitorsList,
-    );
-
-    inputtedTimes.value = results;
-    await recalculate();
-  } catch (err) {
-    console.error(err);
-  } finally {
-    wcaLiveLoading.value = false;
+  if (competitionIdParam) {
+    await syncResultsWithWCALiveBase(competitionIdParam);
   }
 };
 
@@ -307,18 +211,15 @@ const exportCSV = () => {
 
       <p class="text-muted-foreground m-2">
         Export as:
-        <a
-          role="button"
+        <button
           class="me-1 underline hover:text-gray-300"
           @click="exportJson()"
-          >json</a
         >
-        <a
-          role="button"
-          class="underline hover:text-gray-300"
-          @click="exportCSV()"
-          >csv</a
-        >
+          json
+        </button>
+        <button class="underline hover:text-gray-300" @click="exportCSV()">
+          csv
+        </button>
       </p>
 
       <div class="fixed right-2 bottom-4 z-50 flex">
@@ -335,7 +236,7 @@ const exportCSV = () => {
         </Transition>
         <Transition name="fade">
           <Button
-            @click="recalculate"
+            @click="handleRecalculation"
             class="me-2"
             :disabled="recalculateLoading || !inputtedTimesState.isModified"
             v-if="inputtedTimesState.isModified"

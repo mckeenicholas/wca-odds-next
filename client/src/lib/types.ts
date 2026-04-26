@@ -226,3 +226,23 @@ export interface HistoryPoint {
 }
 
 export type HistoryChartMetric = "win" | "podium" | "rank";
+
+export interface CompetitorRankingHistoryStat {
+  id: string;
+  name: string;
+  rank: number;
+  value: number;
+  color?: string;
+}
+
+export interface RankingHistoryPoint {
+  date: string;
+  competitors: CompetitorRankingHistoryStat[];
+}
+
+export interface RankingSnapshot {
+  person_id: string;
+  name: string;
+  value: number;
+  rank: number;
+}
