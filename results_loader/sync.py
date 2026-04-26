@@ -32,7 +32,11 @@ from common import (
 def import_snapshots(cursor, path):
     """Bulk-load a CSV exported by bootstrap.py into ranking_snapshots."""
     logger.info(f"Importing ranking_snapshots from {path}...")
-    df = pl.read_csv(path, try_parse_dates=True)
+    df = pl.read_csv(
+        path,
+        try_parse_dates=True,
+        schema_overrides={"event_id": pl.Utf8, "person_id": pl.Utf8},
+    )
     expected = {"snapshot_date", "person_id", "event_id", "value", "rank"}
     if not expected.issubset(set(df.columns)):
         raise ValueError(f"CSV is missing columns. Expected: {expected}")

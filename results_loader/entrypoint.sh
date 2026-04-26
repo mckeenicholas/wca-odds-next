@@ -17,7 +17,7 @@ chmod 0600 /etc/wca-env
     echo "SHELL=/bin/bash"
     echo "PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
     echo ""
-    echo "0 2 * * * root source /etc/wca-env && python3 /app/pull_results.py 2>&1 | logger -t wca-pull"
+    echo "0 2 * * * root source /etc/wca-env && python3 /app/sync.py 2>&1 | logger -t wca-pull"
 } > /etc/cron.d/wca-pull-results
 
 chmod 0644 /etc/cron.d/wca-pull-results

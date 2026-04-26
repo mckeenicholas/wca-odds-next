@@ -18,7 +18,9 @@ import { cn } from "@/lib/utils";
 import {
   CalendarDate,
   type DateValue,
+  getLocalTimeZone,
   isEqualMonth,
+  today,
 } from "@internationalized/date";
 import {
   Calendar,
@@ -31,16 +33,10 @@ import { type DateRange, RangeCalendarRoot, useDateFormatter } from "reka-ui";
 import { createMonth, type Grid, toDate } from "reka-ui/date";
 import { computed, type Ref, ref, watch } from "vue";
 
-const props = withDefaults(
-  defineProps<{
-    startDate?: Date;
-    endDate?: Date;
-  }>(),
-  {
-    startDate: () => new Date(),
-    endDate: () => new Date(),
-  },
-);
+const props = defineProps<{
+  startDate?: Date;
+  endDate?: Date;
+}>();
 
 const emit = defineEmits<{
   "update:startDate": [date?: Date];
@@ -86,8 +82,12 @@ const value = computed({
 const locale = ref("en-US");
 const formatter = useDateFormatter(locale.value);
 
-const placeholder = ref(value.value.start) as Ref<DateValue>;
-const secondMonthPlaceholder = ref(value.value.end) as Ref<DateValue>;
+const defaultDate = today(getLocalTimeZone());
+
+const placeholder = ref(value.value.start || defaultDate) as Ref<DateValue>;
+const secondMonthPlaceholder = ref(
+  value.value.end || defaultDate.add({ months: 1 })
+) as Ref<DateValue>;
 
 const firstMonth = ref<Grid<DateValue>>(
   createMonth({
