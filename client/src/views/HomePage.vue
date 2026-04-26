@@ -136,10 +136,10 @@ watch(data, () => {
     </div>
     <div class="mt-8 flex items-center justify-center space-x-4">
       <RouterLink to="/custom">
-        <Button> Or select competitors manually </Button>
+        <Button>Select competitors manually</Button>
       </RouterLink>
       <RouterLink to="/rankings">
-        <Button variant="secondary"> View Global Rankings </Button>
+        <Button variant="secondary">View Global Rankings</Button>
       </RouterLink>
     </div>
   </div>
