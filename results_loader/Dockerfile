@@ -8,7 +8,7 @@ COPY requirements.txt .
 
 RUN pip install -r requirements.txt
 
-COPY pull_results.py .
+COPY . .
 
 RUN echo "0 0 * * 0 cd /app && /usr/local/bin/python pull_results.py > /proc/1/fd/1 2>&1" > /etc/cron.d/pull-cron
 
