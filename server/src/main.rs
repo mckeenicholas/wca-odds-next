@@ -30,10 +30,10 @@ cfg_if! {
 mod routes;
 mod utils;
 
-use routes::{health, history, simulation};
+use routes::{health, history, rankings, simulation};
 use utils::http::timer_middleware;
 
-const ALLOWED_ORIGINS: &[&str] = &["http://localhost:5173", "https://odds.nmckee.org"];
+const ALLOWED_ORIGINS: &[&str] = &["http://localhost:5173", "http://127.0.0.1:5173", "https://odds.nmckee.org"];
 
 #[tokio::main]
 async fn main() {
@@ -69,6 +69,11 @@ async fn main() {
         .route("/api/health", get(health::health_check))
         .route("/api/simulation", post(simulation::simulation_handler))
         .route("/api/history", post(history::simulation_history_handler))
+        .route("/api/rankings", post(rankings::rankings_handler))
+        .route(
+            "/api/rankings/competitor",
+            post(rankings::competitor_rankings_history_handler),
+        )
         .with_state(pool);
 
     cfg_if! {

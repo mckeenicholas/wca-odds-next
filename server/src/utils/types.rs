@@ -68,3 +68,17 @@ pub struct SimulationEndpointResults {
     pub full_histogram: FullHistogramChartData,
     pub rank_histogram: ChartData,
 }
+
+#[derive(Debug, Deserialize)]
+pub struct RankingRequest {
+    pub event_id: String,
+    pub date: Option<NaiveDate>,
+}
+
+#[derive(Debug, Deserialize)]
+pub struct RankingHistoryRequest {
+    pub competitor_id: String,
+    pub event_id: String,
+    pub start_date: NaiveDate,
+    pub end_date: NaiveDate,
+}

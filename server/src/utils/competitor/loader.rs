@@ -1,4 +1,4 @@
-use super::model::Competitor;
+use super::model::{Competitor, DatedCompetitionResult};
 use crate::utils::database;
 use crate::utils::http::AppError;
 use crate::utils::wca::{EventType, clean_and_validate_wca_id};
@@ -153,17 +153,35 @@ pub fn validate_request_constraints(
         return Err(AppError::BadRequest("Max 32 competitors".into()));
     }
 
+    validate_date_range(start_date, end_date, Some(28), None)
+}
+
+pub fn validate_date_range(
+    start_date: NaiveDate,
+    end_date: NaiveDate,
+    min_days: Option<i64>,
+    max_days: Option<i64>,
+) -> Result<(), AppError> {
     let window_days = (end_date - start_date).num_days();
-    if window_days < 28 {
+
+    if let Some(min) = min_days
+        && window_days < min
+    {
         return Err(AppError::BadRequest(
             "Date window too short (min 28 days)".into(),
         ));
     }
 
+    if let Some(max) = max_days
+        && window_days > max
+    {
+        return Err(AppError::BadRequest(
+            "Date window too long (max 28 days)".into(),
+        ));
+    }
+
     Ok(())
 }
-
-use super::model::DatedCompetitionResult;
 
 fn filter_and_convert_relative(
     raw_data: &HashMap<NaiveDate, Vec<i32>>,
