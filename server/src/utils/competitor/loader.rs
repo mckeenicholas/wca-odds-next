@@ -167,17 +167,17 @@ pub fn validate_date_range(
     if let Some(min) = min_days
         && window_days < min
     {
-        return Err(AppError::BadRequest(
-            "Date window too short (min 28 days)".into(),
-        ));
+        return Err(AppError::BadRequest(format!(
+            "Date window too short (min {min} days)"
+        )));
     }
 
     if let Some(max) = max_days
         && window_days > max
     {
-        return Err(AppError::BadRequest(
-            "Date window too long (max 28 days)".into(),
-        ));
+        return Err(AppError::BadRequest(format!(
+            "Date window too long (max {max} days)"
+        )));
     }
 
     Ok(())
