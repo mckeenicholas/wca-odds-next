@@ -100,6 +100,7 @@ pub fn format_results(
             CompetitorSimulationResult {
                 id: comp.id,
                 name: comp.name,
+                country_iso2: comp.country_iso2,
                 expected_rank: res.expected_rank(),
                 win_chance: res.win_probability(),
                 pod_chance: res.podium_probability(),

@@ -7,7 +7,7 @@ import "./style.css";
 
 const route = useRoute();
 
-const versionNum = "1.1.0";
+const versionNum = "1.1.1";
 </script>
 
 <template>
@@ -27,7 +27,7 @@ const versionNum = "1.1.0";
         >
       </span>
       <a
-        href="https://github.com/mckeenicholas/wca-odds-web"
+        href="https://github.com/mckeenicholas/wca-odds-next"
         class="mr-3 hover:text-gray-400"
         aria-label="GitHub Repository"
       >

@@ -2,13 +2,14 @@ use axum::{Json, extract::State, response::IntoResponse};
 use sqlx::PgPool;
 
 use crate::utils::competitor::validate_date_range;
-use crate::utils::database;
+use crate::utils::database::{self, CountryFilter};
 use crate::utils::http::AppError;
 use crate::utils::types::{RankingHistoryRequest, RankingRequest};
 use crate::utils::wca::EventType;
 
 const MAX_WINDOW_DAYS: i64 = 31 * 12 * 5; // ~5 years
-const TOP_N: i32 = 32;
+const PAGE_SIZE: i32 = 32;
+const MAX_ITEMS: i32 = 512;
 
 pub async fn rankings_handler(
     State(pool): State<PgPool>,
@@ -23,7 +24,31 @@ pub async fn rankings_handler(
         }
     };
 
-    let results = database::fetch_ranks_by_date(&pool, db_event_id, TOP_N, payload.date).await?;
+    let offset = payload.offset.unwrap_or(0).max(0);
+    if offset >= MAX_ITEMS {
+        return Ok(Json(Vec::<database::RankingSnapshotRow>::new()).into_response());
+    }
+    let limit = PAGE_SIZE.min(MAX_ITEMS - offset);
+
+    let country_filter = payload.country_id.as_deref().and_then(|id| {
+        if id.is_empty() || id == "World" {
+            None
+        } else if id.starts_with('_') {
+            Some(CountryFilter::Continent(id.to_string()))
+        } else {
+            Some(CountryFilter::Country(id.to_string()))
+        }
+    });
+
+    let results = database::fetch_ranks_by_date(
+        &pool,
+        db_event_id,
+        limit,
+        offset,
+        payload.date,
+        country_filter.as_ref(),
+    )
+    .await?;
 
     Ok(Json(results).into_response())
 }

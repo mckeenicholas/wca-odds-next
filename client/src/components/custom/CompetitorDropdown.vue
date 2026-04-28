@@ -20,6 +20,7 @@ import {
   CollapsibleTrigger,
 } from "../ui/collapsible";
 import ColoredCircle from "./ColoredCircle.vue";
+import FlagIcon from "./FlagIcon.vue";
 import FMCEntryField from "./FMCEntryField.vue";
 import Chevron from "./RotatableChevron.vue";
 import ResultEntryField from "./TimeEntryField.vue";
@@ -58,6 +59,11 @@ const ariaId = computed(() => `dropdown-${result.id}`);
             <div class="mx-2 flex flex-col justify-center">
               <ColoredCircle :color />
             </div>
+            <FlagIcon
+              v-if="result.country_iso2"
+              :code="result.country_iso2"
+              class="me-1 flex items-center"
+            />
             <a
               :href="`https://worldcubeassociation.org/persons/${result.id}?event=${event}`"
               @click.stop

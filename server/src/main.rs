@@ -30,10 +30,14 @@ cfg_if! {
 mod routes;
 mod utils;
 
-use routes::{health, history, rankings, simulation};
+use routes::{country, health, history, person, rankings, simulation};
 use utils::http::timer_middleware;
 
-const ALLOWED_ORIGINS: &[&str] = &["http://localhost:5173", "http://127.0.0.1:5173", "https://odds.nmckee.org"];
+const ALLOWED_ORIGINS: &[&str] = &[
+    "http://localhost:5173",
+    "http://127.0.0.1:5173",
+    "https://odds.nmckee.org",
+];
 
 #[tokio::main]
 async fn main() {
@@ -65,15 +69,44 @@ async fn main() {
         .allow_methods([Method::GET, Method::POST])
         .allow_headers([axum::http::header::CONTENT_TYPE]);
 
-    let mut app = Router::new()
-        .route("/api/health", get(health::health_check))
+    let heavy_routes = Router::new()
         .route("/api/simulation", post(simulation::simulation_handler))
-        .route("/api/history", post(history::simulation_history_handler))
+        .route("/api/history", post(history::simulation_history_handler));
+
+    let crud_routes = Router::new()
+        .route("/api/health", get(health::health_check))
         .route("/api/rankings", post(rankings::rankings_handler))
         .route(
             "/api/rankings/competitor",
             post(rankings::competitor_rankings_history_handler),
         )
+        .route("/api/search", get(person::search_handler))
+        .route("/api/persons", post(person::person_rank_details))
+        .route("/api/countries", get(country::country_list_handler));
+
+    cfg_if! {
+        if #[cfg(feature = "enable_governor")] {
+            let stats_governor = GovernorConfigBuilder::default()
+                .per_second(5)
+                .burst_size(10)
+                .key_extractor(ForwardedIpExtractor)
+                .finish()
+                .unwrap();
+            let stats_routes = heavy_routes.layer(GovernorLayer::new(stats_governor));
+
+            let crud_governor = GovernorConfigBuilder::default()
+                .per_second(20)
+                .burst_size(60)
+                .key_extractor(ForwardedIpExtractor)
+                .finish()
+                .unwrap();
+            let crud_routes = crud_routes.layer(GovernorLayer::new(crud_governor));
+        }
+    }
+
+    let mut app = Router::new()
+        .merge(stats_routes)
+        .merge(crud_routes)
         .with_state(pool);
 
     cfg_if! {
@@ -83,18 +116,6 @@ async fn main() {
                 .time_to_live(Duration::from_secs(CACHE_TIMEOUT_SECNODS))
                 .build();
             app = app.layer(middleware::from_fn_with_state(cache, caching_middleware));
-        }
-    }
-
-    cfg_if! {
-        if #[cfg(feature = "enable_governor")] {
-            let governor_conf = GovernorConfigBuilder::default()
-                .per_second(5)
-                .burst_size(10)
-                .key_extractor(ForwardedIpExtractor)
-                .finish()
-                .unwrap();
-            app = app.layer(GovernorLayer::new(governor_conf));
         }
     }
 

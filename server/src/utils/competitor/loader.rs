@@ -31,7 +31,10 @@ impl CompetitorContext {
         );
 
         let results = result_rows?;
-        let mut names_map: HashMap<String, String> = name_rows?.into_iter().collect();
+        let mut names_map: HashMap<String, (String, String)> = name_rows?
+            .into_iter()
+            .map(|(id, name, iso2)| (id, (name, iso2)))
+            .collect();
 
         let grouped_by_date = database::group_results_by_date(results);
         let mut dated_results_map = database::convert_to_dated_results(grouped_by_date);
@@ -39,9 +42,11 @@ impl CompetitorContext {
         let competitors: Vec<Competitor> = valid_ids
             .into_iter()
             .map(|id| {
-                let name = names_map.remove(&id).unwrap_or_else(|| id.clone());
+                let (name, country_iso2) = names_map
+                    .remove(&id)
+                    .unwrap_or_else(|| (id.clone(), String::new()));
                 let results = dated_results_map.remove(&id).unwrap_or_default();
-                Competitor::new(name, id, results, half_life)
+                Competitor::new(name, id, country_iso2, results, half_life)
             })
             .collect();
 
@@ -64,7 +69,7 @@ impl CompetitorContext {
 pub struct HistoryContext {
     pub event_type: EventType,
     pub valid_ids: Vec<String>,
-    pub names_map: HashMap<String, String>,
+    pub names_map: HashMap<String, (String, String)>,
     pub grouped_results: HashMap<String, HashMap<NaiveDate, Vec<i32>>>,
     pub half_life: f32,
 }
@@ -89,7 +94,10 @@ impl HistoryContext {
         );
 
         let results = result_rows?;
-        let names_map: HashMap<String, String> = name_rows?.into_iter().collect();
+        let names_map: HashMap<String, (String, String)> = name_rows?
+            .into_iter()
+            .map(|(id, name, iso2)| (id, (name, iso2)))
+            .collect();
         let grouped_results = database::group_results_by_date(results);
 
         Ok(Self {
@@ -115,13 +123,19 @@ impl HistoryContext {
                     .map(|data| filter_and_convert_relative(data, window_start, window_end))
                     .unwrap_or_default();
 
-                let name = self
+                let (name, country_iso2) = self
                     .names_map
                     .get(id)
                     .cloned()
-                    .unwrap_or_else(|| id.clone());
+                    .unwrap_or_else(|| (id.clone(), String::new()));
 
-                Competitor::new(name, id.clone(), dated_results, self.half_life)
+                Competitor::new(
+                    name,
+                    id.clone(),
+                    country_iso2,
+                    dated_results,
+                    self.half_life,
+                )
             })
             .collect()
     }

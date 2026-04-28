@@ -1,7 +1,7 @@
 use crate::utils::competitor::DatedCompetitionResult;
 use chrono::{NaiveDate, Utc};
 use serde::Serialize;
-use sqlx::{FromRow, PgPool};
+use sqlx::{FromRow, PgPool, Postgres, QueryBuilder};
 use std::collections::HashMap;
 
 /// Database row for competitor results.
@@ -44,9 +44,14 @@ pub async fn fetch_competitor_results<T: AsRef<str>>(
 pub async fn fetch_competitor_names<T: AsRef<str>>(
     pool: &PgPool,
     competitor_ids: &[T],
-) -> Result<Vec<(String, String)>, sqlx::Error> {
-    sqlx::query_as::<_, (String, String)>(
-        r#"SELECT person_id, name from persons WHERE person_id = ANY($1)"#,
+) -> Result<Vec<(String, String, String)>, sqlx::Error> {
+    sqlx::query_as::<_, (String, String, String)>(
+        r#"
+        SELECT p.person_id, p.name, COALESCE(c.iso2, '') AS country_iso2
+        FROM persons p
+        LEFT JOIN countries c ON c.id = p.country_id
+        WHERE p.person_id = ANY($1)
+        "#,
     )
     .bind(
         competitor_ids
@@ -105,38 +110,60 @@ pub fn convert_to_dated_results(
 pub struct RankingSnapshotRow {
     pub person_id: String,
     pub name: String,
+    pub country_iso2: String,
     pub value: f32,
     pub rank: i32,
+}
+
+pub enum CountryFilter {
+    Country(String),   // filter by persons.country_id
+    Continent(String), // filter by countries.continent_id
 }
 
 pub async fn fetch_ranks_by_date(
     pool: &PgPool,
     event_id: &str,
     limit: i32,
+    offset: i32,
     date: Option<NaiveDate>,
+    country_filter: Option<&CountryFilter>,
 ) -> Result<Vec<RankingSnapshotRow>, sqlx::Error> {
-    sqlx::query_as::<_, RankingSnapshotRow>(
-        r#"
-        SELECT rs.person_id, p.name, rs.value, rs.rank
+    let mut qb: QueryBuilder<Postgres> = QueryBuilder::new(
+        r#"SELECT rs.person_id, p.name, COALESCE(c.iso2, '') AS country_iso2, rs.value, rs.rank
         FROM ranking_snapshots rs
         JOIN persons p ON p.person_id = rs.person_id
-        WHERE rs.event_id = $1
-          AND rs.snapshot_date = (
-              SELECT snapshot_date 
-              FROM ranking_snapshots 
-              WHERE snapshot_date <= COALESCE($3, CURRENT_DATE)
-              ORDER BY snapshot_date DESC 
-              LIMIT 1
-          )
-          AND rs.rank <= $2
-        ORDER BY rs.rank
-        "#,
-    )
-    .bind(event_id)
-    .bind(limit)
-    .bind(date) // sqlx handles Option<NaiveDate> as a nullable Date
-    .fetch_all(pool)
-    .await
+        LEFT JOIN countries c ON c.id = p.country_id
+        WHERE rs.event_id = "#,
+    );
+    qb.push_bind(event_id);
+    qb.push(
+        r#" AND rs.snapshot_date = (
+            SELECT snapshot_date FROM ranking_snapshots
+            WHERE snapshot_date <= COALESCE("#,
+    );
+    qb.push_bind(date);
+    qb.push(", CURRENT_DATE) ORDER BY snapshot_date DESC LIMIT 1)");
+
+    match country_filter {
+        Some(CountryFilter::Country(id)) => {
+            qb.push(" AND p.country_id = ");
+            qb.push_bind(id.as_str());
+        }
+        Some(CountryFilter::Continent(id)) => {
+            qb.push(" AND c.continent_id = ");
+            qb.push_bind(id.as_str());
+        }
+        None => {}
+    }
+
+    qb.push(" ORDER BY rs.rank LIMIT ");
+    qb.push_bind(limit);
+    qb.push(" OFFSET ");
+    qb.push_bind(offset);
+
+    qb.build_query_as::<RankingSnapshotRow>()
+        .fetch_all(pool)
+        .await
 }
 
 #[derive(Debug, FromRow, Serialize)]
@@ -168,6 +195,32 @@ pub async fn fetch_competitor_ranking_history(
     .bind(start_date)
     .bind(end_date)
     .bind(competitor_id)
+    .fetch_all(pool)
+    .await
+}
+
+pub async fn fetch_competitor_rank_info(
+    pool: &PgPool,
+    competitor_id: &str,
+    date: Option<NaiveDate>,
+) -> Result<Vec<RankingSnapshotHistoryRow>, sqlx::Error> {
+    sqlx::query_as::<_, RankingSnapshotHistoryRow>(
+        r#"
+        SELECT rs.person_id, p.name, rs.value, rs.rank
+        FROM ranking_snapshots rs
+        JOIN persons p ON p.person_id = rs.person_id
+        WHERE p.person_id = $1
+        AND rs.snapshot_date = (
+              SELECT snapshot_date 
+              FROM ranking_snapshots 
+              WHERE snapshot_date <= COALESCE($2, CURRENT_DATE)
+              ORDER BY snapshot_date DESC 
+              LIMIT 1
+          )
+        "#,
+    )
+    .bind(competitor_id)
+    .bind(date)
     .fetch_all(pool)
     .await
 }

@@ -20,6 +20,7 @@ import { format, subYears } from "date-fns";
 import { LoaderCircle } from "lucide-vue-next";
 import { computed, ref, watch } from "vue";
 import DateRangePicker from "./DateRangePicker.vue";
+import FlagIcon from "./FlagIcon.vue";
 import RotatableChevron from "./RotatableChevron.vue";
 
 const props = defineProps<{
@@ -28,6 +29,7 @@ const props = defineProps<{
   formattedScore: string;
   rankDate: Date;
   index: number;
+  showRegionRank?: boolean;
 }>();
 
 const isOpen = ref(false);
@@ -124,11 +126,21 @@ const mappedHistory = computed(() => {
         class="hover:bg-secondary focus-visible:bg-secondary flex w-full cursor-pointer justify-between rounded-md border-0 bg-transparent p-2 ps-1 text-left focus:outline-none"
         :class="{ 'bg-muted/20': index % 2 === 0 }"
       >
+        <div
+          v-if="showRegionRank"
+          class="w-16 shrink-0 ps-3 text-left text-xs sm:text-sm md:w-28"
+        >
+          {{ index + 1 }}
+        </div>
         <div class="text-foreground flex-1 ps-3 text-left">
           {{ competitor.rank }}
         </div>
         <div class="flex-2 text-left">
           <div class="flex flex-row items-center gap-2">
+            <FlagIcon
+              v-if="competitor.country_iso2"
+              :code="competitor.country_iso2"
+            />
             <a
               :href="`https://worldcubeassociation.org/persons/${competitor.person_id}`"
               @click.stop

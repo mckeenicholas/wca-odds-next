@@ -182,6 +182,7 @@ export interface Competitor {
 export interface CompetitorSimulationResult {
   name: string;
   id: string;
+  country_iso2: string;
   win_chance: number;
   pod_chance: number;
   expected_rank: number;
@@ -243,6 +244,14 @@ export interface RankingHistoryPoint {
 export interface RankingSnapshot {
   person_id: string;
   name: string;
+  country_iso2: string;
   value: number;
   rank: number;
+}
+
+export interface CountryResult {
+  id: string;
+  iso2: string;
+  name: string;
+  continent_id: string;
 }

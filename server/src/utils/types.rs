@@ -32,6 +32,7 @@ pub struct SimulationHistoryRequest {
 pub struct CompetitorSimulationResult {
     pub name: String,
     pub id: String,
+    pub country_iso2: String,
     pub win_chance: f64,
     pub pod_chance: f64,
     pub expected_rank: f64,
@@ -50,6 +51,7 @@ pub struct HistoryPoint {
 pub struct CompetitorHistoryStat {
     pub id: String,
     pub name: String,
+    pub country_iso2: String,
     pub win_chance: f64,
     pub pod_chance: f64,
     pub expected_rank: f64,
@@ -73,6 +75,8 @@ pub struct SimulationEndpointResults {
 pub struct RankingRequest {
     pub event_id: String,
     pub date: Option<NaiveDate>,
+    pub country_id: Option<String>,
+    pub offset: Option<i32>,
 }
 
 #[derive(Debug, Deserialize)]

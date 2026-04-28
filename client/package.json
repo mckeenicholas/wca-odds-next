@@ -14,6 +14,7 @@
     "@internationalized/date": "3.10.0",
     "@tailwindcss/vite": "^4.2.4",
     "@tanstack/vue-query": "5.90.2",
+    "@tanstack/vue-virtual": "^3.13.24",
     "@unovis/ts": "^1.6.5",
     "@unovis/vue": "^1.6.5",
     "@vueuse/core": "^14.2.1",

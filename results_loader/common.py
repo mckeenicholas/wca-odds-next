@@ -29,6 +29,7 @@ RESULTS_FILES = [
     "WCA_export_results.tsv",
     "WCA_export_result_attempts.tsv",
     "WCA_export_persons.tsv",
+    "WCA_export_countries.tsv",
 ]
 
 EWMA_HALF_LIFE_DAYS = 90
@@ -55,6 +56,16 @@ ALL_EVENTS = [
     "sq1",
 ]
 
+MULTI_COUNTRY_IDS = {
+    "XA",
+    "XE",
+    "XF",
+    "XM",
+    "XN",
+    "XO",
+    "XS",
+    "XW",
+}
 
 # --- DB Connection ---
 
@@ -142,7 +153,9 @@ def load_results_to_db(cursor):
     swapping atomically via _new staging tables."""
     logger.info("Initializing staging tables...")
     cursor.execute(
-        "DROP TABLE IF EXISTS results_new CASCADE; DROP TABLE IF EXISTS persons_new CASCADE;"
+        "DROP TABLE IF EXISTS results_new CASCADE;"
+        "DROP TABLE IF EXISTS persons_new CASCADE;"
+        "DROP TABLE IF EXISTS countries_new CASCADE;"
     )
     cursor.execute(
         "CREATE TABLE results_new ("
@@ -151,16 +164,48 @@ def load_results_to_db(cursor):
         ");"
     )
     cursor.execute(
-        "CREATE TABLE persons_new (person_id VARCHAR(10), name VARCHAR(255));"
+        "CREATE TABLE countries_new ("
+        "  id VARCHAR(50) PRIMARY KEY,"
+        "  iso2 CHAR(2),"
+        "  name VARCHAR(100),"
+        "  continent_id VARCHAR(20)"
+        ");"
+    )
+    cursor.execute(
+        "CREATE TABLE persons_new ("
+        "  person_id VARCHAR(10),"
+        "  name VARCHAR(255),"
+        "  country_id VARCHAR(50) REFERENCES countries_new(id)"
+        ");"
     )
 
-    persons_df = pl.read_csv(
-        f"{TARGET_DIR}/WCA_export_persons.tsv",
-        separator="\t",
-        encoding="utf8-lossy",
-        quote_char=None,
-    ).select([pl.col("wca_id").alias("person_id"), pl.col("name")])
+    countries_df = (
+        pl.read_csv(
+            f"{TARGET_DIR}/WCA_export_countries.tsv",
+            separator="\t",
+            encoding="utf8-lossy",
+            quote_char=None,
+        )
+        .select(["id", "iso2", "name", "continent_id"])
+        .filter(~pl.col("id").is_in(MULTI_COUNTRY_IDS))
+    )
+    copy_to_db(cursor, countries_df, "countries_new")
+
+    persons_df = (
+        pl.read_csv(
+            f"{TARGET_DIR}/WCA_export_persons.tsv",
+            separator="\t",
+            encoding="utf8-lossy",
+            quote_char=None,
+        )
+        .filter(pl.col("sub_id").eq(1))
+        .select(
+            [pl.col("wca_id").alias("person_id"), pl.col("name"), pl.col("country_id")]
+        )
+    )
+    
     copy_to_db(cursor, persons_df, "persons_new")
+
     cursor.execute(
         "DELETE FROM persons_new a USING persons_new b"
         " WHERE a.ctid < b.ctid AND a.person_id = b.person_id;"
@@ -207,11 +252,14 @@ def load_results_to_db(cursor):
         " ON results_new(person_id, event_id, competition_date DESC);"
     )
     cursor.execute(
-        "DROP TABLE IF EXISTS results CASCADE; DROP TABLE IF EXISTS persons CASCADE;"
+        "DROP TABLE IF EXISTS results CASCADE;"
+        "DROP TABLE IF EXISTS persons CASCADE;"
+        "DROP TABLE IF EXISTS countries CASCADE;"
     )
     cursor.execute(
         "ALTER TABLE results_new RENAME TO results;"
-        " ALTER TABLE persons_new RENAME TO persons;"
+        "ALTER TABLE persons_new RENAME TO persons;"
+        "ALTER TABLE countries_new RENAME TO countries;"
     )
     cursor.execute("ALTER INDEX idx_results_person_new RENAME TO idx_results_person;")
 

@@ -53,6 +53,7 @@ pub async fn simulation_history_handler(
             .map(|(comp, res)| CompetitorHistoryStat {
                 id: comp.id.clone(),
                 name: comp.name.clone(),
+                country_iso2: comp.country_iso2.clone(),
                 win_chance: res.win_probability(),
                 pod_chance: res.podium_probability(),
                 expected_rank: res.expected_rank(),

@@ -86,7 +86,7 @@ const defaultDate = today(getLocalTimeZone());
 
 const placeholder = ref(value.value.start || defaultDate) as Ref<DateValue>;
 const secondMonthPlaceholder = ref(
-  value.value.end || defaultDate.add({ months: 1 })
+  value.value.end || defaultDate.add({ months: 1 }),
 ) as Ref<DateValue>;
 
 const firstMonth = ref<Grid<DateValue>>(

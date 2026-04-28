@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import CompetitorRankDropdown from "@/components/custom/CompetitorRankDropdown.vue";
+import CountryFilterButton from "@/components/custom/CountryFilterButton.vue";
 import DatePicker from "@/components/custom/DatePicker.vue";
 import ErrorDisplay from "@/components/custom/ErrorPanel.vue";
 import Button from "@/components/ui/button/Button.vue";
@@ -11,14 +12,23 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
-import { eventNames, RankingSnapshot } from "@/lib/types";
+import {
+  eventNames,
+  type CountryResult,
+  type RankingSnapshot,
+} from "@/lib/types";
 import { API_URL, renderTime } from "@/lib/utils";
-import { useQuery } from "@tanstack/vue-query";
-import { computed, ref } from "vue";
+import { useInfiniteQuery } from "@tanstack/vue-query";
+import { LoaderCircle } from "lucide-vue-next";
+import { computed, onUnmounted, ref, watch } from "vue";
+
+const PAGE_SIZE = 32;
+const MAX_ITEMS = 512;
 
 const selectedEvent = ref("all");
 const rankDate = ref(new Date());
 const committedDate = ref(new Date());
+const selectedCountry = ref<CountryResult | null>(null);
 
 const isDirty = computed(
   () => rankDate.value.toDateString() !== committedDate.value.toDateString(),
@@ -51,29 +61,73 @@ const formatScore = (score: number, selectedCategory: string) => {
   return renderTime(score, selectedCategory == "333fm");
 };
 
-const fetchRankings = async () => {
-  const rankingsResponse = await fetch(`${API_URL}/api/rankings`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      event_id: selectedEvent.value,
-      date: isToday(committedDate.value)
-        ? undefined
-        : toNaiveDate(committedDate.value),
-    }),
-  });
-  const rankingsData: RankingSnapshot[] = await rankingsResponse.json();
-  return rankingsData;
-};
+const queryKey = computed(() => [
+  "rankings",
+  selectedEvent.value,
+  committedDate.value.toDateString(),
+  selectedCountry.value?.id ?? "all",
+]);
 
-const { isPending, isError, error, data } = useQuery({
-  queryKey: computed(() => [
-    "rankings",
-    selectedEvent.value,
-    committedDate.value.toDateString(),
-  ]),
-  queryFn: fetchRankings,
+const {
+  isPending,
+  isError,
+  error,
+  data,
+  fetchNextPage,
+  hasNextPage,
+  isFetchingNextPage,
+} = useInfiniteQuery({
+  queryKey,
+  queryFn: async ({ pageParam }) => {
+    const res = await fetch(`${API_URL}/api/rankings`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        event_id: selectedEvent.value,
+        date: isToday(committedDate.value)
+          ? undefined
+          : toNaiveDate(committedDate.value),
+        country_id: selectedCountry.value?.id ?? undefined,
+        offset: pageParam,
+      }),
+    });
+    const page: RankingSnapshot[] = await res.json();
+    return page;
+  },
+  initialPageParam: 0,
+  getNextPageParam: (lastPage, allPages) => {
+    const totalLoaded = allPages.flat().length;
+    if (lastPage.length < PAGE_SIZE || totalLoaded >= MAX_ITEMS)
+      return undefined;
+    return totalLoaded;
+  },
 });
+
+const allItems = computed(() => data.value?.pages.flat() ?? []);
+
+// Infinite scroll sentinel
+const sentinelRef = ref<HTMLElement | null>(null);
+let observer: IntersectionObserver | null = null;
+
+watch(sentinelRef, (el) => {
+  observer?.disconnect();
+  if (!el) return;
+  observer = new IntersectionObserver(
+    (entries) => {
+      if (
+        entries[0].isIntersecting &&
+        hasNextPage.value &&
+        !isFetchingNextPage.value
+      ) {
+        fetchNextPage();
+      }
+    },
+    { threshold: 0.1 },
+  );
+  observer.observe(el);
+});
+
+onUnmounted(() => observer?.disconnect());
 
 const applyDate = () => {
   committedDate.value = new Date(rankDate.value);
@@ -84,7 +138,7 @@ const applyDate = () => {
   <div class="mx-2 flex flex-col items-center justify-center pb-12">
     <h1 class="mt-4 mb-4 text-center text-2xl font-bold">Rankings</h1>
 
-    <div class="mb-2 flex items-center justify-center space-x-4">
+    <div class="mb-2 flex flex-wrap items-center justify-center gap-2">
       <Select v-model="selectedEvent">
         <SelectTrigger class="w-64">
           <SelectValue placeholder="Event" />
@@ -101,6 +155,8 @@ const applyDate = () => {
           </SelectItem>
         </SelectContent>
       </Select>
+
+      <CountryFilterButton v-model="selectedCountry" :include-regions="true" />
     </div>
 
     <div class="mb-4 flex items-center gap-2">
@@ -116,15 +172,23 @@ const applyDate = () => {
     </div>
 
     <div v-else-if="isPending" class="w-full max-w-4xl">
-      <div class="mt-2 rounded-md border p-4">
-        <Skeleton v-for="index in 10" :key="index" class="my-4 h-6" />
+      <div class="rounded-md border px-4">
+        <Skeleton v-for="index in 10" :key="index" class="my-4 h-9" />
       </div>
     </div>
 
-    <div v-else-if="data && data.length > 0" class="w-full max-w-4xl">
+    <div v-else-if="allItems.length > 0" class="w-full max-w-4xl">
       <div class="mt-2 rounded-md border">
         <div class="me-8 flex justify-between p-1">
-          <div class="flex-1 py-1 ps-3 text-left">Rank</div>
+          <div
+            v-if="selectedCountry"
+            class="w-16 shrink-0 py-1 ps-3 text-left md:w-28"
+          >
+            Region Rank
+          </div>
+          <div class="flex-1 py-1 ps-3 text-left">
+            {{ selectedCountry ? "Global Rank" : "Rank" }}
+          </div>
           <div class="flex-2 py-1 ps-1 text-left">Name</div>
           <div class="flex-1 py-1 pe-3 text-right">
             {{ getRankColName(selectedEvent) }}
@@ -133,7 +197,7 @@ const applyDate = () => {
         <hr class="mx-2" />
         <ol>
           <li
-            v-for="(competitor, index) in data"
+            v-for="(competitor, index) in allItems"
             :key="competitor.person_id"
             class="rounded-md p-1"
           >
@@ -143,9 +207,26 @@ const applyDate = () => {
               :selected-event="selectedEvent"
               :formatted-score="formatScore(competitor.value, selectedEvent)"
               :rank-date="committedDate"
+              :show-region-rank="!!selectedCountry"
             />
           </li>
         </ol>
+
+        <!-- Infinite scroll sentinel -->
+        <div ref="sentinelRef" class="h-1" />
+
+        <!-- Loading more indicator -->
+        <div v-if="isFetchingNextPage" class="flex justify-center py-4">
+          <LoaderCircle class="text-muted-foreground h-5 w-5 animate-spin" />
+        </div>
+
+        <!-- End of results -->
+        <div
+          v-else-if="!hasNextPage && allItems.length > PAGE_SIZE"
+          class="text-muted-foreground py-3 text-center text-sm"
+        >
+          Showing all {{ allItems.length }} results
+        </div>
       </div>
     </div>
 

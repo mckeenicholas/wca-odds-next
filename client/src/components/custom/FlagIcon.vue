@@ -11,6 +11,7 @@ import { computed } from "vue";
 const props = defineProps<{
   code: string;
   muted?: boolean;
+  showTooltip?: boolean;
 }>();
 
 const countryName = computed(() => {
@@ -24,7 +25,7 @@ const countryName = computed(() => {
 </script>
 
 <template>
-  <TooltipProvider :delayDuration="250">
+  <TooltipProvider v-if="showTooltip">
     <Tooltip>
       <TooltipTrigger :aria-label="`${countryName} flag`">
         <span
@@ -40,4 +41,9 @@ const countryName = computed(() => {
       </TooltipContent>
     </Tooltip>
   </TooltipProvider>
+  <span
+    v-else
+    :class="[`fi shadow-md fi-${code.toLowerCase()}`, { 'opacity-50': muted }]"
+  >
+  </span>
 </template>

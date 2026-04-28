@@ -26,6 +26,7 @@ pub struct CompetitorStats {
 pub struct Competitor {
     pub name: String,
     pub id: String,
+    pub country_iso2: String,
     pub entered_results: Vec<i32>,
     pub stats: Option<CompetitorStats>,
 }
@@ -34,6 +35,7 @@ impl Competitor {
     pub fn new(
         name: String,
         id: String,
+        country_iso2: String,
         results: Vec<DatedCompetitionResult>,
         halflife: f32,
     ) -> Self {
@@ -41,6 +43,7 @@ impl Competitor {
         Self {
             name,
             id,
+            country_iso2,
             entered_results: vec![],
             stats,
         }
