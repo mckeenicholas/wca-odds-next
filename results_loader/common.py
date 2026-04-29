@@ -203,7 +203,7 @@ def load_results_to_db(cursor):
             [pl.col("wca_id").alias("person_id"), pl.col("name"), pl.col("country_id")]
         )
     )
-    
+
     copy_to_db(cursor, persons_df, "persons_new")
 
     cursor.execute(

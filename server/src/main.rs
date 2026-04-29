@@ -126,6 +126,10 @@ async fn main() {
 
     let addr = format!("0.0.0.0:{}", port_num);
     println!("Server running on {}", addr);
-    let listener = tokio::net::TcpListener::bind(addr).await.expect("Failed to bind listener");
-    axum::serve(listener, app).await.expect("Failed to init server");
+    let listener = tokio::net::TcpListener::bind(addr)
+        .await
+        .expect("Failed to bind listener");
+    axum::serve(listener, app)
+        .await
+        .expect("Failed to init server");
 }
