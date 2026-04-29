@@ -16,7 +16,7 @@ import {
 } from "@/components/ui/popover";
 import { cn } from "@/lib/utils";
 import { CalendarIcon } from "lucide-vue-next";
-import { computed, ref, watch } from "vue";
+import { computed, shallowRef, watch } from "vue";
 
 const props = defineProps<{
   modelValue?: Date;
@@ -47,7 +47,7 @@ const date = computed<DateValue | undefined>({
   },
 });
 
-const placeholder = ref<DateValue | undefined>(date.value);
+const placeholder = shallowRef<DateValue | undefined>(date.value);
 
 watch(
   () => props.modelValue,
@@ -67,15 +67,11 @@ const maxDate = computed(() => {
 <template>
   <Popover>
     <PopoverTrigger as-child :disabled="props.disabled ?? false">
-      <Button
-        variant="outline"
-        :class="
-          cn(
-            'w-60 justify-start text-left font-normal',
-            !date && 'text-muted-foreground',
-          )
-        "
-      >
+      <Button variant="outline" :class="cn(
+        'w-60 justify-start text-left font-normal',
+        !date && 'text-muted-foreground',
+      )
+        ">
         <CalendarIcon />
         {{
           props.modelValue
@@ -85,22 +81,13 @@ const maxDate = computed(() => {
       </Button>
     </PopoverTrigger>
     <PopoverContent class="w-auto p-0" align="start">
-      <Calendar
-        v-model="date"
-        v-model:placeholder="placeholder"
-        layout="month-and-year"
-        initial-focus
-        :max-value="maxDate"
-      />
+      <Calendar v-model="date" v-model:placeholder="placeholder" layout="month-and-year" initial-focus
+        :max-value="maxDate" />
       <div v-if="message !== undefined" class="border-t p-3">
-        <input
-          :value="message"
-          class="placeholder:text-muted-foreground w-full bg-transparent text-sm outline-none"
-          placeholder="Add a message..."
-          @input="
+        <input :value="message" class="placeholder:text-muted-foreground w-full bg-transparent text-sm outline-none"
+          placeholder="Add a message..." @input="
             emit('update:message', ($event.target as HTMLInputElement).value)
-          "
-        />
+            " />
       </div>
     </PopoverContent>
   </Popover>
