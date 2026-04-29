@@ -216,7 +216,7 @@ const setToday = () => {
 
     <div class="mb-2 flex flex-wrap items-center justify-center gap-2">
       <!-- Person Search (inline autocomplete) -->
-      <div ref="comboboxRef" class="relative w-72">
+      <div ref="comboboxRef" class="relative w-96">
         <div
           class="border-input bg-background ring-offset-background flex items-center gap-2 rounded-md border px-3 py-2 text-sm"
         >

@@ -16,7 +16,7 @@ import {
 } from "@/components/ui/popover";
 import { cn } from "@/lib/utils";
 import { CalendarIcon } from "lucide-vue-next";
-import { computed } from "vue";
+import { computed, ref, watch } from "vue";
 
 const props = defineProps<{
   modelValue?: Date;
@@ -35,13 +35,28 @@ const df = new DateFormatter("en-US", {
   dateStyle: "long",
 });
 
-const date = computed<DateValue>({
+const date = computed<DateValue | undefined>({
   get: () =>
     props.modelValue
       ? fromDate(props.modelValue, getLocalTimeZone())
       : today(getLocalTimeZone()),
-  set: (val) => emit("update:modelValue", val?.toDate(getLocalTimeZone())),
+  set: (val) => {
+    if (val) {
+      emit("update:modelValue", val.toDate(getLocalTimeZone()));
+    }
+  },
 });
+
+const placeholder = ref<DateValue | undefined>(date.value);
+
+watch(
+  () => props.modelValue,
+  (newVal) => {
+    if (newVal) {
+      placeholder.value = fromDate(newVal, getLocalTimeZone());
+    }
+  },
+);
 
 const maxDate = computed(() => {
   if (props.allowFuture) return undefined;
@@ -72,7 +87,7 @@ const maxDate = computed(() => {
     <PopoverContent class="w-auto p-0" align="start">
       <Calendar
         v-model="date"
-        v-model:placeholder="date"
+        v-model:placeholder="placeholder"
         layout="month-and-year"
         initial-focus
         :max-value="maxDate"

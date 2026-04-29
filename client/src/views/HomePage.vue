@@ -65,108 +65,114 @@ watch(data, () => {
 </script>
 
 <template>
-  <div class="flex flex-col items-center justify-center">
-    <div>
-      <h1 class="m-6 text-center text-3xl font-bold">
-        WCA Competition Predictor
-      </h1>
-      <h1 class="m-4 text-center text-xl">Find a competition</h1>
-      <div class="flex min-w-[70vw] flex-row space-x-4">
-        <Input
-          id="input-field"
-          v-model="input"
-          @keyup.enter="refetch()"
-          @keydown="handleKeydown"
-          placeholder="Competition Name..."
-          class="me-2"
-          aria-label="Competition search"
-          aria-describedby="search-instructions"
-        />
-        <Button
-          @click="refetch()"
-          class="h-10"
-          :disabled="isFetching || !input.trim()"
-          aria-label="Search for competitions"
-        >
-          {{ isFetching ? "Searching..." : "Search" }}
-        </Button>
-      </div>
-      <div v-if="isFetching && input" class="mt-2">
-        <div class="max-h-[75vh] overflow-y-scroll rounded-md border px-3 pt-1">
-          <div v-for="index in 12" :key="index">
-            <Skeleton class="my-2 h-6" />
-            <Skeleton class="my-2 h-5 w-24" />
+  <div>
+    <div class="flex flex-col items-center justify-center">
+      <div>
+        <h1 class="m-6 text-center text-3xl font-bold">
+          WCA Competition Predictor
+        </h1>
+        <h1 class="m-4 text-center text-xl">Find a competition</h1>
+        <div class="flex min-w-[70vw] flex-row space-x-4">
+          <Input
+            id="input-field"
+            v-model="input"
+            @keyup.enter="refetch()"
+            @keydown="handleKeydown"
+            placeholder="Competition Name..."
+            class="me-2"
+            aria-label="Competition search"
+            aria-describedby="search-instructions"
+          />
+          <Button
+            @click="refetch()"
+            class="h-10"
+            :disabled="isFetching || !input.trim()"
+            aria-label="Search for competitions"
+          >
+            {{ isFetching ? "Searching..." : "Search" }}
+          </Button>
+        </div>
+        <div v-if="isFetching && input" class="mt-2">
+          <div
+            class="max-h-[75vh] overflow-y-scroll rounded-md border px-3 pt-1"
+          >
+            <div v-for="index in 12" :key="index">
+              <Skeleton class="my-2 h-6" />
+              <Skeleton class="my-2 h-5 w-24" />
+            </div>
           </div>
         </div>
-      </div>
-      <div v-else-if="isError">
-        Error fetching data: {{ error?.message || "Unknown error occurred" }}
-      </div>
-      <div
-        v-else-if="data?.length"
-        class="mt-4 max-h-[75vh] overflow-y-scroll rounded-md border"
-        ref="listContainer"
-        role="listbox"
-        aria-label="Competition search results"
-      >
-        <ol class="mx-1 py-1">
-          <li
-            v-for="(result, index) in data"
-            :key="result.id"
-            class="rounded-md"
-            role="option"
-            :aria-selected="index === selectedResult"
-          >
-            <RouterLink
-              :to="`/competition/${result.id}`"
-              class="block rounded-md p-2"
-              :class="[
-                index === selectedResult ? 'bg-muted' : 'hover:bg-secondary',
-              ]"
+        <div v-else-if="isError">
+          Error fetching data: {{ error?.message || "Unknown error occurred" }}
+        </div>
+        <div
+          v-else-if="data?.length"
+          class="mt-4 max-h-[75vh] overflow-y-scroll rounded-md border"
+          ref="listContainer"
+          role="listbox"
+          aria-label="Competition search results"
+        >
+          <ol class="mx-1 py-1">
+            <li
+              v-for="(result, index) in data"
+              :key="result.id"
+              class="rounded-md"
+              role="option"
+              :aria-selected="index === selectedResult"
             >
-              <p>{{ result.name }}</p>
-              <p class="text-secondary-foreground text-sm">
-                {{ formatDate(result.start_date) }}
-              </p>
-            </RouterLink>
-          </li>
-        </ol>
+              <RouterLink
+                :to="`/competition/${result.id}`"
+                class="block rounded-md p-2"
+                :class="[
+                  index === selectedResult ? 'bg-muted' : 'hover:bg-secondary',
+                ]"
+              >
+                <p>{{ result.name }}</p>
+                <p class="text-secondary-foreground text-sm">
+                  {{ formatDate(result.start_date) }}
+                </p>
+              </RouterLink>
+            </li>
+          </ol>
+        </div>
+        <div v-else-if="input" class="m-4 text-center">
+          No competitions found
+        </div>
       </div>
-      <div v-else-if="input" class="m-4 text-center">No competitions found</div>
+      <div class="mt-8 flex items-center justify-center space-x-4">
+        <RouterLink to="/custom">
+          <Button>Select competitors manually</Button>
+        </RouterLink>
+        <RouterLink to="/rankings">
+          <Button variant="secondary">View Global Rankings</Button>
+        </RouterLink>
+        <RouterLink to="/rankings/personal">
+          <Button variant="secondary">View Personal Rankings</Button>
+        </RouterLink>
+      </div>
     </div>
-    <div class="mt-8 flex items-center justify-center space-x-4">
-      <RouterLink to="/custom">
-        <Button>Select competitors manually</Button>
-      </RouterLink>
-      <RouterLink to="/rankings">
-        <Button variant="secondary">View Global Rankings</Button>
-      </RouterLink>
-      <RouterLink to="/rankings/personal">
-        <Button variant="secondary">View Personal Rankings</Button>
-      </RouterLink>
-    </div>
-  </div>
-  <div
-    class="mt-4 flex flex-col items-center rounded-xl p-8 text-center shadow-sm"
-  >
-    <h2 class="mb-4 text-xl font-bold">Please consider donating!</h2>
-
-    <p class="mb-6 max-w-xl leading-relaxed">
-      Services like this offering statistical analysis require a considerable
-      amount of compute power, which has costs associated with it. If you enjoy
-      using this tool, please consider donating to help maintain it!
-    </p>
-
-    <a
-      href="https://ko-fi.com/I2I51SX94L"
-      target="_blank"
-      class="transition-transform hover:scale-105"
+    <div
+      class="mt-4 flex flex-col items-center rounded-xl p-8 text-center shadow-sm"
     >
-      <img
-        src="https://storage.ko-fi.com/cdn/kofi6.png?v=6"
-        alt="Buy Me a Coffee at ko-fi.com"
-        class="h-10 border-0"
-      />
-    </a>
+      <h2 class="mb-4 text-xl font-bold">Please consider donating!</h2>
+
+      <p class="mb-6 max-w-xl leading-relaxed">
+        Services like this offering statistical analysis require a considerable
+        amount of compute power, which has costs associated with it. If you
+        enjoy using this tool, please consider donating to help maintain it!
+      </p>
+
+      <a
+        href="https://ko-fi.com/I2I51SX94L"
+        target="_blank"
+        class="transition-transform hover:scale-105"
+      >
+        <img
+          src="https://storage.ko-fi.com/cdn/kofi6.png?v=6"
+          alt="Buy Me a Coffee at ko-fi.com"
+          class="h-10 border-0"
+        />
+      </a>
+    </div>
   </div>
 </template>
