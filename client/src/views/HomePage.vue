@@ -141,6 +141,9 @@ watch(data, () => {
       <RouterLink to="/rankings">
         <Button variant="secondary">View Global Rankings</Button>
       </RouterLink>
+      <RouterLink to="/rankings/personal">
+        <Button variant="secondary">View Personal Rankings</Button>
+      </RouterLink>
     </div>
   </div>
   <div

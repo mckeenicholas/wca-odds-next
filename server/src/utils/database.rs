@@ -199,17 +199,24 @@ pub async fn fetch_competitor_ranking_history(
     .await
 }
 
+/// Row for personal rankings across all events at a single snapshot date.
+#[derive(Debug, FromRow, Serialize)]
+pub struct PersonRankInfoRow {
+    pub event_id: String,
+    pub value: f32,
+    pub rank: i32,
+}
+
 pub async fn fetch_competitor_rank_info(
     pool: &PgPool,
     competitor_id: &str,
     date: Option<NaiveDate>,
-) -> Result<Vec<RankingSnapshotHistoryRow>, sqlx::Error> {
-    sqlx::query_as::<_, RankingSnapshotHistoryRow>(
+) -> Result<Vec<PersonRankInfoRow>, sqlx::Error> {
+    sqlx::query_as::<_, PersonRankInfoRow>(
         r#"
-        SELECT rs.person_id, p.name, rs.value, rs.rank
+        SELECT rs.event_id, rs.value, rs.rank
         FROM ranking_snapshots rs
-        JOIN persons p ON p.person_id = rs.person_id
-        WHERE p.person_id = $1
+        WHERE rs.person_id = $1
         AND rs.snapshot_date = (
               SELECT snapshot_date 
               FROM ranking_snapshots 
@@ -217,6 +224,7 @@ pub async fn fetch_competitor_rank_info(
               ORDER BY snapshot_date DESC 
               LIMIT 1
           )
+        ORDER BY rs.rank
         "#,
     )
     .bind(competitor_id)

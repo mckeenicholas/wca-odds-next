@@ -13,23 +13,21 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import type { RankingSnapshot } from "@/lib/types";
-import { API_URL } from "@/lib/utils";
+import { eventNames, type PersonRankInfo } from "@/lib/types";
+import { API_URL, renderTime } from "@/lib/utils";
 import { useQuery } from "@tanstack/vue-query";
 import { format, subYears } from "date-fns";
 import { LoaderCircle } from "lucide-vue-next";
 import { computed, ref, watch } from "vue";
 import DateRangePicker from "./DateRangePicker.vue";
-import FlagIcon from "./FlagIcon.vue";
 import RotatableChevron from "./RotatableChevron.vue";
 
 const props = defineProps<{
-  competitor: RankingSnapshot;
-  selectedEvent: string;
-  formattedScore: string;
+  eventRank: PersonRankInfo;
+  personId: string;
+  personName: string;
   rankDate: Date;
   index: number;
-  showRegionRank?: boolean;
 }>();
 
 const isOpen = ref(false);
@@ -60,6 +58,32 @@ const applyDateRange = () => {
   appliedDateRange.value = { ...selectedDateRange.value };
 };
 
+const eventLabel = computed(() => {
+  switch (props.eventRank.event_id) {
+    case "all":
+      return "Sum of Ranks";
+    case "kinch":
+      return "Kinch";
+    case "kinch_strict":
+      return "Kinch Strict";
+    default:
+      return eventNames[props.eventRank.event_id as keyof typeof eventNames];
+  }
+});
+
+const isTimeEvent = computed(
+  () => !["all", "kinch", "kinch_strict"].includes(props.eventRank.event_id),
+);
+
+const isFMC = computed(() => props.eventRank.event_id === "333fm");
+
+const formatScore = (score: number) => {
+  const eid = props.eventRank.event_id;
+  if (eid === "all") return score.toFixed(0);
+  if (["kinch", "kinch_strict"].includes(eid)) return score.toFixed(2);
+  return renderTime(score, eid === "333fm");
+};
+
 const {
   data: detailData,
   isPending,
@@ -67,9 +91,9 @@ const {
   error,
 } = useQuery({
   queryKey: computed(() => [
-    "competitor-detail",
-    props.competitor.person_id,
-    props.selectedEvent,
+    "personal-event-detail",
+    props.personId,
+    props.eventRank.event_id,
     appliedDateRange.value.start.getTime(),
     appliedDateRange.value.end.getTime(),
   ]),
@@ -78,8 +102,8 @@ const {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
-        competitor_id: props.competitor.person_id,
-        event_id: props.selectedEvent,
+        competitor_id: props.personId,
+        event_id: props.eventRank.event_id,
         start_date: format(appliedDateRange.value.start, "yyyy-MM-dd"),
         end_date: format(appliedDateRange.value.end, "yyyy-MM-dd"),
       }),
@@ -95,25 +119,29 @@ const {
   retry: false,
 });
 
-const ariaId = computed(() => `details-${props.competitor.person_id}`);
+const ariaId = computed(
+  () => `event-details-${props.personId}-${props.eventRank.event_id}`,
+);
 
 const metric = ref<"value" | "rank">("rank");
 
 const mappedHistory = computed(() => {
   if (!detailData.value || !Array.isArray(detailData.value)) return [];
 
-  return detailData.value.map((d) => ({
-    date: d.snapshot_date,
-    competitors: [
-      {
-        id: props.competitor.person_id,
-        name: props.competitor.name,
-        rank: d.rank,
-        value: d.value,
-        color: "#3b82f6",
-      },
-    ],
-  }));
+  return detailData.value.map(
+    (d: { snapshot_date: string; rank: number; value: number }) => ({
+      date: d.snapshot_date,
+      competitors: [
+        {
+          id: props.personId,
+          name: props.personName,
+          rank: d.rank,
+          value: d.value,
+          color: "#3b82f6",
+        },
+      ],
+    }),
+  );
 });
 </script>
 
@@ -122,36 +150,18 @@ const mappedHistory = computed(() => {
     <CollapsibleTrigger as-child :aria-controls="ariaId">
       <button
         type="button"
-        :aria-label="`Details for ${competitor.person_id}`"
+        :aria-label="`Details for ${eventLabel}`"
         class="hover:bg-secondary focus-visible:bg-secondary flex w-full cursor-pointer justify-between rounded-md border-0 bg-transparent p-2 ps-1 text-left focus:outline-none"
         :class="{ 'bg-muted/20': index % 2 === 0 }"
       >
-        <div
-          v-if="showRegionRank"
-          class="w-16 shrink-0 ps-3 text-left text-xs sm:text-sm md:w-28"
-        >
-          {{ index + 1 }}
-        </div>
-        <div class="text-foreground flex-1 ps-3 text-left">
-          {{ competitor.rank }}
+        <div class="text-foreground w-16 shrink-0 ps-3 text-left md:w-28">
+          {{ eventRank.rank }}
         </div>
         <div class="flex-2 text-left">
-          <div class="flex flex-row items-center gap-2">
-            <FlagIcon
-              v-if="competitor.country_iso2"
-              :code="competitor.country_iso2"
-            />
-            <a
-              :href="`https://worldcubeassociation.org/persons/${competitor.person_id}`"
-              @click.stop
-              class="hover:underline"
-            >
-              {{ competitor.name }}
-            </a>
-          </div>
+          {{ eventLabel }}
         </div>
         <div class="flex-1 pe-3 text-right">
-          {{ formattedScore }}
+          {{ formatScore(eventRank.value) }}
         </div>
         <RotatableChevron :up="isOpen" />
       </button>
@@ -186,8 +196,8 @@ const mappedHistory = computed(() => {
             :history="mappedHistory"
             :stacked="false"
             :metric="metric"
-            :isTime="!['all', 'kinch', 'kinch_strict'].includes(selectedEvent)"
-            :isFMC="selectedEvent === '333fm'"
+            :isTime="isTimeEvent"
+            :isFMC="isFMC"
           />
         </div>
       </div>

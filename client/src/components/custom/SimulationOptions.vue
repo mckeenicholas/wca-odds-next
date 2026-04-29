@@ -17,6 +17,7 @@ const endDate = defineModel<Date>("endDate");
       id="resultCutoff"
       v-model:start-date="startDate"
       v-model:end-date="endDate"
+      :allow-future="false"
     />
   </div>
   <div class="flex items-center min-[1255px]:border-r min-[1255px]:pe-4">

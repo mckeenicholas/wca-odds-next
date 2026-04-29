@@ -64,12 +64,12 @@ async fn main() {
                 .iter()
                 .map(|origin| axum::http::HeaderValue::from_str(origin))
                 .collect::<Result<Vec<_>, _>>()
-                .unwrap(),
+                .expect("Failed to init CORS"),
         )
         .allow_methods([Method::GET, Method::POST])
         .allow_headers([axum::http::header::CONTENT_TYPE]);
 
-    let heavy_routes = Router::new()
+    let stats_routes = Router::new()
         .route("/api/simulation", post(simulation::simulation_handler))
         .route("/api/history", post(history::simulation_history_handler));
 
@@ -91,22 +91,25 @@ async fn main() {
                 .burst_size(10)
                 .key_extractor(ForwardedIpExtractor)
                 .finish()
-                .unwrap();
-            let stats_routes = heavy_routes.layer(GovernorLayer::new(stats_governor));
+                .expect("Failed to init governor");
+            let stats_routes_limited = stats_routes.layer(GovernorLayer::new(stats_governor));
 
             let crud_governor = GovernorConfigBuilder::default()
                 .per_second(20)
                 .burst_size(60)
                 .key_extractor(ForwardedIpExtractor)
                 .finish()
-                .unwrap();
-            let crud_routes = crud_routes.layer(GovernorLayer::new(crud_governor));
+                .expect("Failed to init governor");
+            let crud_routes_limited = crud_routes.layer(GovernorLayer::new(crud_governor));
+        } else {
+            let stats_routes_limited = stats_routes;
+            let crud_routes_limited = crud_routes;
         }
     }
 
     let mut app = Router::new()
-        .merge(stats_routes)
-        .merge(crud_routes)
+        .merge(stats_routes_limited)
+        .merge(crud_routes_limited)
         .with_state(pool);
 
     cfg_if! {
@@ -123,6 +126,6 @@ async fn main() {
 
     let addr = format!("0.0.0.0:{}", port_num);
     println!("Server running on {}", addr);
-    let listener = tokio::net::TcpListener::bind(addr).await.unwrap();
-    axum::serve(listener, app).await.unwrap();
+    let listener = tokio::net::TcpListener::bind(addr).await.expect("Failed to bind listener");
+    axum::serve(listener, app).await.expect("Failed to init server");
 }

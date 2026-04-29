@@ -55,6 +55,25 @@ export const supportedWCAEvents = [
   "555bf",
 ] as const;
 
+export const eventOrder: Record<SupportedWCAEvent, number> = {
+  "333": 1,
+  "222": 2,
+  "444": 3,
+  "555": 4,
+  "666": 5,
+  "777": 6,
+  "333bf": 7,
+  "333fm": 8,
+  "333oh": 9,
+  minx: 10,
+  pyram: 11,
+  clock: 12,
+  skewb: 13,
+  sq1: 14,
+  "444bf": 15,
+  "555bf": 16,
+};
+
 export type SupportedWCAEvent = (typeof supportedWCAEvents)[number];
 
 interface Registration {
@@ -254,4 +273,16 @@ export interface CountryResult {
   iso2: string;
   name: string;
   continent_id: string;
+}
+
+export interface PersonSearchResult {
+  person_id: string;
+  name: string;
+  country_iso2: string | null;
+}
+
+export interface PersonRankInfo {
+  event_id: string;
+  value: number;
+  rank: number;
 }

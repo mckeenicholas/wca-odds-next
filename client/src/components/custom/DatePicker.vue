@@ -22,6 +22,8 @@ const props = defineProps<{
   modelValue?: Date;
   message?: string;
   placeholder?: string;
+  disabled?: boolean;
+  allowFuture?: boolean;
 }>();
 
 const emit = defineEmits<{
@@ -40,11 +42,16 @@ const date = computed<DateValue>({
       : today(getLocalTimeZone()),
   set: (val) => emit("update:modelValue", val?.toDate(getLocalTimeZone())),
 });
+
+const maxDate = computed(() => {
+  if (props.allowFuture) return undefined;
+  return today(getLocalTimeZone());
+});
 </script>
 
 <template>
   <Popover>
-    <PopoverTrigger as-child>
+    <PopoverTrigger as-child :disabled="props.disabled ?? false">
       <Button
         variant="outline"
         :class="
@@ -68,6 +75,7 @@ const date = computed<DateValue>({
         v-model:placeholder="date"
         layout="month-and-year"
         initial-focus
+        :max-value="maxDate"
       />
       <div v-if="message !== undefined" class="border-t p-3">
         <input

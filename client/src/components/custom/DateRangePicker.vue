@@ -36,6 +36,7 @@ import { computed, type Ref, ref, watch } from "vue";
 const props = defineProps<{
   startDate?: Date;
   endDate?: Date;
+  allowFuture?: boolean;
 }>();
 
 const emit = defineEmits<{
@@ -174,6 +175,10 @@ watch(
     }
   },
 );
+
+const maxValue = computed(() =>
+  props.allowFuture ? undefined : today(getLocalTimeZone()),
+);
 </script>
 
 <template>
@@ -221,6 +226,7 @@ watch(
         v-model="value"
         v-model:placeholder="placeholder"
         class="p-3"
+        :max-value="maxValue"
       >
         <div
           class="mt-4 flex flex-col gap-y-4 sm:flex-row sm:gap-x-4 sm:gap-y-0"

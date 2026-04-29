@@ -5,6 +5,7 @@ const CompetitionPage = () => import("./views/CompetitionPage.vue");
 const SimulationPage = () => import("./views/SimulationPage.vue");
 const CustomPage = () => import("./views/CustomPage.vue");
 const RankingsPage = () => import("./views/RankingsPage.vue");
+const PersonalRankingsPage = () => import("./views/PersonalRankingsPage.vue");
 
 const routes = [
   { path: "/", component: HomePage },
@@ -13,6 +14,7 @@ const routes = [
   { path: "/custom/", component: CustomPage },
   { path: "/custom/results/", component: SimulationPage },
   { path: "/rankings", component: RankingsPage },
+  { path: "/rankings/personal/:id?", component: PersonalRankingsPage },
   { path: "/:pathMatch(.*)*", redirect: "/" },
 ];
 

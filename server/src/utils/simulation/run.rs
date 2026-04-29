@@ -58,7 +58,7 @@ impl CompetitorAccumulator {
 }
 
 fn generate_skewnorm_value(stats: &CompetitorStats, rng: &mut ThreadRng, include_dnf: bool) -> i32 {
-    let normal = Normal::new(0.0, 1.0).unwrap();
+    let normal = Normal::new(0.0, 1.0).expect("Failed to init normal dist");
 
     if stats.location.is_nan() || stats.shape.is_nan() {
         return DNF_VALUE;

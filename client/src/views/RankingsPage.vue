@@ -21,6 +21,10 @@ import { API_URL, renderTime } from "@/lib/utils";
 import { useInfiniteQuery } from "@tanstack/vue-query";
 import { LoaderCircle } from "lucide-vue-next";
 import { computed, onUnmounted, ref, watch } from "vue";
+import { useRoute, useRouter } from "vue-router";
+
+const route = useRoute();
+const router = useRouter();
 
 const PAGE_SIZE = 32;
 const MAX_ITEMS = 512;
@@ -41,6 +45,56 @@ const isToday = (date: Date) => {
   const today = new Date();
   return date.toDateString() === today.toDateString();
 };
+
+watch(
+  () => route.query.date,
+  (newDate) => {
+    if (newDate && typeof newDate === "string") {
+      const [year, month, day] = newDate.split("-");
+      if (year && month && day) {
+        const d = new Date(Number(year), Number(month) - 1, Number(day));
+        if (!isNaN(d.getTime())) {
+          rankDate.value = d;
+          committedDate.value = d;
+        }
+      }
+    } else {
+      rankDate.value = new Date();
+      committedDate.value = new Date();
+    }
+  },
+  { immediate: true },
+);
+
+watch(
+  () => route.query.event,
+  (newEvent) => {
+    if (newEvent && typeof newEvent === "string") {
+      selectedEvent.value = newEvent;
+    } else {
+      selectedEvent.value = "all";
+    }
+  },
+  { immediate: true },
+);
+
+const updateUrl = () => {
+  const query: Record<string, string> = {};
+  if (!isToday(committedDate.value)) {
+    query.date = toNaiveDate(committedDate.value);
+  }
+  if (selectedEvent.value !== "all") {
+    query.event = selectedEvent.value;
+  }
+  // Preserve country if we add it later
+  router.push({ query });
+};
+
+watch(selectedEvent, (newVal, oldVal) => {
+  if (newVal !== oldVal) {
+    updateUrl();
+  }
+});
 
 const getRankColName = (selectedCategory: string) => {
   switch (selectedCategory) {
@@ -131,6 +185,12 @@ onUnmounted(() => observer?.disconnect());
 
 const applyDate = () => {
   committedDate.value = new Date(rankDate.value);
+  updateUrl();
+};
+
+const setToday = () => {
+  rankDate.value = new Date();
+  applyDate();
 };
 </script>
 
@@ -159,12 +219,23 @@ const applyDate = () => {
       <CountryFilterButton v-model="selectedCountry" :include-regions="true" />
     </div>
 
-    <div class="mb-4 flex items-center gap-2">
-      <span class="me-1">As of:</span>
-      <DatePicker v-model="rankDate" />
-      <Button v-if="isDirty" @click="applyDate" :disabled="isPending">
-        Update
-      </Button>
+    <div class="mb-4 flex flex-col items-center gap-2">
+      <div class="flex items-center gap-2">
+        <DatePicker v-model="rankDate" :allow-future="false" />
+      </div>
+      <div class="flex h-9 items-center gap-2">
+        <Button
+          v-if="!isToday(rankDate)"
+          @click="setToday"
+          variant="outline"
+          :disabled="isPending"
+        >
+          Today
+        </Button>
+        <Button v-if="isDirty" @click="applyDate" :disabled="isPending">
+          Update
+        </Button>
+      </div>
     </div>
 
     <div v-if="isError">
