@@ -168,7 +168,7 @@ const tooltip = computed(() => {
   >
     <VisXYContainer
       v-if="processedData.length > 0"
-      :style="{ height: isMounted ? '100%' : 'auto' }"
+      :style="{ height: isMounted ? '100%' : 'auto', width: '100%' }"
       :margin="{ left: 25, right: 20 }"
       :data="processedData"
       :yDomain="yRange"

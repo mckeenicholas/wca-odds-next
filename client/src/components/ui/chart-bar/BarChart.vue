@@ -96,7 +96,7 @@ const selectorsBar = computed(() =>
 
     <VisXYContainer
       :data="data"
-      :style="{ height: isMounted ? '100%' : 'auto' }"
+      :style="{ height: isMounted ? '100%' : 'auto', width: '100%' }"
       :margin="margin"
     >
       <ChartCrosshair

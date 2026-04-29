@@ -80,7 +80,7 @@ function handleLegendItemClick(d: BulletLegendItemInterface, i: number) {
     />
 
     <VisXYContainer
-      :style="{ height: isMounted ? '100%' : 'auto' }"
+      :style="{ height: isMounted ? '100%' : 'auto', width: '100%' }"
       :margin="{ left: 20, right: 20 }"
       :data="data"
     >

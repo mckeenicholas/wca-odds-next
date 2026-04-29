@@ -163,4 +163,7 @@ export default defineConfig({
       "@": path.resolve(import.meta.dirname, "./src"),
     },
   },
+  preview: {
+    port: 5173,
+  },
 });

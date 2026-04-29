@@ -86,7 +86,7 @@ const totalValue = computed(() =>
 <template>
   <div :class="cn('flex h-48 w-full flex-col items-end', $attrs.class ?? '')">
     <VisSingleContainer
-      :style="{ height: isMounted ? '100%' : 'auto' }"
+      :style="{ height: isMounted ? '100%' : 'auto', width: '100%' }"
       :margin="{ left: 20, right: 20 }"
       :data="data"
     >
