@@ -206,9 +206,7 @@ const setToday = () => {
         <SelectContent>
           <SelectItem value="all">Global (Sum-of-Ranks)</SelectItem>
           <SelectItem value="kinch">Kinch (Competed Only)</SelectItem>
-          <SelectItem value="kinch_strict"
-            >Kinch (All Events Strict)</SelectItem
-          >
+          <SelectItem value="kinch_strict">Kinch (All Events Strict)</SelectItem>
           <div class="bg-muted my-1 h-px" />
           <SelectItem v-for="(label, id) in eventNames" :key="id" :value="id">
             {{ label }}
@@ -224,12 +222,7 @@ const setToday = () => {
         <DatePicker v-model="rankDate" :allow-future="false" />
       </div>
       <div class="flex h-9 items-center gap-2">
-        <Button
-          v-if="!isToday(rankDate)"
-          @click="setToday"
-          variant="outline"
-          :disabled="isPending"
-        >
+        <Button v-if="!isToday(rankDate)" @click="setToday" variant="outline" :disabled="isPending">
           Today
         </Button>
         <Button v-if="isDirty" @click="applyDate" :disabled="isPending">
@@ -250,36 +243,25 @@ const setToday = () => {
 
     <div v-else-if="allItems.length > 0" class="w-full max-w-4xl">
       <div class="mt-2 rounded-md border">
-        <div class="me-8 flex justify-between p-1">
-          <div
-            v-if="selectedCountry"
-            class="w-16 shrink-0 py-1 ps-3 text-left md:w-28"
-          >
+        <div class="flex w-full justify-between p-2 ps-1 text-muted-foreground text-sm font-medium">
+          <div v-if="selectedCountry" class="w-16 shrink-0 ps-3 text-left md:w-28">
             Region Rank
           </div>
-          <div class="flex-1 py-1 ps-3 text-left">
+          <div class="flex-1 ps-3 text-left">
             {{ selectedCountry ? "Global Rank" : "Rank" }}
           </div>
-          <div class="flex-2 py-1 ps-1 text-left">Name</div>
-          <div class="flex-1 py-1 pe-3 text-right">
+          <div class="flex-[2] min-w-0 text-left">Name</div>
+          <div class="flex-1 pe-3 text-right">
             {{ getRankColName(selectedEvent) }}
           </div>
+          <div class="w-6"></div>
         </div>
         <hr class="mx-2" />
         <ol>
-          <li
-            v-for="(competitor, index) in allItems"
-            :key="competitor.person_id"
-            class="rounded-md p-1"
-          >
-            <CompetitorRankDropdown
-              :competitor="competitor"
-              :index="index"
-              :selected-event="selectedEvent"
-              :formatted-score="formatScore(competitor.value, selectedEvent)"
-              :rank-date="committedDate"
-              :show-region-rank="!!selectedCountry"
-            />
+          <li v-for="(competitor, index) in allItems" :key="competitor.person_id" class="rounded-md p-1">
+            <CompetitorRankDropdown :competitor="competitor" :index="index" :selected-event="selectedEvent"
+              :formatted-score="formatScore(competitor.value, selectedEvent)" :rank-date="committedDate"
+              :show-region-rank="!!selectedCountry" />
           </li>
         </ol>
 
@@ -292,10 +274,8 @@ const setToday = () => {
         </div>
 
         <!-- End of results -->
-        <div
-          v-else-if="!hasNextPage && allItems.length > PAGE_SIZE"
-          class="text-muted-foreground py-3 text-center text-sm"
-        >
+        <div v-else-if="!hasNextPage && allItems.length > PAGE_SIZE"
+          class="text-muted-foreground py-3 text-center text-sm">
           Showing all {{ allItems.length }} results
         </div>
       </div>

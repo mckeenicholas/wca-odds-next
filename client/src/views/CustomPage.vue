@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import ControlPanel from "@/components/custom/ControlPanel.vue";
 import FlagIcon from "@/components/custom/FlagIcon.vue";
+import CompetitorLink from "@/components/custom/CompetitorLink.vue";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
 import { supportedWCAEvents } from "@/lib/types";
@@ -169,12 +170,12 @@ const runSimulation = () => {
             :key="competitor.wca_id"
             class="flex items-center justify-between"
           >
-            <a
-              :href="`https://worldcubeassociation.org/persons/${competitor.wca_id}`"
-              class="p-2 hover:underline"
-            >
-              {{ competitor.name }}
-            </a>
+            <CompetitorLink
+              :name="competitor.name"
+              :id="competitor.wca_id"
+              :iso2="competitor.country.iso2"
+              class="flex items-center gap-2 p-2"
+            />
             <button
               class="hover:bg-secondary me-1 rounded-md p-1 hover:cursor-pointer"
               aria-label="remove competitor"

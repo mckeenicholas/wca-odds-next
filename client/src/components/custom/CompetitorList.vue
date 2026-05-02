@@ -22,24 +22,33 @@ const sortBy = ref<sortCol>("win");
 const sortAsc = ref<boolean>(false);
 
 const headerOptions = [
-  { id: "name", label: "Name", justify: "justify-start", padding: "ps-3" },
+  {
+    id: "name",
+    label: "Name",
+    justify: "justify-start",
+    padding: "ps-8",
+    flex: "flex-[2] lg:flex-[1.5]",
+  },
   {
     id: "win",
     label: "Chance of winning",
     justify: "justify-center",
     padding: "",
+    flex: "flex-1",
   },
   {
     id: "pod",
     label: "Chance of podiuming",
     justify: "justify-center",
     padding: "",
+    flex: "flex-1",
   },
   {
     id: "rank",
     label: "Expected rank",
     justify: "justify-center",
     padding: "",
+    flex: "flex-1",
   },
 ] as const;
 
@@ -81,36 +90,18 @@ const model = defineModel<number[][]>({ required: true });
 <template>
   <div class="mt-2 rounded-md border">
     <div class="me-8 flex justify-between p-1">
-      <button
-        v-for="option in headerOptions"
-        :key="option.id"
-        @click="setSortBy(option.id)"
-        :class="option.padding"
-      >
+      <button v-for="option in headerOptions" :key="option.id" @click="setSortBy(option.id)"
+        :class="[option.padding, option.flex]">
         <div class="flex items-center" :class="option.justify">
           <span>{{ option.label }}</span>
-          <Chevron
-            v-show="sortBy === option.id"
-            class="ms-1"
-            :up="!sortAsc"
-            :animate="false"
-          />
+          <Chevron v-show="sortBy === option.id" class="ms-1" :up="!sortAsc" :animate="false" />
         </div>
       </button>
     </div>
     <hr class="mx-2" />
     <ol>
-      <li
-        v-for="(person, idx) in groupedProps"
-        :key="idx"
-        class="rounded-md p-1"
-      >
-        <CompetitorDropdown
-          :result="person.results"
-          :event
-          :color="person.color"
-          v-model="model[person.idx]"
-        />
+      <li v-for="(person, idx) in groupedProps" :key="idx" class="rounded-md p-1">
+        <CompetitorDropdown :result="person.results" :event :color="person.color" v-model="model[person.idx]" />
       </li>
     </ol>
   </div>
