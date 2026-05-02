@@ -12,6 +12,7 @@ import { BREAKPOINT } from "@/lib/utils";
 import { useWindowSize } from "@vueuse/core";
 import ExpandableBox from "./ExpandableBox.vue";
 import SimulationOptions from "./SimulationOptions.vue";
+import CubingIcon from "./CubingIcon.vue";
 
 const selectedEventId = defineModel<string>("selectedEventId");
 const includeDnf = defineModel<boolean>("includeDnf");
@@ -34,10 +35,18 @@ const { width } = useWindowSize();
 <template>
   <Select v-model="selectedEventId">
     <SelectTrigger class="ms-0 min-h-10.5" aria-label="Event select dropdown">
-      <SelectValue />
+      <div>
+        <CubingIcon
+          :event="selectedEventId as SupportedWCAEvent"
+          class="me-1"
+          :show-tooltip="false"
+        />
+        <SelectValue />
+      </div>
     </SelectTrigger>
     <SelectContent>
       <SelectItem v-for="event of eventIds" :key="event" :value="event">
+        <CubingIcon :event="event" class="me-1" :show-tooltip="false" />
         {{ eventNames[event] }}
       </SelectItem>
     </SelectContent>

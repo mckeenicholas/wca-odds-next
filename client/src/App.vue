@@ -7,7 +7,7 @@ import "./style.css";
 
 const route = useRoute();
 
-const versionNum = "1.1.3";
+const versionNum = "1.1.4";
 </script>
 
 <template>
@@ -21,6 +21,14 @@ const versionNum = "1.1.3";
       class="text-muted-foreground flex h-10 items-center justify-end px-4 text-sm font-semibold"
     >
       <span class="mr-3"
+        >This website is not affiliated with or endorsed by the
+        <a
+          class="underline hover:text-gray-300"
+          href="https://www.worldcubeassociation.org/"
+          >World Cube Association</a
+        ></span
+      >
+      <span class="mr-3"
         >Made by
         <a class="underline hover:text-gray-300" href="https://nmckee.org"
           >Nicholas McKee</a
@@ -28,7 +36,7 @@ const versionNum = "1.1.3";
       </span>
       <a
         href="https://github.com/mckeenicholas/wca-odds-next"
-        class="mr-3 hover:text-gray-400"
+        class="mr-3 hover:text-gray-300"
         aria-label="GitHub Repository"
       >
         <Github class="h-4 w-4" />

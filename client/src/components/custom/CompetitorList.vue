@@ -90,18 +90,36 @@ const model = defineModel<number[][]>({ required: true });
 <template>
   <div class="mt-2 rounded-md border">
     <div class="me-8 flex justify-between p-1">
-      <button v-for="option in headerOptions" :key="option.id" @click="setSortBy(option.id)"
-        :class="[option.padding, option.flex]">
+      <button
+        v-for="option in headerOptions"
+        :key="option.id"
+        @click="setSortBy(option.id)"
+        :class="[option.padding, option.flex]"
+      >
         <div class="flex items-center" :class="option.justify">
           <span>{{ option.label }}</span>
-          <Chevron v-show="sortBy === option.id" class="ms-1" :up="!sortAsc" :animate="false" />
+          <Chevron
+            v-show="sortBy === option.id"
+            class="ms-1"
+            :up="!sortAsc"
+            :animate="false"
+          />
         </div>
       </button>
     </div>
     <hr class="mx-2" />
     <ol>
-      <li v-for="(person, idx) in groupedProps" :key="idx" class="rounded-md p-1">
-        <CompetitorDropdown :result="person.results" :event :color="person.color" v-model="model[person.idx]" />
+      <li
+        v-for="(person, idx) in groupedProps"
+        :key="idx"
+        class="rounded-md p-1"
+      >
+        <CompetitorDropdown
+          :result="person.results"
+          :event
+          :color="person.color"
+          v-model="model[person.idx]"
+        />
       </li>
     </ol>
   </div>

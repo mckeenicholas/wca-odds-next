@@ -139,7 +139,9 @@ watch(data, () => {
           No competitions found
         </div>
       </div>
-      <div class="mt-8 flex items-center justify-center space-x-4">
+      <div
+        class="mt-8 flex flex-col items-center justify-center gap-4 sm:flex-row"
+      >
         <RouterLink to="/custom">
           <Button>Select competitors manually</Button>
         </RouterLink>

@@ -13,7 +13,11 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { eventNames, type PersonRankInfo } from "@/lib/types";
+import {
+  eventNames,
+  type PersonRankInfo,
+  type SupportedWCAEvent,
+} from "@/lib/types";
 import { API_URL, renderTime } from "@/lib/utils";
 import { useQuery } from "@tanstack/vue-query";
 import { format, subYears } from "date-fns";
@@ -21,6 +25,7 @@ import { LoaderCircle } from "lucide-vue-next";
 import { computed, ref, watch } from "vue";
 import DateRangePicker from "./DateRangePicker.vue";
 import RotatableChevron from "./RotatableChevron.vue";
+import CubingIcon from "./CubingIcon.vue";
 
 const props = defineProps<{
   eventRank: PersonRankInfo;
@@ -158,6 +163,12 @@ const mappedHistory = computed(() => {
           {{ eventRank.rank }}
         </div>
         <div class="flex-2 text-left">
+          <CubingIcon
+            v-if="isTimeEvent"
+            :event="props.eventRank.event_id as SupportedWCAEvent"
+            class="me-2"
+            :show-tooltip="false"
+          />
           {{ eventLabel }}
         </div>
         <div class="flex-1 pe-3 text-right">

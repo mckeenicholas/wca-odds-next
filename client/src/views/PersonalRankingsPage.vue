@@ -343,7 +343,9 @@ const setToday = () => {
       <!-- Results -->
       <div v-if="rankData && rankData.length > 0" class="w-full max-w-4xl">
         <div class="mt-2 rounded-md border">
-          <div class="flex w-full justify-between p-2 ps-1 text-muted-foreground text-sm font-medium">
+          <div
+            class="text-muted-foreground flex w-full justify-between p-2 ps-1 text-sm font-medium"
+          >
             <div class="w-16 shrink-0 ps-3 text-left md:w-28">Rank</div>
             <div class="flex-2 text-left">Event</div>
             <div class="flex-1 pe-3 text-right">Score</div>

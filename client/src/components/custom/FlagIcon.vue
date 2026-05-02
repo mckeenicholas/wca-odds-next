@@ -8,14 +8,17 @@ import {
 import "flag-icons/css/flag-icons.min.css";
 import { computed } from "vue";
 
-const props = withDefaults(defineProps<{
-  code: string;
-  muted?: boolean;
-  showTooltip?: boolean;
-}>(), {
-  muted: false,
-  showTooltip: true,
-});
+const props = withDefaults(
+  defineProps<{
+    code: string;
+    muted?: boolean;
+    showTooltip?: boolean;
+  }>(),
+  {
+    muted: false,
+    showTooltip: true,
+  },
+);
 
 const countryName = computed(() => {
   try {
@@ -31,10 +34,12 @@ const countryName = computed(() => {
   <TooltipProvider v-if="showTooltip" :delay-duration="300">
     <Tooltip>
       <TooltipTrigger :aria-label="`${countryName} flag`">
-        <span :class="[
-          `fi shadow-md fi-${code.toLowerCase()}`,
-          { 'opacity-50': muted },
-        ]">
+        <span
+          :class="[
+            `fi shadow-md fi-${code.toLowerCase()}`,
+            { 'opacity-50': muted },
+          ]"
+        >
         </span>
       </TooltipTrigger>
       <TooltipContent>
@@ -42,6 +47,9 @@ const countryName = computed(() => {
       </TooltipContent>
     </Tooltip>
   </TooltipProvider>
-  <span v-else :class="[`fi shadow-md fi-${code.toLowerCase()}`, { 'opacity-50': muted }]">
+  <span
+    v-else
+    :class="[`fi shadow-md fi-${code.toLowerCase()}`, { 'opacity-50': muted }]"
+  >
   </span>
 </template>

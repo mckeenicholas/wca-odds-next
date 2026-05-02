@@ -2,6 +2,7 @@
 import { ClassValue } from "clsx";
 import { computed } from "vue";
 import WCALogo from "./WCALogo.vue";
+import FlagIcon from "./FlagIcon.vue";
 import { RouterLink } from "vue-router";
 
 const props = defineProps<{
@@ -23,11 +24,19 @@ const wcaLink = computed(() => {
 <template>
   <div :class="[props.class, 'min-w-0']">
     <FlagIcon v-if="iso2" :code="iso2" />
-    <RouterLink :to="`/rankings/personal/${id}?event=${event}`" @click.stop
-      class="hover:underline me-1 truncate min-w-0">
+    <RouterLink
+      :to="`/rankings/personal/${id}?event=${event}`"
+      @click.stop
+      class="me-1 min-w-0 truncate hover:underline"
+    >
       {{ name }}
     </RouterLink>
-    <a v-if="id" :href="wcaLink" target="_blank" class="inline-flex shrink-0 [vertical-align:-0.125em]">
+    <a
+      v-if="id"
+      :href="wcaLink"
+      target="_blank"
+      class="inline-flex shrink-0 [vertical-align:-0.125em]"
+    >
       <WCALogo class="ml-1 h-4 w-4" />
     </a>
   </div>

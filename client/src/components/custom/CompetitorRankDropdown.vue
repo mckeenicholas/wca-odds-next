@@ -120,18 +120,29 @@ const mappedHistory = computed(() => {
 <template>
   <Collapsible v-model:open="isOpen">
     <CollapsibleTrigger as-child :aria-controls="ariaId">
-      <div role="button" tabindex="0" :aria-label="`Details for ${competitor.person_id}`"
+      <div
+        role="button"
+        tabindex="0"
+        :aria-label="`Details for ${competitor.person_id}`"
         class="hover:bg-secondary focus-visible:bg-secondary flex w-full cursor-pointer justify-between rounded-md border-0 bg-transparent p-2 ps-1 text-left focus:outline-none"
-        :class="{ 'bg-muted/20': index % 2 === 0 }">
-        <div v-if="showRegionRank" class="w-16 shrink-0 ps-3 text-left text-xs sm:text-sm md:w-28">
+        :class="{ 'bg-muted/20': index % 2 === 0 }"
+      >
+        <div
+          v-if="showRegionRank"
+          class="w-16 shrink-0 ps-3 text-left text-xs sm:text-sm md:w-28"
+        >
           {{ index + 1 }}
         </div>
         <div class="text-foreground flex-1 ps-3 text-left">
           {{ competitor.rank }}
         </div>
-        <div class="flex-[2] min-w-0 text-left">
-          <CompetitorLink :name="competitor.name" :id="competitor.person_id" :iso2="competitor.country_iso2"
-            class="flex flex-row items-center gap-2" />
+        <div class="min-w-0 flex-[2] text-left">
+          <CompetitorLink
+            :name="competitor.name"
+            :id="competitor.person_id"
+            :iso2="competitor.country_iso2"
+            class="flex flex-row items-center gap-2"
+          />
         </div>
         <div class="flex-1 pe-3 text-right">
           {{ formattedScore }}
@@ -145,26 +156,42 @@ const mappedHistory = computed(() => {
         <LoaderCircle class="text-muted-foreground h-6 w-6 animate-spin" />
       </div>
 
-      <div v-else-if="error" class="text-destructive mt-2 py-4 text-center text-sm">
+      <div
+        v-else-if="error"
+        class="text-destructive mt-2 py-4 text-center text-sm"
+      >
         {{ error.message }}
       </div>
 
-      <div v-else-if="
-        detailData && Array.isArray(detailData) && detailData.length > 0
-      " class="px-4 pt-2 pb-2">
+      <div
+        v-else-if="
+          detailData && Array.isArray(detailData) && detailData.length > 0
+        "
+        class="px-4 pt-2 pb-2"
+      >
         <div class="relative w-full">
-          <div v-if="isFetching && !isPending"
-            class="bg-background/50 absolute inset-0 z-10 flex items-center justify-center rounded-md">
+          <div
+            v-if="isFetching && !isPending"
+            class="bg-background/50 absolute inset-0 z-10 flex items-center justify-center rounded-md"
+          >
             <LoaderCircle class="text-muted-foreground h-6 w-6 animate-spin" />
           </div>
-          <RankingsAreaChart :history="mappedHistory" :stacked="false" :metric="metric"
-            :isTime="!['all', 'kinch', 'kinch_strict'].includes(selectedEvent)" :isFMC="selectedEvent === '333fm'" />
+          <RankingsAreaChart
+            :history="mappedHistory"
+            :stacked="false"
+            :metric="metric"
+            :isTime="!['all', 'kinch', 'kinch_strict'].includes(selectedEvent)"
+            :isFMC="selectedEvent === '333fm'"
+          />
         </div>
       </div>
 
-      <div v-else-if="
-        detailData && Array.isArray(detailData) && detailData.length === 0
-      " class="text-muted-foreground py-4 text-center text-sm">
+      <div
+        v-else-if="
+          detailData && Array.isArray(detailData) && detailData.length === 0
+        "
+        class="text-muted-foreground py-4 text-center text-sm"
+      >
         No history available.
       </div>
 
@@ -178,8 +205,11 @@ const mappedHistory = computed(() => {
             <SelectItem value="rank">Rank</SelectItem>
           </SelectContent>
         </Select>
-        <DateRangePicker v-model:start-date="selectedDateRange.start" v-model:end-date="selectedDateRange.end"
-          :allow-future="false" />
+        <DateRangePicker
+          v-model:start-date="selectedDateRange.start"
+          v-model:end-date="selectedDateRange.end"
+          :allow-future="false"
+        />
         <Button size="sm" @click="applyDateRange" :disabled="isFetching">
           Update
         </Button>
