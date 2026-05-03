@@ -22,12 +22,12 @@ const wcaLink = computed(() => {
 </script>
 
 <template>
-  <div :class="[props.class, 'min-w-0']">
+  <div :class="props.class" class="min-w-0">
     <FlagIcon v-if="iso2" :code="iso2" />
     <RouterLink
       :to="`/rankings/personal/${id}?event=${event}`"
       @click.stop
-      class="me-1 min-w-0 truncate hover:underline"
+      class="ms-2 min-w-0 truncate hover:underline"
     >
       {{ name }}
     </RouterLink>
@@ -35,9 +35,9 @@ const wcaLink = computed(() => {
       v-if="id"
       :href="wcaLink"
       target="_blank"
-      class="inline-flex shrink-0 [vertical-align:-0.125em]"
+      class="inline-flex shrink-0 align-[-0.125em]"
     >
-      <WCALogo class="ml-1 h-4 w-4" />
+      <WCALogo class="ml-2 h-4 w-4" />
     </a>
   </div>
 </template>

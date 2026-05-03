@@ -209,7 +209,7 @@ const exportCSV = () => {
         v-model="inputtedTimes"
       />
 
-      <p class="text-muted-foreground m-2">
+      <p class="text-muted-foreground m-2 mb-6">
         Export as:
         <button
           class="me-1 underline hover:text-gray-300"

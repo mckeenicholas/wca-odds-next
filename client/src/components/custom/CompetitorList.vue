@@ -94,31 +94,30 @@ const model = defineModel<number[][]>({ required: true });
         v-for="option in headerOptions"
         :key="option.id"
         @click="setSortBy(option.id)"
-        :class="[option.padding, option.flex]"
+        :class="[
+          'flex items-center',
+          option.padding,
+          option.flex,
+          option.justify,
+        ]"
       >
-        <div class="flex items-center" :class="option.justify">
-          <span>{{ option.label }}</span>
-          <Chevron
-            v-show="sortBy === option.id"
-            class="ms-1"
-            :up="!sortAsc"
-            :animate="false"
-          />
-        </div>
+        <span>{{ option.label }}</span>
+        <Chevron
+          v-show="sortBy === option.id"
+          class="ms-1"
+          :up="!sortAsc"
+          :animate="false"
+        />
       </button>
     </div>
     <hr class="mx-2" />
-    <ol>
-      <li
-        v-for="(person, idx) in groupedProps"
-        :key="idx"
-        class="rounded-md p-1"
-      >
+    <ol class="space-y-0.5 p-1">
+      <li v-for="(person, idx) in groupedProps" :key="person.idx || idx">
         <CompetitorDropdown
-          :result="person.results"
-          :event
-          :color="person.color"
           v-model="model[person.idx]"
+          :result="person.results"
+          :event="event"
+          :color="person.color"
         />
       </li>
     </ol>

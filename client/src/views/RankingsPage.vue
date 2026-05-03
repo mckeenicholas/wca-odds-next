@@ -195,7 +195,7 @@ const setToday = () => {
 </script>
 
 <template>
-  <div class="mx-2 flex flex-col items-center justify-center pb-12">
+  <div class="mx-2 flex flex-col items-center justify-center">
     <h1 class="mt-4 mb-4 text-center text-2xl font-bold">Rankings</h1>
 
     <div class="mb-2 flex flex-wrap items-center justify-center gap-2">
@@ -219,11 +219,11 @@ const setToday = () => {
       <CountryFilterButton v-model="selectedCountry" :include-regions="true" />
     </div>
 
-    <div class="mb-4 flex flex-col items-center gap-2">
+    <div class="flex flex-col items-center gap-2">
       <div class="flex items-center gap-2">
         <DatePicker v-model="rankDate" :allow-future="false" />
       </div>
-      <div class="flex h-9 items-center gap-2">
+      <div class="-mb-6 flex h-9 items-center gap-2">
         <Button
           v-if="!isToday(rankDate)"
           @click="setToday"
@@ -259,10 +259,10 @@ const setToday = () => {
           >
             Region Rank
           </div>
-          <div class="flex-1 ps-3 text-left">
+          <div class="w-20 shrink-0 ps-3 text-left md:w-28">
             {{ selectedCountry ? "Global Rank" : "Rank" }}
           </div>
-          <div class="min-w-0 flex-[2] text-left">Name</div>
+          <div class="min-w-0 flex-2 text-left">Name</div>
           <div class="flex-1 pe-3 text-right">
             {{ getRankColName(selectedEvent) }}
           </div>
@@ -309,3 +309,9 @@ const setToday = () => {
     </div>
   </div>
 </template>
+
+<style lang="css" scoped>
+li {
+  contain: content;
+}
+</style>

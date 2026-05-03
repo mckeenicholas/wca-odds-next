@@ -174,7 +174,9 @@ const mappedHistory = computed(() => {
         <div class="flex-1 pe-3 text-right">
           {{ formatScore(eventRank.value) }}
         </div>
-        <RotatableChevron :up="isOpen" />
+        <div class="flex w-6 shrink-0 items-center justify-end">
+          <RotatableChevron :up="isOpen" />
+        </div>
       </button>
     </CollapsibleTrigger>
 

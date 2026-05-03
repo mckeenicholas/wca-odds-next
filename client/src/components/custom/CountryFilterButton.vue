@@ -7,7 +7,7 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 import type { CountryResult } from "@/lib/types";
-import { API_URL, cn } from "@/lib/utils";
+import { API_URL } from "@/lib/utils";
 import { useQuery } from "@tanstack/vue-query";
 import { useVirtualizer } from "@tanstack/vue-virtual";
 import { Check, ChevronDown, Globe, Search, X } from "lucide-vue-next";
@@ -240,7 +240,7 @@ const clear = (e: MouseEvent) => {
         <div
           v-else
           ref="listRef"
-          class="max-h-[300px] overflow-x-hidden overflow-y-auto"
+          class="max-h-75 overflow-x-hidden overflow-y-auto"
         >
           <div
             :style="{
@@ -288,14 +288,13 @@ const clear = (e: MouseEvent) => {
               <!-- Country item -->
               <div
                 v-else
-                :class="
-                  cn(
-                    'relative mx-1 flex cursor-default cursor-pointer items-center gap-2 rounded-sm px-2 py-1.5 text-sm outline-none select-none',
-                    highlightedIndex === row.index
-                      ? 'bg-accent text-accent-foreground'
-                      : 'hover:bg-accent hover:text-accent-foreground',
-                  )
-                "
+                class="relative mx-1 flex cursor-pointer items-center gap-2 rounded-sm px-2 py-1.5 text-sm outline-none select-none"
+                :class="{
+                  'bg-accent text-accent-foreground':
+                    highlightedIndex === row.index,
+                  'hover:bg-accent hover:text-accent-foreground':
+                    highlightedIndex !== row.index,
+                }"
                 @click="select(getCountry(row.index))"
                 @mouseenter="highlightedIndex = row.index"
               >

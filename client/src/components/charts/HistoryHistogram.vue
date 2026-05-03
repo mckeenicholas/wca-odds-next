@@ -68,7 +68,7 @@ const { isPending, isError, error, data, refetch } = useQuery({
 });
 
 const chartData = computed(() => {
-  if (!data.value) return [];
+  if (!data.value) return null;
 
   return data.value.map((point) => ({
     ...point,
@@ -93,21 +93,18 @@ const chartData = computed(() => {
 </script>
 
 <template>
-  <div class="ms-4 -me-6 mt-2 mb-4">
+  <div class="w-full py-4">
     <div class="relative min-h-75">
       <div
         v-if="isPending"
-        class="flex h-75 w-full items-center justify-center"
+        class="bg-background/50 absolute inset-0 z-10 flex flex-col items-center justify-center space-y-2"
       >
-        <div class="text-muted-foreground flex flex-col items-center space-y-2">
-          <LoaderCircle class="h-8 w-8 animate-spin" />
-          <p class="text-sm">Generating...</p>
-        </div>
+        <LoaderCircle class="text-muted-foreground h-8 w-8 animate-spin" />
+        <p class="text-muted-foreground text-sm">Generating...</p>
       </div>
-
       <div
         v-else-if="isError"
-        class="flex h-75 w-full flex-col items-center justify-center space-y-2"
+        class="flex h-75 w-full flex-col items-center justify-center gap-2 rounded-md border"
       >
         <p class="text-sm text-red-500">
           {{ error?.message || "Failed to load history" }}
@@ -119,34 +116,33 @@ const chartData = computed(() => {
           Try Again
         </button>
       </div>
-
-      <StackedAreaChart
-        v-if="chartData"
-        class="-ms-6"
-        :history="chartData"
-        :stacked="!isOverlap"
-        :metric
-      />
-      <div class="ms-12 me-6 mt-4 mb-6 flex items-center gap-2">
-        <Select v-model="metric">
-          <SelectTrigger class="h-8 w-45 text-xs">
-            <SelectValue placeholder="Select Metric" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="win">Win Probability</SelectItem>
-            <SelectItem value="podium">Podium Probability</SelectItem>
-            <SelectItem value="rank">Expected Rank</SelectItem>
-          </SelectContent>
-        </Select>
-
-        <MultiLabelSwitch
-          class="ms-2"
-          v-if="metric != 'rank'"
-          left="Stacked"
-          right="Overlap"
-          v-model="isOverlap"
+      <template v-if="chartData">
+        <StackedAreaChart
+          :history="chartData"
+          :stacked="!isOverlap"
+          :metric="metric"
+          class="h-75 w-full"
         />
-      </div>
+        <div class="mt-6 flex flex-wrap items-center gap-4 px-2">
+          <Select v-model="metric">
+            <SelectTrigger class="h-8 w-44 text-xs">
+              <SelectValue placeholder="Select Metric" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="win">Win Probability</SelectItem>
+              <SelectItem value="podium">Podium Probability</SelectItem>
+              <SelectItem value="rank">Expected Rank</SelectItem>
+            </SelectContent>
+          </Select>
+
+          <MultiLabelSwitch
+            v-if="metric !== 'rank'"
+            left="Stacked"
+            right="Overlap"
+            v-model="isOverlap"
+          />
+        </div>
+      </template>
     </div>
   </div>
 </template>

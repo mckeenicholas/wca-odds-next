@@ -133,21 +133,23 @@ const mappedHistory = computed(() => {
         >
           {{ index + 1 }}
         </div>
-        <div class="text-foreground flex-1 ps-3 text-left">
+        <div class="text-foreground w-20 shrink-0 ps-3 text-left md:w-28">
           {{ competitor.rank }}
         </div>
-        <div class="min-w-0 flex-[2] text-left">
+        <div class="min-w-0 flex-2 text-left">
           <CompetitorLink
             :name="competitor.name"
             :id="competitor.person_id"
             :iso2="competitor.country_iso2"
-            class="flex flex-row items-center gap-2"
+            class="flex flex-row items-center"
           />
         </div>
         <div class="flex-1 pe-3 text-right">
           {{ formattedScore }}
         </div>
-        <RotatableChevron :up="isOpen" />
+        <div class="flex w-6 shrink-0 items-center justify-end">
+          <RotatableChevron :up="isOpen" />
+        </div>
       </div>
     </CollapsibleTrigger>
 
@@ -163,27 +165,21 @@ const mappedHistory = computed(() => {
         {{ error.message }}
       </div>
 
-      <div
-        v-else-if="
-          detailData && Array.isArray(detailData) && detailData.length > 0
-        "
-        class="px-4 pt-2 pb-2"
-      >
-        <div class="relative w-full">
-          <div
-            v-if="isFetching && !isPending"
-            class="bg-background/50 absolute inset-0 z-10 flex items-center justify-center rounded-md"
-          >
-            <LoaderCircle class="text-muted-foreground h-6 w-6 animate-spin" />
-          </div>
-          <RankingsAreaChart
-            :history="mappedHistory"
-            :stacked="false"
-            :metric="metric"
-            :isTime="!['all', 'kinch', 'kinch_strict'].includes(selectedEvent)"
-            :isFMC="selectedEvent === '333fm'"
-          />
+      <div v-if="detailData?.length > 0" class="relative px-4 py-2">
+        <div
+          v-if="isFetching && !isPending"
+          class="bg-background/50 absolute inset-0 z-10 flex items-center justify-center rounded-md"
+        >
+          <LoaderCircle class="text-muted-foreground h-6 w-6 animate-spin" />
         </div>
+
+        <RankingsAreaChart
+          :history="mappedHistory"
+          :stacked="false"
+          :metric="metric"
+          :isTime="false"
+          :isFMC="selectedEvent === '333fm'"
+        />
       </div>
 
       <div
@@ -195,7 +191,7 @@ const mappedHistory = computed(() => {
         No history available.
       </div>
 
-      <div class="ms-4 flex items-center space-x-2 pb-2">
+      <div class="ms-4 flex items-center gap-2 pb-2">
         <Select v-model="metric">
           <SelectTrigger class="w-32 text-xs">
             <SelectValue placeholder="Select Metric" />
@@ -205,12 +201,14 @@ const mappedHistory = computed(() => {
             <SelectItem value="rank">Rank</SelectItem>
           </SelectContent>
         </Select>
+
         <DateRangePicker
           v-model:start-date="selectedDateRange.start"
           v-model:end-date="selectedDateRange.end"
           :allow-future="false"
         />
-        <Button size="sm" @click="applyDateRange" :disabled="isFetching">
+
+        <Button size="sm" :disabled="isFetching" @click="applyDateRange">
           Update
         </Button>
       </div>

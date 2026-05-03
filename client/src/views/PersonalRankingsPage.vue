@@ -211,14 +211,12 @@ const setToday = () => {
 </script>
 
 <template>
-  <div class="mx-2 flex flex-col items-center justify-center pb-12">
-    <h1 class="mt-4 mb-4 text-center text-2xl font-bold">Personal Rankings</h1>
-
-    <div class="mb-2 flex flex-wrap items-center justify-center gap-2">
-      <!-- Person Search (inline autocomplete) -->
-      <div ref="comboboxRef" class="relative w-96">
+  <div class="mx-auto flex w-full max-w-4xl flex-col items-center px-4 pb-12">
+    <h1 class="my-6 text-2xl font-bold">Personal Rankings</h1>
+    <div class="mb-6 flex w-full flex-col items-center gap-4">
+      <div ref="comboboxRef" class="relative w-full max-w-md">
         <div
-          class="border-input bg-background ring-offset-background flex items-center gap-2 rounded-md border px-3 py-2 text-sm"
+          class="border-input bg-background ring-offset-background focus-within:ring-ring flex items-center gap-2 rounded-md border px-3 py-2 text-sm shadow-sm focus-within:ring-2"
         >
           <Search class="text-muted-foreground h-4 w-4 shrink-0" />
           <template v-if="selectedPerson">
@@ -227,14 +225,16 @@ const setToday = () => {
                 v-if="selectedPerson.country_iso2"
                 :code="selectedPerson.country_iso2"
               />
-              <span class="truncate">{{ selectedPerson.name }}</span>
+              <span class="truncate font-medium">{{
+                selectedPerson.name
+              }}</span>
               <span class="text-muted-foreground text-xs"
                 >({{ selectedPerson.person_id }})</span
               >
             </div>
             <button
               @click="clearPerson"
-              class="text-muted-foreground hover:text-foreground shrink-0 cursor-pointer transition-colors"
+              class="text-muted-foreground hover:text-foreground transition-colors"
               aria-label="Clear selection"
             >
               <X class="h-4 w-4" />
@@ -248,144 +248,114 @@ const setToday = () => {
             class="placeholder:text-muted-foreground flex-1 bg-transparent outline-none"
           />
         </div>
-
-        <!-- Dropdown results -->
         <div
           v-if="
             dropdownOpen &&
             !selectedPerson &&
-            ((searchResults?.length ?? 0) > 0 || isSearching)
+            (searchResults?.length || isSearching)
           "
-          class="bg-popover text-popover-foreground animate-in fade-in-0 zoom-in-95 absolute z-50 mt-1 w-full rounded-md border shadow-md"
+          class="bg-popover text-popover-foreground animate-in fade-in-0 zoom-in-95 absolute z-50 mt-2 w-full rounded-md border shadow-lg"
         >
-          <div class="no-scrollbar max-h-64 overflow-y-scroll p-1">
-            <!-- Loading -->
+          <div class="no-scrollbar max-h-64 overflow-y-auto p-1">
             <div
               v-if="isSearching && showResults"
-              class="flex items-center justify-center py-4"
+              class="flex justify-center py-6"
             >
               <LoaderCircle
                 class="text-muted-foreground h-5 w-5 animate-spin"
               />
             </div>
-            <!-- Results -->
-            <template
-              v-else-if="
-                showResults && searchResults && searchResults.length > 0
-              "
-            >
+            <template v-else-if="showResults && searchResults?.length">
               <button
                 v-for="person in searchResults"
                 :key="person.person_id"
                 @click="selectPerson(person)"
-                class="hover:bg-accent hover:text-accent-foreground flex w-full cursor-pointer items-center gap-2 rounded-md px-3 py-2 text-left text-sm transition-colors"
+                class="hover:bg-accent hover:text-accent-foreground flex w-full items-center gap-2 rounded-sm px-3 py-2 text-left text-sm transition-colors"
               >
                 <FlagIcon
                   v-if="person.country_iso2"
                   :code="person.country_iso2"
                 />
                 <span class="truncate">{{ person.name }}</span>
-                <span class="text-muted-foreground ms-auto shrink-0 text-xs">
-                  {{ person.person_id }}
-                </span>
+                <span class="text-muted-foreground ms-auto text-xs">{{
+                  person.person_id
+                }}</span>
               </button>
             </template>
-            <!-- No results -->
             <div
-              v-else-if="
-                showResults && searchResults && searchResults.length === 0
-              "
-              class="text-muted-foreground py-4 text-center text-sm"
+              v-else-if="showResults"
+              class="text-muted-foreground py-6 text-center text-sm"
             >
               No results found.
             </div>
           </div>
         </div>
       </div>
-    </div>
-
-    <div class="mb-4 flex flex-col items-center gap-2">
-      <div class="flex items-center gap-2">
+      <div class="flex flex-col items-center gap-3">
         <DatePicker
           v-model="rankDate"
           :disabled="!selectedPerson"
           :allow-future="false"
         />
-      </div>
-      <div class="flex h-9 items-center gap-2">
-        <Button
-          v-if="!isToday(rankDate)"
-          @click="setToday"
-          variant="outline"
-          :disabled="isRankPending"
-        >
-          Today
-        </Button>
-        <Button v-if="isDirty" @click="applyDate" :disabled="isRankPending">
-          Update
-        </Button>
-      </div>
-    </div>
-
-    <!-- Error -->
-    <div v-if="isError">
-      <ErrorDisplay :error="error!.toString()" />
-    </div>
-
-    <template v-if="selectedPerson">
-      <!-- Loading -->
-      <div v-if="isRankPending" class="w-full max-w-4xl">
-        <div class="rounded-md border px-4">
-          <Skeleton v-for="index in 10" :key="index" class="my-4 h-9" />
-        </div>
-      </div>
-
-      <!-- Results -->
-      <div v-if="rankData && rankData.length > 0" class="w-full max-w-4xl">
-        <div class="mt-2 rounded-md border">
-          <div
-            class="text-muted-foreground flex w-full justify-between p-2 ps-1 text-sm font-medium"
+        <div class="flex h-9 gap-2">
+          <Button
+            v-if="!isToday(rankDate)"
+            @click="setToday"
+            variant="outline"
+            size="sm"
+            :disabled="isRankPending"
           >
-            <div class="w-16 shrink-0 ps-3 text-left md:w-28">Rank</div>
-            <div class="flex-2 text-left">Event</div>
-            <div class="flex-1 pe-3 text-right">Score</div>
-            <div class="w-6"></div>
-          </div>
-          <hr class="mx-2" />
-          <ol>
-            <li
-              v-for="(eventRank, index) in rankData"
-              :key="eventRank.event_id"
-              class="rounded-md p-1"
-            >
-              <EventRankDropdown
-                :event-rank="eventRank"
-                :person-id="selectedPerson.person_id"
-                :person-name="selectedPerson.name"
-                :rank-date="committedDate"
-                :index="index"
-              />
-            </li>
-          </ol>
+            Today
+          </Button>
+          <Button
+            v-if="isDirty"
+            @click="applyDate"
+            size="sm"
+            :disabled="isRankPending"
+          >
+            Update
+          </Button>
         </div>
       </div>
-
-      <div
-        v-else-if="selectedPerson && rankData && rankData.length === 0"
-        class="text-muted-foreground mt-4 text-center"
-      >
-        {{ selectedPerson.name }} has not competed in the given timeframe.
+    </div>
+    <ErrorDisplay
+      v-if="isError"
+      :error="error!.toString()"
+      class="mb-4 w-full"
+    />
+    <section v-if="selectedPerson" class="w-full">
+      <div v-if="isRankPending" class="space-y-4 rounded-md border p-4">
+        <Skeleton v-for="i in 8" :key="i" class="h-9 w-full" />
       </div>
-    </template>
+      <div v-else-if="rankData?.length" class="rounded-md border shadow-sm">
+        <header
+          class="text-muted-foreground flex items-center justify-between px-4 py-2 text-xs font-semibold tracking-wider uppercase"
+        >
+          <span class="w-16 md:w-28">Rank</span>
+          <span class="flex-1">Event</span>
+          <span class="w-24 text-right">Score</span>
+          <span class="w-8"></span>
+        </header>
+        <ol class="border-t">
+          <li
+            v-for="(eventRank, index) in rankData"
+            :key="eventRank.event_id"
+            class="p-1"
+          >
+            <EventRankDropdown
+              :event-rank="eventRank"
+              :person-id="selectedPerson.person_id"
+              :person-name="selectedPerson.name"
+              :rank-date="committedDate"
+              :index="index"
+            />
+          </li>
+        </ol>
+      </div>
+      <div v-else class="text-muted-foreground mt-12 text-center">
+        <p class="text-lg">{{ selectedPerson.name }}</p>
+        <p class="text-sm">No competition data found for this timeframe.</p>
+      </div>
+    </section>
   </div>
 </template>
-
-<style lang="css" scoped>
-.no-scrollbar::-webkit-scrollbar {
-  display: none;
-}
-
-.no-scrollbar {
-  scrollbar-width: none;
-}
-</style>

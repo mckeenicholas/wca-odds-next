@@ -67,7 +67,7 @@ const { width } = useWindowSize();
       >
     </div>
   </div>
-  <div v-else>
+  <template v-else>
     <ExpandableBox title="Options" class="my-2">
       <hr class="mx-2" />
       <div class="flex flex-col items-stretch space-y-4 p-4">
@@ -84,5 +84,5 @@ const { width } = useWindowSize();
         >Run Simulation</Button
       >
     </div>
-  </div>
+  </template>
 </template>

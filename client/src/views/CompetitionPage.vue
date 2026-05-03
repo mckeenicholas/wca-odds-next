@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import ControlPanel from "@/components/custom/ControlPanel.vue";
-import FlagIcon from "@/components/custom/FlagIcon.vue";
 import CompetitorLink from "@/components/custom/CompetitorLink.vue";
 import WCALogo from "@/components/custom/WCALogo.vue";
 import LoadingMessage from "@/components/custom/LoadingMessage.vue";
@@ -99,28 +98,25 @@ const runSimulation = () => {
 </script>
 
 <template>
-  <div class="flex flex-col items-center justify-center">
-    <div v-if="isPending">
-      <LoadingMessage message="Loading WCA Data" class="m-4 text-2xl" />
-    </div>
-
+  <div class="flex w-full flex-col items-center justify-center p-4">
+    <template v-if="isPending">
+      <LoadingMessage message="Loading WCA Data" class="text-2xl" />
+    </template>
     <div v-else-if="isError || !data?.name" class="text-red-500">
       Error fetching data: {{ error?.message || "Unknown error occurred" }}
     </div>
-
     <template v-else>
-      <h1 class="m-4 text-center text-2xl leading-snug font-bold">
+      <h1 class="mb-4 text-center text-2xl leading-snug font-bold">
         {{ data.name }}
         <a
           :href="`https://www.worldcubeassociation.org/competitions/${data.id}`"
           target="_blank"
-          class="ms-1 inline-flex [vertical-align:-0.125em]"
+          class="ms-1 inline-flex align-[-0.125em]"
         >
           <WCALogo class="h-6 w-6" />
         </a>
       </h1>
-
-      <div>
+      <div class="w-full max-w-5xl">
         <ControlPanel
           :event-ids="eventIds"
           v-model:selected-event-id="selectedEventId"
@@ -131,48 +127,38 @@ const runSimulation = () => {
           :disable-run="currentSelectedCompetitors.length < 2"
           @run-simulation="runSimulation"
         />
-
         <div
           v-if="!competitorsByEvent[selectedEventId]?.length"
-          class="m-6 text-center text-lg"
+          class="mt-6 text-center text-lg"
         >
           No one is registered for this event
         </div>
-
         <ol
           v-else
-          class="flex-1 overflow-y-auto rounded-md border"
-          :class="{
-            'max-h-[72vh]': width > BREAKPOINT,
-            'max-h-[64vh]': width <= BREAKPOINT,
-          }"
+          class="no-scrollbar mt-4 overflow-y-auto rounded-md border p-1"
+          :class="width > BREAKPOINT ? 'max-h-[72vh]' : 'max-h-[64vh]'"
         >
           <li
             v-for="person in competitorsByEvent[selectedEventId]"
             :key="person.id"
-            class="hover:bg-secondary flex items-center justify-between rounded-md p-2"
+            class="hover:bg-secondary rounded-md transition-colors"
           >
             <label
-              class="flex w-full cursor-pointer items-center justify-between"
               :for="`select-${person.id}`"
+              class="flex cursor-pointer items-center justify-between p-2"
+              :class="{ 'text-muted-foreground': !person.selected }"
             >
-              <span
-                :class="{ 'text-muted-foreground': !person.selected }"
+              <CompetitorLink
+                :name="person.name"
+                :id="person.id"
+                :event="selectedEventId"
+                :iso2="person.country"
                 class="flex items-center"
-              >
-                <FlagIcon :code="person.country" :muted="!person.selected" />
-                <CompetitorLink
-                  :name="person.name"
-                  :id="person.id"
-                  :event="selectedEventId"
-                  :iso2="null"
-                  class="mx-2 flex items-center"
-                />
-              </span>
+                :class="{ 'opacity-50': !person.selected }"
+              />
 
               <Checkbox
                 v-model:checked="person.selected"
-                class="me-2"
                 :id="`select-${person.id}`"
                 :aria-label="`Select competitor ${person.name}`"
               />

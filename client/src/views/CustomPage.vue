@@ -2,15 +2,15 @@
 import ControlPanel from "@/components/custom/ControlPanel.vue";
 import FlagIcon from "@/components/custom/FlagIcon.vue";
 import CompetitorLink from "@/components/custom/CompetitorLink.vue";
-import { Input } from "@/components/ui/input";
-import { Skeleton } from "@/components/ui/skeleton";
 import { supportedWCAEvents } from "@/lib/types";
-import { buildSimulationQuery, fetchWCAInfo, WCA_API_BASE } from "@/lib/utils";
+import { buildSimulationQuery, API_URL } from "@/lib/utils";
 import { useQuery } from "@tanstack/vue-query";
-import { useDebounceFn } from "@vueuse/core";
-import { Search, X } from "lucide-vue-next";
-import { computed, ref, watch } from "vue";
+import { LoaderCircle, Search, X } from "lucide-vue-next";
+import { computed, ref } from "vue";
 import { useRouter } from "vue-router";
+import { useStorage, onClickOutside, refDebounced } from "@vueuse/core";
+import { useCompSettingsStore } from "@/lib/stores/compSettings";
+import { storeToRefs } from "pinia";
 
 interface Person {
   name: string;
@@ -18,60 +18,51 @@ interface Person {
   country: { iso2: string };
 }
 
-interface SearchResult {
-  result: Person[];
-}
-
-import { useCompSettingsStore } from "@/lib/stores/compSettings";
-import { storeToRefs } from "pinia";
-
 const router = useRouter();
-const input = ref<string>("");
-const competitors = ref<Person[]>(
-  JSON.parse(localStorage.getItem("competitors") || "[]"),
-);
-
 const store = useCompSettingsStore();
 const { selectedEventId, includeDnf, decayHalfLife, startDate, endDate } =
   storeToRefs(store);
 
-const searchPersons = async (): Promise<Person[]> => {
-  if (!input.value.trim()) return [];
+const input = ref("");
+const dropdownOpen = ref(false);
+const comboboxRef = ref<HTMLElement | null>(null);
+const competitors = useStorage<Person[]>("competitors", []);
 
-  const response = await fetchWCAInfo<SearchResult>(
-    `${WCA_API_BASE}/search/users?q=${input.value}`,
-  );
+const debouncedInput = refDebounced(input, 250);
 
-  return response.result.filter((person) => person.wca_id);
-};
+const { isFetching, isError, data, error } = useQuery({
+  queryKey: computed(() => ["userSearch", debouncedInput.value]),
+  queryFn: async () => {
+    if (!debouncedInput.value.trim()) return [];
+    const response = await fetch(
+      `${API_URL}/api/search?q=${encodeURIComponent(debouncedInput.value)}`,
+    );
+    if (!response.ok) throw new Error("Search failed");
 
-const { isFetching, isError, data, error, refetch } = useQuery({
-  queryKey: computed(() => ["userSearch", input.value]),
-  queryFn: searchPersons,
-  enabled: false,
+    const results = await response.json();
+    return results.map(
+      (r: { name: string; person_id: string; country_iso2: string }) => ({
+        name: r.name,
+        wca_id: r.person_id,
+        country: { iso2: r.country_iso2 },
+      }),
+    );
+  },
+  enabled: computed(() => dropdownOpen.value && input.value.trim().length > 0),
 });
 
-watch(
-  competitors,
-  (newCompetitors) => {
-    localStorage.setItem("competitors", JSON.stringify(newCompetitors));
-  },
-  { deep: true },
-);
+onClickOutside(comboboxRef, () => (dropdownOpen.value = false));
 
-const debouncedInput = useDebounceFn(refetch, 250);
-
-const addCompetitor = (competitor: Person) => {
-  if (!competitors.value.some((c) => c.wca_id === competitor.wca_id)) {
-    competitors.value.push(competitor);
+const addCompetitor = (person: Person) => {
+  if (!competitors.value.find((c) => c.wca_id === person.wca_id)) {
+    competitors.value.push(person);
     input.value = "";
+    dropdownOpen.value = false;
   }
 };
 
-const removeCompetitor = (competitorId: string) => {
-  competitors.value = competitors.value.filter(
-    (p) => p.wca_id !== competitorId,
-  );
+const removeCompetitor = (id: string) => {
+  competitors.value = competitors.value.filter((p) => p.wca_id !== id);
 };
 
 const runSimulation = () => {
@@ -82,110 +73,108 @@ const runSimulation = () => {
     endDate: endDate.value,
     includeDnf: includeDnf.value,
     decayRate: decayHalfLife.value,
-    competitors: competitors.value.map((c: Person) => c.wca_id),
-  });
+    competitors: competitors.value.map((c) => c.wca_id),
+  }) as Record<string, string>;
 
-  router.push({
-    path: "/custom/results",
-    query: query as Record<string, string>,
-  });
+  router.push({ path: "/custom/results", query });
 };
 </script>
 
 <template>
-  <div class="flex flex-col items-center justify-center">
-    <div>
-      <h1 class="m-4 text-center text-xl">Add a competitor</h1>
-      <div class="relative flex min-w-[70vw] flex-row">
-        <Input
+  <div class="mx-auto flex w-full max-w-5xl flex-col items-center px-4 pb-8">
+    <h1 class="my-4 text-center text-xl font-semibold">Add a competitor</h1>
+    <div class="relative w-full" ref="comboboxRef">
+      <div
+        class="border-input bg-background ring-offset-background focus-within:ring-ring flex w-full items-center gap-2 rounded-md border px-3 py-2 text-sm focus-within:ring-2 focus-within:ring-offset-2"
+      >
+        <Search class="text-muted-foreground h-4 w-4 shrink-0" />
+        <input
           v-model="input"
-          @keyup.enter="refetch()"
-          @input="debouncedInput"
-          placeholder="Competitor Name..."
-          class="-me-2"
+          @keyup.enter="dropdownOpen = true"
+          @input="dropdownOpen = true"
+          @focus="dropdownOpen = true"
+          placeholder="Search for a person..."
+          class="placeholder:text-muted-foreground flex-1 bg-transparent outline-none"
           aria-label="Search for competitors"
         />
-        <span
-          class="absolute inset-y-0 end-0 flex items-center justify-center px-2"
-        >
-          <Search class="text-muted-foreground size-6" />
-        </span>
+      </div>
+      <div
+        v-if="dropdownOpen && input && (data?.length || isFetching || isError)"
+        class="bg-popover text-popover-foreground animate-in fade-in-0 zoom-in-95 absolute top-full left-0 z-50 mt-2 w-full rounded-md border shadow-md"
+      >
+        <div class="no-scrollbar max-h-64 overflow-y-auto p-1">
+          <div v-if="isFetching" class="flex items-center justify-center py-6">
+            <LoaderCircle class="text-muted-foreground h-5 w-5 animate-spin" />
+          </div>
 
-        <!-- Popover Content -->
-        <div
-          v-if="input"
-          class="bg-popover absolute top-full left-0 z-50 mt-2 max-h-[40vh] w-full overflow-y-scroll rounded-md border shadow-md"
-        >
-          <div v-if="isFetching" class="px-3">
-            <Skeleton v-for="index in 3" class="my-4 h-6" :key="index" />
+          <div
+            v-else-if="isError"
+            class="text-muted-foreground py-4 text-center text-sm"
+          >
+            Error: {{ error?.message || "Unknown error occurred" }}
           </div>
-          <div v-else-if="isError" class="m-4 text-center">
-            Error fetching data:
-            {{ error?.message || "Unknown error occurred" }}
+
+          <div
+            v-else-if="!data?.length"
+            class="text-muted-foreground py-4 text-center text-sm"
+          >
+            No results found.
           </div>
-          <div v-else-if="!data?.length" class="m-4 text-center">
-            No Results found
-          </div>
-          <div v-else>
-            <ol class="mx-1 py-1">
-              <li
-                v-for="person in data"
-                :key="person.wca_id"
-                class="hover:bg-secondary rounded-md p-2 hover:cursor-pointer"
-                @click="() => addCompetitor(person)"
-              >
-                <div class="flex items-center justify-between">
-                  <div class="flex items-center gap-2">
-                    <FlagIcon :code="person.country.iso2" />
-                    <span>{{ person.name }}</span>
-                  </div>
-                  <span class="text-muted-foreground">{{ person.wca_id }}</span>
-                </div>
-              </li>
-            </ol>
-          </div>
+
+          <template v-else>
+            <button
+              v-for="person in data"
+              :key="person.wca_id"
+              @click="addCompetitor(person)"
+              class="hover:bg-accent hover:text-accent-foreground flex w-full items-center gap-2 rounded-sm px-3 py-2 text-left text-sm transition-colors"
+            >
+              <FlagIcon :code="person.country.iso2" />
+              <span class="truncate">{{ person.name }}</span>
+              <span class="text-muted-foreground ms-auto text-xs">{{
+                person.wca_id
+              }}</span>
+            </button>
+          </template>
         </div>
       </div>
-
-      <div class="mt-4">
-        <ControlPanel
-          v-bind:event-ids="[...supportedWCAEvents]"
-          v-model:selected-event-id="selectedEventId"
-          v-model:include-dnf="includeDnf"
-          v-model:decay-rate="decayHalfLife"
-          v-model:start-date="startDate"
-          v-model:end-date="endDate"
-          :disableRun="competitors.length < 2"
-          @run-simulation="runSimulation"
-        />
-      </div>
-
-      <div
-        v-if="competitors.length"
-        class="mt-4 max-h-[75vh] rounded-md border"
-      >
-        <ol>
-          <li
-            v-for="competitor of competitors"
-            :key="competitor.wca_id"
-            class="flex items-center justify-between"
+    </div>
+    <div class="mt-2 w-full">
+      <ControlPanel
+        :event-ids="[...supportedWCAEvents]"
+        v-model:selected-event-id="selectedEventId"
+        v-model:include-dnf="includeDnf"
+        v-model:decay-rate="decayHalfLife"
+        v-model:start-date="startDate"
+        v-model:end-date="endDate"
+        :disableRun="competitors.length < 2"
+        @run-simulation="runSimulation"
+      />
+    </div>
+    <div
+      v-if="competitors.length"
+      class="mt-6 w-full overflow-hidden rounded-md border p-1 shadow-sm"
+    >
+      <ol>
+        <li
+          v-for="competitor in competitors"
+          :key="competitor.wca_id"
+          class="hover:bg-muted/50 flex items-center justify-between rounded-md transition-colors"
+        >
+          <CompetitorLink
+            :name="competitor.name"
+            :id="competitor.wca_id"
+            :iso2="competitor.country.iso2"
+            class="flex items-center p-2"
+          />
+          <button
+            class="text-muted-foreground hover:text-destructive hover:bg-secondary me-1 rounded-md p-1 transition-colors"
+            aria-label="remove competitor"
+            @click="removeCompetitor(competitor.wca_id)"
           >
-            <CompetitorLink
-              :name="competitor.name"
-              :id="competitor.wca_id"
-              :iso2="competitor.country.iso2"
-              class="flex items-center gap-2 p-2"
-            />
-            <button
-              class="hover:bg-secondary me-1 rounded-md p-1 hover:cursor-pointer"
-              aria-label="remove competitor"
-              @click="() => removeCompetitor(competitor.wca_id)"
-            >
-              <X :size="24" />
-            </button>
-          </li>
-        </ol>
-      </div>
+            <X :size="20" />
+          </button>
+        </li>
+      </ol>
     </div>
   </div>
 </template>
