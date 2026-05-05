@@ -1,7 +1,8 @@
 <script setup lang="ts">
 import { AreaChart } from "@/components/ui/chart-area";
+import HistogramCustomTooltip from "@/components/charts/HistogramCustomTooltip.vue";
 import { ChartData, SupportedWCAEvent } from "@/lib/types";
-import { computeCDF, createFMCTooltip, renderTime } from "@/lib/utils";
+import { computeCDF, renderTime } from "@/lib/utils";
 import { computed, ref } from "vue";
 import MultiLabelSwitch from "./MultiLabelSwitch.vue";
 
@@ -11,7 +12,7 @@ const { data, color, event } = defineProps<{
   event: SupportedWCAEvent;
 }>();
 
-const histogramTooltip = createFMCTooltip(event);
+const isFmc = event === "333fm";
 const isCDF = ref<boolean>(false);
 
 const histData = computed(() => {
@@ -41,7 +42,8 @@ const xFormatter = (value: number | Date) => {
       index="name"
       :categories="['single', 'average']"
       :colors="[color, `${color}88`]"
-      :custom-tooltip="histogramTooltip"
+      :custom-tooltip="HistogramCustomTooltip"
+      :custom-tooltip-props="{ isFmc }"
       showXAxis
       :yFormatter="(value) => `${value}%`"
       :xFormatter

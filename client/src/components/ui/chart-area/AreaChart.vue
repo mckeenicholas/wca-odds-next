@@ -22,6 +22,7 @@ const props = withDefaults(
   defineProps<
     BaseChartProps<T> & {
       customTooltip?: Component;
+      customTooltipProps?: Record<string, unknown>;
       curveType?: CurveType;
       showGradient?: boolean;
     }
@@ -112,6 +113,7 @@ function handleLegendItemClick(d: BulletLegendItemInterface, i: number) {
         :items="legendItems"
         :index="index"
         :custom-tooltip="customTooltip"
+        :custom-tooltip-props="customTooltipProps"
       />
 
       <template v-for="(category, i) in categories" :key="category">

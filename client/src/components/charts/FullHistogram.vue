@@ -2,7 +2,8 @@
 import { AreaChart } from "@/components/ui/chart-area";
 import { Select, SelectContent, SelectTrigger } from "@/components/ui/select";
 import { ChartData, SimulationResultProps } from "@/lib/types";
-import { computeCDF, createFMCTooltip, renderTime } from "@/lib/utils";
+import HistogramCustomTooltip from "@/components/charts/HistogramCustomTooltip.vue";
+import { computeCDF, renderTime } from "@/lib/utils";
 import { computed, ref } from "vue";
 import ColoredCircle from "../custom/ColoredCircle.vue";
 import Checkbox from "../ui/checkbox/Checkbox.vue";
@@ -11,7 +12,7 @@ import MultiLabelSwitch from "./MultiLabelSwitch.vue";
 
 const { data, event, colors } = defineProps<SimulationResultProps>();
 
-const histogramTooltip = createFMCTooltip(event);
+const isFmc = event === "333fm";
 
 const isAverage = ref<boolean>(false);
 const isCDF = ref<boolean>(false);
@@ -75,7 +76,8 @@ const xFormatter = (value: number | Date) => {
       :categories="histValues.labels"
       :colors="colors"
       :showLegend="false"
-      :customTooltip="histogramTooltip"
+      :customTooltip="HistogramCustomTooltip"
+      :customTooltipProps="{ isFmc }"
       showXAxis
       :yFormatter="(value) => `${value}%`"
       :xFormatter

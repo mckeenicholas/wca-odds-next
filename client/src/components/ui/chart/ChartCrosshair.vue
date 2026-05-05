@@ -11,9 +11,11 @@ const props = withDefaults(
     index: string;
     items: BulletLegendItemInterface[];
     customTooltip?: Component;
+    customTooltipProps?: Record<string, unknown>;
   }>(),
   {
     colors: () => [],
+    customTooltipProps: () => ({}),
   },
 );
 
@@ -31,12 +33,16 @@ function template(d: any) {
       },
     );
     const TooltipComponent = props.customTooltip ?? ChartTooltip;
-    createApp(TooltipComponent, {
+    const app = createApp(TooltipComponent, {
       title: d[props.index].toString(),
       data: omittedData,
-    }).mount(componentDiv);
-    wm.set(d, componentDiv.innerHTML);
-    return componentDiv.innerHTML;
+      ...props.customTooltipProps,
+    });
+    app.mount(componentDiv);
+    const html = componentDiv.innerHTML;
+    app.unmount();
+    wm.set(d, html);
+    return html;
   }
 }
 
