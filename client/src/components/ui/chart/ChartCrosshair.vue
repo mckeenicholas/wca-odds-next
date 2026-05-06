@@ -29,13 +29,13 @@ function template(d: any) {
     const omittedData = Object.entries(omit(d, [props.index])).map(
       ([key, value]) => {
         const legendReference = props.items.find((i) => i.name === key);
-        return { ...legendReference, value };
+        return Object.assign({}, legendReference, { value });
       },
     );
     const TooltipComponent = props.customTooltip ?? ChartTooltip;
     const app = createApp(TooltipComponent, {
-      title: d[props.index].toString(),
       data: omittedData,
+      title: d[props.index].toString(),
       ...props.customTooltipProps,
     });
     app.mount(componentDiv);

@@ -1,6 +1,9 @@
 <script setup lang="ts">
 import { computed, ref } from "vue";
-import { CompetitorSimulationResult, SupportedWCAEvent } from "@/lib/types";
+import type {
+  CompetitorSimulationResult,
+  SupportedWCAEvent,
+} from "@/lib/types";
 import CompetitorDropdown from "./CompetitorDropdown.vue";
 import Chevron from "./RotatableChevron.vue";
 
@@ -23,32 +26,32 @@ const sortAsc = ref<boolean>(false);
 
 const headerOptions = [
   {
-    id: "name",
-    label: "Name",
-    justify: "justify-start",
-    padding: "ps-8",
     flex: "flex-[2] lg:flex-[1.5]",
+    id: "name",
+    justify: "justify-start",
+    label: "Name",
+    padding: "ps-8",
   },
   {
+    flex: "flex-1",
     id: "win",
+    justify: "justify-center",
     label: "Chance of winning",
-    justify: "justify-center",
     padding: "",
-    flex: "flex-1",
   },
   {
+    flex: "flex-1",
     id: "pod",
-    label: "Chance of podiuming",
     justify: "justify-center",
+    label: "Chance of podiuming",
     padding: "",
-    flex: "flex-1",
   },
   {
-    id: "rank",
-    label: "Expected rank",
-    justify: "justify-center",
-    padding: "",
     flex: "flex-1",
+    id: "rank",
+    justify: "justify-center",
+    label: "Expected rank",
+    padding: "",
   },
 ] as const;
 
@@ -79,12 +82,10 @@ const groupedProps = computed(() => {
     const aVal = getSortValue(a);
     const bVal = getSortValue(b);
 
-    let comparison: number;
-    if (typeof aVal === "string" && typeof bVal === "string") {
-      comparison = aVal.localeCompare(bVal);
-    } else {
-      comparison = (aVal as number) - (bVal as number);
-    }
+    const comparison =
+      typeof aVal === "string" && typeof bVal === "string"
+        ? aVal.localeCompare(bVal)
+        : (aVal as number) - (bVal as number);
 
     // For stats (win/pod), higher is better so default descending;
     // for rank, lower is better so also default descending (shows best first).
@@ -96,11 +97,11 @@ const groupedProps = computed(() => {
 
   return simulationResults
     .map((results, idx) => ({
+      color: colors[idx],
       idx,
       results,
-      color: colors[idx],
     }))
-    .sort(sortFn);
+    .toSorted(sortFn);
 });
 
 const model = defineModel<number[][]>({ required: true });

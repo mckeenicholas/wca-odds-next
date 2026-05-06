@@ -6,26 +6,26 @@ type EventRegistration = Partial<Record<SupportedWCAEvent, Competitor[]>>;
 const MAX_COMPETITORS = 64 as const;
 const DEFAULT_SELECTED = 16 as const;
 
-export function useCompetitionData() {
-  const processCompetitor = (
-    person: Person,
-    event: SupportedWCAEvent,
-  ): Competitor | null => {
-    const worldRank = person.personalBests.find(
-      (pb) => pb.eventId === event,
-    )?.worldRanking;
+const processCompetitor = (
+  person: Person,
+  event: SupportedWCAEvent,
+): Competitor | undefined => {
+  const worldRank = person.personalBests.find(
+    (pb) => pb.eventId === event,
+  )?.worldRanking;
 
-    if (!worldRank) return null;
+  if (!worldRank) return undefined;
 
-    return {
-      id: person.wcaId,
-      country: person.countryIso2,
-      name: person.name,
-      rank: worldRank,
-      selected: false,
-    };
+  return {
+    country: person.countryIso2,
+    id: person.wcaId,
+    name: person.name,
+    rank: worldRank,
+    selected: false,
   };
+};
 
+export function useCompetitionData() {
   const getCompetitorData = (
     data: Wcif | undefined | null,
     isError: boolean,

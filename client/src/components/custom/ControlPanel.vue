@@ -8,7 +8,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { eventNames, SupportedWCAEvent } from "@/lib/types";
+import { eventNames, type SupportedWCAEvent } from "@/lib/types";
 import { BREAKPOINT } from "@/lib/utils";
 import CubingIcon from "./CubingIcon.vue";
 import ExpandableBox from "./ExpandableBox.vue";

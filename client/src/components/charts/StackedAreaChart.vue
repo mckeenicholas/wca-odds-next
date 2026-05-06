@@ -10,57 +10,51 @@ import { VisArea, VisAxis, VisLine, VisXYContainer } from "@unovis/vue";
 import { useMounted } from "@vueuse/core";
 import { useId } from "radix-vue";
 import { computed, h, ref, watchEffect } from "vue";
+import type { HistoryChartMetric, HistoryPoint } from "@/lib/types";
 import { ChartCrosshair } from "@/components/ui/chart";
-import { HistoryChartMetric, HistoryPoint } from "@/lib/types";
 import HistoryTooltip, { type HistoryTooltipProps } from "./HistoryTooltip.vue";
 
 const STACKED_OPACITY = 0.8;
 
-const props = withDefaults(
-  defineProps<{
-    history: HistoryPoint[];
-    stacked?: boolean;
-    filterOpacity?: number;
-    showGradient?: boolean;
-    metric: HistoryChartMetric;
-  }>(),
-  {
-    stacked: true,
-    filterOpacity: 0.2,
-    showGradient: true,
-  },
-);
+const {
+  history,
+  stacked = true,
+  filterOpacity = 0.2,
+  showGradient = true,
+  metric,
+} = defineProps<{
+  history: HistoryPoint[];
+  stacked?: boolean;
+  filterOpacity?: number;
+  showGradient?: boolean;
+  metric: HistoryChartMetric;
+}>();
 
 const rawId = useId();
-const chartRef = computed(() => rawId.replace(/:/g, "-"));
+const chartRef = computed(() => rawId.replaceAll(":", "-"));
 const isMounted = useMounted();
 
 const competitorMeta = computed(() => {
-  if (!props.history?.length) return [];
+  if (!history?.length) return [];
 
-  const lastEntry = props.history[props.history.length - 1];
+  const lastEntry = history.at(-1)!;
 
   const meta = lastEntry.competitors.map((c) => {
-    let finalVal;
-    switch (props.metric) {
-      case "win":
-        finalVal = c.win_chance;
-        break;
-      case "podium":
-        finalVal = c.pod_chance;
-        break;
-      case "rank":
-        finalVal = -c.expected_rank;
-        break;
-      default:
-        finalVal = 0;
+    let finalVal = 0;
+
+    if (metric === "win") {
+      finalVal = c.win_chance;
+    } else if (metric === "podium") {
+      finalVal = c.pod_chance;
+    } else if (metric === "rank") {
+      finalVal = -c.expected_rank;
     }
 
     return {
-      id: c.id,
-      name: c.name,
       color: c.color!,
       finalVal,
+      id: c.id,
+      name: c.name,
     };
   });
 
@@ -69,20 +63,20 @@ const competitorMeta = computed(() => {
 });
 
 const processedData = computed(() => {
-  if (!props.history?.length) return [];
+  if (!history?.length) return [];
 
-  return props.history.map((point) => {
+  return history.map((point) => {
     const dataPoint: Record<string, number> = {
       date: new Date(point.date).getTime(),
     };
 
     point.competitors.forEach((c) => {
       let val = 0;
-      if (props.metric === "win") {
+      if (metric === "win") {
         val = c.win_chance * 100;
-      } else if (props.metric === "podium") {
+      } else if (metric === "podium") {
         val = c.pod_chance * 100;
-      } else if (props.metric === "rank") {
+      } else if (metric === "rank") {
         val = c.expected_rank;
       }
       dataPoint[c.name] = val;
@@ -93,7 +87,7 @@ const processedData = computed(() => {
 });
 
 const yDomain = computed(() => {
-  if (props.metric === "rank") {
+  if (metric === "rank") {
     const allRanks = processedData.value.flatMap((d) =>
       competitorMeta.value.map((m) => d[m.name]),
     );
@@ -104,7 +98,7 @@ const yDomain = computed(() => {
 });
 
 const yTickFormat = (v: number) => {
-  if (props.metric === "rank") return v.toFixed(1);
+  if (metric === "rank") return v.toFixed(1);
   return `${Math.round(v)}%`;
 };
 
@@ -113,9 +107,9 @@ const x = (d: Record<string, number>) => d.date;
 const legendItems = ref<BulletLegendItemInterface[]>([]);
 watchEffect(() => {
   legendItems.value = competitorMeta.value.map((meta) => ({
-    name: meta.name,
     color: meta.color,
     inactive: false,
+    name: meta.name,
   }));
 });
 
@@ -140,7 +134,7 @@ const dateFormatter = (timestamp: number) => {
 };
 
 const tooltip = computed(() => {
-  const isPercent = props.metric !== "rank";
+  const isPercent = metric !== "rank";
 
   return (tooltipProps: HistoryTooltipProps) =>
     h(HistoryTooltip, {

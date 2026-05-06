@@ -13,38 +13,33 @@ import {
 } from "@/components/ui/popover";
 import { API_URL } from "@/lib/utils";
 
-const props = withDefaults(
-  defineProps<{
-    modelValue: CountryResult | null;
-    includeRegions?: boolean;
-  }>(),
-  {
-    includeRegions: false,
-  },
-);
+const { modelValue, includeRegions = false } = defineProps<{
+  modelValue: CountryResult | undefined;
+  includeRegions?: boolean;
+}>();
 
 const emit = defineEmits<{
-  "update:modelValue": [value: CountryResult | null];
+  "update:modelValue": [value: CountryResult | undefined];
 }>();
 
 const open = ref(false);
 const search = ref("");
-const listRef = ref<HTMLDivElement | null>(null);
-const inputRef = ref<HTMLInputElement | null>(null);
+const listRef = ref<HTMLDivElement | undefined>(undefined);
+const inputRef = ref<HTMLInputElement | undefined>(undefined);
 
 const { data: countries } = useQuery({
-  queryKey: [
-    "countries",
-    {
-      include_regions: props.includeRegions,
-    },
-  ],
   queryFn: async () => {
     const res = await fetch(
-      `${API_URL}/api/countries?include_regions=${props.includeRegions}`,
+      `${API_URL}/api/countries?include_regions=${includeRegions}`,
     );
     return res.json() as Promise<CountryResult[]>;
   },
+  queryKey: [
+    "countries",
+    {
+      include_regions: includeRegions,
+    },
+  ],
   staleTime: Infinity,
 });
 
@@ -80,19 +75,19 @@ type ListEntry =
 
 const flatList = computed<ListEntry[]>(() => {
   const entries: ListEntry[] = [];
-  if (filteredSpecial.value.length) {
-    entries.push({ type: "header", label: "Regions" });
+  if (filteredSpecial.value.length > 0) {
+    entries.push({ label: "Regions", type: "header" });
     for (const c of filteredSpecial.value) {
-      entries.push({ type: "item", country: c });
+      entries.push({ country: c, type: "item" });
     }
   }
-  if (filteredSpecial.value.length && filteredCountries.value.length) {
+  if (filteredSpecial.value.length > 0 && filteredCountries.value.length > 0) {
     entries.push({ type: "separator" });
   }
-  if (filteredCountries.value.length) {
-    entries.push({ type: "header", label: "Countries" });
+  if (filteredCountries.value.length > 0) {
+    entries.push({ label: "Countries", type: "header" });
     for (const c of filteredCountries.value) {
-      entries.push({ type: "item", country: c });
+      entries.push({ country: c, type: "item" });
     }
   }
   return entries;
@@ -107,15 +102,15 @@ const virtualizer = useVirtualizer({
   get count() {
     return flatList.value.length;
   },
-  getScrollElement: () => listRef.value,
   estimateSize: (index) => {
     const entry = flatList.value[index];
     if (entry.type === "header") return 26;
     if (entry.type === "separator") return 9;
     return 36;
   },
-  overscan: 5,
+  getScrollElement: () => listRef.value ?? null,
   measureElement: (el) => el.getBoundingClientRect().height,
+  overscan: 5,
 });
 
 // Auto-focus search input when popover opens
@@ -169,7 +164,7 @@ function onKeydown(e: KeyboardEvent) {
 
 const select = (country: CountryResult) => {
   if (country.id === "World") {
-    emit("update:modelValue", null);
+    emit("update:modelValue", undefined);
   } else {
     emit("update:modelValue", country);
   }
@@ -178,7 +173,7 @@ const select = (country: CountryResult) => {
 
 const clear = (e: MouseEvent) => {
   e.stopPropagation();
-  emit("update:modelValue", null);
+  emit("update:modelValue", undefined);
 };
 </script>
 

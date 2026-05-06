@@ -7,7 +7,7 @@ const model = defineModel<number>({ required: true });
 const inputValue = ref<string>("");
 
 const formatInput = (input: string): string => {
-  const number = parseInt(input.replace(/\D/g, ""));
+  const number = parseInt(input.replaceAll(/\D/g, ""));
   if (isNaN(number) || number === 0) return "";
 
   const str = number.toString().padStart(8, "0").slice(-8);
@@ -17,20 +17,20 @@ const formatInput = (input: string): string => {
     str.slice(4, 6),
     str.slice(6, 8),
   ];
-  return `${hh}:${mm}:${ss}.${cc}`.replace(/^[0:]*(?!\.)/g, "");
+  return `${hh}:${mm}:${ss}.${cc}`.replaceAll(/^[0:]*(?!\.)/g, "");
 };
 
 const toCentiseconds = (input: string): number => {
   if (input === "") return 0;
   if (input.toLowerCase() === "dnf") return -1;
 
-  const digits = input.replace(/\D/g, "");
+  const digits = input.replaceAll(/\D/g, "");
   if (!digits) return 0;
 
   const num = parseInt(digits);
-  const hh = Math.floor(num / 1000000) * 360000;
-  const mm = Math.floor((num % 1000000) / 10000) * 6000;
-  const ss = Math.floor((num % 10000) / 100) * 100;
+  const hh = Math.floor(num / 1_000_000) * 360_000;
+  const mm = Math.floor((num % 1_000_000) / 10_000) * 6000;
+  const ss = Math.floor((num % 10_000) / 100) * 100;
   const cc = num % 100;
 
   return hh + mm + ss + cc;

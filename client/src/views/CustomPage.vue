@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { useQuery } from "@tanstack/vue-query";
-import { useStorage, onClickOutside, refDebounced } from "@vueuse/core";
+import { onClickOutside, refDebounced, useStorage } from "@vueuse/core";
 import { LoaderCircle, Search, X } from "lucide-vue-next";
 import { storeToRefs } from "pinia";
 import { computed, ref } from "vue";
@@ -10,7 +10,7 @@ import ControlPanel from "@/components/custom/ControlPanel.vue";
 import FlagIcon from "@/components/custom/FlagIcon.vue";
 import { useCompSettingsStore } from "@/lib/stores/compSettings";
 import { supportedWCAEvents } from "@/lib/types";
-import { buildSimulationQuery, API_URL } from "@/lib/utils";
+import { API_URL, buildSimulationQuery } from "@/lib/utils";
 
 interface Person {
   name: string;
@@ -25,13 +25,13 @@ const { selectedEventId, includeDnf, decayHalfLife, startDate, endDate } =
 
 const input = ref("");
 const dropdownOpen = ref(false);
-const comboboxRef = ref<HTMLElement | null>(null);
+const comboboxRef = ref<HTMLElement | undefined>(undefined);
 const competitors = useStorage<Person[]>("competitors", []);
 
 const debouncedInput = refDebounced(input, 250);
 
 const { isFetching, isError, data, error } = useQuery({
-  queryKey: computed(() => ["userSearch", debouncedInput.value]),
+  enabled: computed(() => dropdownOpen.value && input.value.trim().length > 0),
   queryFn: async () => {
     if (!debouncedInput.value.trim()) return [];
     const response = await fetch(
@@ -42,19 +42,19 @@ const { isFetching, isError, data, error } = useQuery({
     const results = await response.json();
     return results.map(
       (r: { name: string; person_id: string; country_iso2: string }) => ({
+        country: { iso2: r.country_iso2 },
         name: r.name,
         wca_id: r.person_id,
-        country: { iso2: r.country_iso2 },
       }),
     );
   },
-  enabled: computed(() => dropdownOpen.value && input.value.trim().length > 0),
+  queryKey: computed(() => ["userSearch", debouncedInput.value]),
 });
 
 onClickOutside(comboboxRef, () => (dropdownOpen.value = false));
 
 const addCompetitor = (person: Person) => {
-  if (!competitors.value.find((c) => c.wca_id === person.wca_id)) {
+  if (!competitors.value.some((c) => c.wca_id === person.wca_id)) {
     competitors.value.push(person);
     input.value = "";
     dropdownOpen.value = false;
@@ -67,13 +67,13 @@ const removeCompetitor = (id: string) => {
 
 const runSimulation = () => {
   const query = buildSimulationQuery({
-    name: "Custom Simulation",
-    eventId: selectedEventId.value,
-    startDate: startDate.value,
-    endDate: endDate.value,
-    includeDnf: includeDnf.value,
-    decayRate: decayHalfLife.value,
     competitors: competitors.value.map((c) => c.wca_id),
+    decayRate: decayHalfLife.value,
+    endDate: endDate.value,
+    eventId: selectedEventId.value,
+    includeDnf: includeDnf.value,
+    name: "Custom Simulation",
+    startDate: startDate.value,
   }) as Record<string, string>;
 
   router.push({ path: "/custom/results", query });

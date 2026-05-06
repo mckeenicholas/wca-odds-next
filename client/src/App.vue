@@ -9,7 +9,7 @@ const route = useRoute();
 
 const versionNum = "1.1.4";
 
-const fatalError = ref<string | null>(null);
+const fatalError = ref<string | undefined>(undefined);
 onErrorCaptured((err) => {
   fatalError.value = err instanceof Error ? err.message : String(err);
   console.error("Uncaught component error:", err);
@@ -30,7 +30,7 @@ onErrorCaptured((err) => {
           Something went wrong
         </p>
         <p class="mt-2 text-sm text-muted-foreground">{{ fatalError }}</p>
-        <button class="mt-4 underline" @click="fatalError = null">
+        <button class="mt-4 underline" @click="fatalError = undefined">
           Try again
         </button>
       </div>

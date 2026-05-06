@@ -8,25 +8,23 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 
-const props = withDefaults(
-  defineProps<{
-    code: string;
-    muted?: boolean;
-    showTooltip?: boolean;
-  }>(),
-  {
-    muted: false,
-    showTooltip: true,
-  },
-);
+const {
+  code,
+  muted = false,
+  showTooltip = true,
+} = defineProps<{
+  code: string;
+  muted?: boolean;
+  showTooltip?: boolean;
+}>();
 
 const regionNames = new Intl.DisplayNames(["en"], { type: "region" });
 
 const countryName = computed(() => {
   try {
-    return regionNames.of(props.code) || props.code;
+    return regionNames.of(code) || code;
   } catch {
-    return props.code;
+    return code;
   }
 });
 </script>

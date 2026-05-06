@@ -21,7 +21,14 @@ import {
 } from "@/components/ui/select";
 import { useRankDetail } from "@/lib/composables/useRankDetail";
 
-const props = defineProps<{
+const {
+  competitor,
+  selectedEvent,
+  formattedScore,
+  rankDate,
+  index,
+  showRegionRank,
+} = defineProps<{
   competitor: RankingSnapshot;
   selectedEvent: string;
   formattedScore: string;
@@ -42,14 +49,14 @@ const {
   error,
   mappedHistory,
 } = useRankDetail({
-  competitorId: computed(() => props.competitor.person_id),
-  eventId: computed(() => props.selectedEvent),
-  competitorName: computed(() => props.competitor.name),
-  rankDate: computed(() => props.rankDate),
+  competitorId: computed(() => competitor.person_id),
+  competitorName: computed(() => competitor.name),
+  eventId: computed(() => selectedEvent),
   isOpen,
+  rankDate: computed(() => rankDate),
 });
 
-const ariaId = computed(() => `details-${props.competitor.person_id}`);
+const ariaId = computed(() => `details-${competitor.person_id}`);
 </script>
 
 <template>

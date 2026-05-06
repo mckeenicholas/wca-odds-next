@@ -6,7 +6,7 @@ import {
   SwitchThumb,
   useForwardPropsEmits,
 } from "radix-vue";
-import { computed, type HTMLAttributes } from "vue";
+import { type HTMLAttributes, computed } from "vue";
 import { cn } from "@/lib/utils";
 
 const props = defineProps<

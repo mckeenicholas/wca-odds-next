@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed } from "vue";
+import type { ChartData } from "@/lib/types";
 import { BarChart } from "@/components/ui/chart-bar";
-import { ChartData } from "@/lib/types";
 import PercentageTooltip from "./PercentageTooltip.vue";
 
 const { data, colors } = defineProps<{ data: ChartData; colors: string[] }>();

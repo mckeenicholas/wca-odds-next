@@ -1,4 +1,4 @@
-import {
+import type {
   FetchRoundResultsGraphQLResponse,
   SupportedWCAEvent,
   WCALiveCompetitionData,
@@ -20,7 +20,7 @@ const fetchWCALiveResults = async (
   );
 
   if (!targetEvent?.rounds || targetEvent.rounds.length === 0) {
-    throw Error(
+    throw new Error(
       `Event '${event}' not found or has no rounds in competition '${competitionId}'.`,
     );
   }
@@ -38,19 +38,19 @@ const fetchWCALiveResults = async (
     const errorMessages = roundResultsResponse.errors
       .map((e) => e.message)
       .join("; ");
-    throw Error(
+    throw new Error(
       `GraphQL query for round '${finalRound.id}' failed: ${errorMessages}`,
     );
   }
 
   if (!roundResultsResponse.data?.round?.format) {
-    throw Error(
+    throw new Error(
       `Essential data (round or format) missing in WCALive response for round '${finalRound.id}'.`,
     );
   }
 
   const roundDetails = roundResultsResponse.data.round;
-  const numberOfAttempts = roundDetails.format.numberOfAttempts;
+  const { numberOfAttempts } = roundDetails.format;
   const actualRoundResultsList = roundDetails.results || [];
 
   const personAttemptsMap = new Map<string, number[]>();
@@ -130,18 +130,21 @@ const fetchCompetitionRounds = async (id: string) => {
       const errorDetail =
         (response as WCALiveCompetitionError).errors.detail ||
         "Unknown GraphQL error";
-      throw Error(`GraphQL query 'Competition' failed: ${errorDetail}`);
+      throw new Error(`GraphQL query 'Competition' failed: ${errorDetail}`);
     } else {
-      throw Error(
+      throw new Error(
         "GraphQL query 'Competition' returned an unexpected response structure.",
       );
     }
-  } catch (err) {
-    if (err instanceof Error) {
-      throw Error(`Fetch competition rounds error: ${err.message}`);
+  } catch (error) {
+    if (error instanceof Error) {
+      throw new TypeError(`Fetch competition rounds error: ${error.message}`, {
+        cause: error,
+      });
     }
-    throw Error(
-      `An unknown error occurred while fetching competition rounds: ${String(err)}`,
+    throw new TypeError(
+      `An unknown error occurred while fetching competition rounds: ${String(error)}`,
+      { cause: error },
     );
   }
 };
@@ -162,7 +165,7 @@ const getWCALiveID = async (competitionId: string) => {
   const match = response.url.match(/\/competitions\/([^/]+)/);
 
   if (!match || !match[1]) {
-    throw Error(
+    throw new Error(
       `Unable to extract WCA Live ID from redirected URL: ${response.url} (original competition ID: ${competitionId})`,
     );
   }
@@ -177,11 +180,11 @@ const fetchGraphQL = async (
   variables: object,
 ) => {
   const requestOptions = {
-    method: "POST",
+    body: JSON.stringify({ operationName, query, variables }),
     headers: {
       "Content-Type": "application/json",
     },
-    body: JSON.stringify({ operationName, variables, query }),
+    method: "POST",
   };
 
   const response = await fetch(WCA_LIVE_ENDPOINT, requestOptions);

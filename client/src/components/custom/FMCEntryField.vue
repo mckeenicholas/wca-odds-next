@@ -6,7 +6,7 @@ const model = defineModel<number>({ required: true });
 const inputValue = ref("");
 
 const formatInput = (input: string): string => {
-  const number = parseInt(input.replace(/\D/g, ""));
+  const number = parseInt(input.replaceAll(/\D/g, ""));
   if (isNaN(number) || number === 0) return "";
 
   return number.toString();
@@ -16,7 +16,7 @@ const toValue = (input: string): number => {
   if (input === "") return 0;
   if (input.toLowerCase() === "dnf") return -1;
 
-  const digits = input.replace(/\D/g, "");
+  const digits = input.replaceAll(/\D/g, "");
   if (!digits) return 0;
 
   return parseInt(digits);

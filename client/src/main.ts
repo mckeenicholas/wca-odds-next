@@ -1,4 +1,5 @@
-import { VueQueryPlugin, VueQueryPluginOptions } from "@tanstack/vue-query";
+import type { VueQueryPluginOptions } from "@tanstack/vue-query";
+import { VueQueryPlugin } from "@tanstack/vue-query";
 import { createPinia } from "pinia";
 import { createApp } from "vue";
 import App from "@/App.vue";

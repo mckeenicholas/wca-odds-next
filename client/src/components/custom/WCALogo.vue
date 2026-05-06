@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import type { ClassValue } from "clsx";
 
-const props = defineProps<{
+const { class: className } = defineProps<{
   class?: ClassValue;
 }>();
 </script>
@@ -10,11 +10,11 @@ const props = defineProps<{
   <img
     src="/wca-logo-light.svg"
     alt="WCA Profile"
-    :class="[props.class, 'dark:hidden']"
+    :class="[className, 'dark:hidden']"
   />
   <img
     src="/wca-logo-dark.svg"
     alt="WCA Profile"
-    :class="[props.class, 'hidden dark:block']"
+    :class="[className, 'hidden dark:block']"
   />
 </template>

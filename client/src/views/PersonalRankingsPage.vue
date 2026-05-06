@@ -4,6 +4,7 @@ import { onClickOutside, useDebounceFn } from "@vueuse/core";
 import { LoaderCircle, Search, X } from "lucide-vue-next";
 import { computed, ref, watch } from "vue";
 import { useRoute, useRouter } from "vue-router";
+import type { SupportedWCAEvent } from "@/lib/types";
 import DatePicker from "@/components/custom/DatePicker.vue";
 import ErrorDisplay from "@/components/custom/ErrorPanel.vue";
 import EventRankDropdown from "@/components/custom/EventRankDropdown.vue";
@@ -11,10 +12,9 @@ import FlagIcon from "@/components/custom/FlagIcon.vue";
 import Button from "@/components/ui/button/Button.vue";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
-  eventOrder,
-  SupportedWCAEvent,
   type PersonRankInfo,
   type PersonSearchResult,
+  eventOrder,
 } from "@/lib/types";
 import { API_URL, isToday, toNaiveDate } from "@/lib/utils";
 
@@ -23,10 +23,10 @@ const router = useRouter();
 
 const searchTerm = ref("");
 const debouncedTerm = ref("");
-const selectedPerson = ref<PersonSearchResult | null>(null);
+const selectedPerson = ref<PersonSearchResult | undefined>(undefined);
 const dropdownOpen = ref(false);
-const searchInputRef = ref<HTMLInputElement | null>(null);
-const comboboxRef = ref<HTMLElement | null>(null);
+const searchInputRef = ref<HTMLInputElement | undefined>(undefined);
+const comboboxRef = ref<HTMLElement | undefined>(undefined);
 
 const rankDate = ref(new Date());
 const committedDate = ref(new Date());
@@ -83,13 +83,13 @@ watch(
         if (data.length > 0) {
           selectedPerson.value = data[0];
         } else {
-          selectedPerson.value = null;
+          selectedPerson.value = undefined;
         }
-      } catch (e) {
-        console.error(e);
+      } catch (error) {
+        console.error(error);
       }
     } else if (!newId) {
-      selectedPerson.value = null;
+      selectedPerson.value = undefined;
     }
   },
   { immediate: true },
@@ -97,7 +97,7 @@ watch(
 
 // Search people
 const { data: searchResults, isFetching: isSearching } = useQuery({
-  queryKey: computed(() => ["person-search", debouncedTerm.value]),
+  enabled: computed(() => debouncedTerm.value.trim().length >= 2),
   queryFn: async () => {
     const res = await fetch(
       `${API_URL}/api/search?q=${encodeURIComponent(debouncedTerm.value)}`,
@@ -105,7 +105,7 @@ const { data: searchResults, isFetching: isSearching } = useQuery({
     if (!res.ok) throw new Error("Search failed");
     return res.json() as Promise<PersonSearchResult[]>;
   },
-  enabled: computed(() => debouncedTerm.value.trim().length >= 2),
+  queryKey: computed(() => ["person-search", debouncedTerm.value]),
   staleTime: 1000 * 60 * 2,
 });
 
@@ -138,7 +138,7 @@ const selectPerson = (person: PersonSearchResult) => {
 };
 
 const clearPerson = () => {
-  selectedPerson.value = null;
+  selectedPerson.value = undefined;
   searchTerm.value = "";
   debouncedTerm.value = "";
   searchInputRef.value?.focus();
@@ -152,21 +152,17 @@ const {
   isError,
   error,
 } = useQuery({
-  queryKey: computed(() => [
-    "personal-rankings",
-    selectedPerson.value?.person_id,
-    committedDate.value.toDateString(),
-  ]),
+  enabled: computed(() => Boolean(selectedPerson.value)),
   queryFn: async () => {
     const res = await fetch(`${API_URL}/api/persons`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
-        person_id: selectedPerson.value!.person_id,
         date: isToday(committedDate.value)
           ? undefined
           : toNaiveDate(committedDate.value),
+        person_id: selectedPerson.value!.person_id,
       }),
+      headers: { "Content-Type": "application/json" },
+      method: "POST",
     });
     if (!res.ok) {
       const body = await res.json().catch(() => ({}));
@@ -179,7 +175,11 @@ const {
     );
     return res_data;
   },
-  enabled: computed(() => !!selectedPerson.value),
+  queryKey: computed(() => [
+    "personal-rankings",
+    selectedPerson.value?.person_id,
+    committedDate.value.toDateString(),
+  ]),
   staleTime: 1000 * 60 * 5,
 });
 
@@ -204,7 +204,7 @@ const setToday = () => {
 <template>
   <div class="mx-auto flex w-full max-w-4xl flex-col items-center px-4 pb-12">
     <h1 class="my-6 text-2xl font-bold">Personal Rankings</h1>
-    <div class="mb-4 flex w-full flex-col items-center gap-4">
+    <div class="mb-2 flex w-full flex-col items-center gap-2">
       <div ref="comboboxRef" class="relative w-full max-w-md">
         <div
           class="flex items-center gap-2 rounded-md border border-input bg-background px-3 py-2 text-sm shadow-sm ring-offset-background focus-within:ring-2 focus-within:ring-ring"
@@ -288,22 +288,16 @@ const setToday = () => {
           :disabled="!selectedPerson"
           :allow-future="false"
         />
-        <div class="flex h-9 gap-2">
+        <div class="flex h-9 items-center gap-2">
           <Button
             v-if="!isToday(rankDate)"
             @click="setToday"
             variant="outline"
-            size="sm"
             :disabled="isRankPending"
           >
             Today
           </Button>
-          <Button
-            v-if="isDirty"
-            @click="applyDate"
-            size="sm"
-            :disabled="isRankPending"
-          >
+          <Button v-if="isDirty" @click="applyDate" :disabled="isRankPending">
             Update
           </Button>
         </div>

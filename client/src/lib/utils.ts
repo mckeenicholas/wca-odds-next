@@ -1,7 +1,7 @@
 import { type ClassValue, clsx } from "clsx";
 import { twMerge } from "tailwind-merge";
 import { toRaw } from "vue";
-import {
+import type {
   ChartPoint,
   SimulationAPIResults,
   SimulationRouteQuery,
@@ -20,7 +20,7 @@ export function cn(...inputs: ClassValue[]) {
 
 export const fetchWCIF = async (id: string): Promise<Wcif> => {
   const wcaURL = `https://api.worldcubeassociation.org/competitions/${id}/wcif/public`;
-  return fetchWCAInfo<Wcif>(wcaURL);
+  return await fetchWCAInfo<Wcif>(wcaURL);
 };
 
 export const fetchWCAInfo = async <T>(url: string | URL): Promise<T> => {
@@ -61,14 +61,14 @@ export const toClockFormat = (centiseconds: number): string => {
   if (centiseconds === -1) return "DNF";
   if (centiseconds === -2) return "DNS";
   if (!Number.isFinite(centiseconds)) {
-    throw new Error(
+    throw new TypeError(
       `Invalid centiseconds, expected positive number, got ${centiseconds}.`,
     );
   }
   return new Date(centiseconds * 10)
     .toISOString()
-    .substring(11, 22)
-    .replace(/^[0:]*(?!\.)/g, "");
+    .slice(11, 22)
+    .replaceAll(/^[0:]*(?!\.)/g, "");
 };
 
 export const toFMC = (result: number): string => {
@@ -112,7 +112,7 @@ export const getNumericValue = (val: string | number): number => {
 
 export const formatPercentage = (
   val: string | number,
-  normalize: boolean = false,
+  normalize = false,
 ): string => {
   const numVal = getNumericValue(val);
   const pctVal = normalize ? numVal * 100 : numVal;
@@ -121,11 +121,11 @@ export const formatPercentage = (
 };
 
 export const getParentPath = (path: string) => {
-  const normalizedPath = path.endsWith("/") ? path : path + "/";
+  const normalizedPath = path.endsWith("/") ? path : `${path}/`;
 
   if (normalizedPath.includes("/results/")) {
     return normalizedPath
-      .substring(0, normalizedPath.lastIndexOf("/results/"))
+      .slice(0, normalizedPath.lastIndexOf("/results/"))
       .replace(/\/$/, "");
   } else if (normalizedPath.startsWith("/competition/")) {
     return "/";
@@ -136,7 +136,7 @@ export const getParentPath = (path: string) => {
   return "/";
 };
 
-export const ArrEq2D = (arr1: number[][], arr2: number[][]): boolean => {
+export const arrEq2D = (arr1: number[][], arr2: number[][]): boolean => {
   if (arr1 === arr2) return true;
   if (!arr1 || !arr2) return false;
   if (arr1.length !== arr2.length) return false;
@@ -161,8 +161,8 @@ export const clone2DArr = (arr: number[][]): number[][] => {
 
 export const formatDate = (date: string | Date | number) =>
   new Date(date).toLocaleDateString("en-US", {
-    month: "short",
     day: "numeric",
+    month: "short",
     year: "numeric",
   });
 
@@ -212,26 +212,24 @@ export const createJSONExport = ({
   event: SupportedWCAEvent;
 }) => {
   const config = {
-    startDate,
-    endDate,
     competitionName,
     decayRate,
-    includeDnf,
+    endDate,
     event,
     generatedOn: new Date(),
+    includeDnf,
+    startDate,
   };
 
   const personResults = results.competitor_results.map((result, index) => ({
+    enteredTimes: currentTimes[index].filter((time) => time !== 0),
+    expectedRank: result.expected_rank,
+    globalMean: result.mean_no_dnf,
     id: ids[index],
     name: result.name,
-    winChance: result.win_chance,
     podiumChance: result.pod_chance,
-    globalMean: result.mean_no_dnf,
-    expectedRank: result.expected_rank,
-    enteredTimes: currentTimes[index].filter((time) => time !== 0),
+    winChance: result.win_chance,
   }));
-
-  // TODO: rebuilt hist data from this
 
   return JSON.stringify({
     config,
@@ -286,9 +284,9 @@ export const downloadTextBlob = (
   anchor.download = filename;
   anchor.style.display = "none";
 
-  document.body.appendChild(anchor);
+  document.body.append(anchor);
   anchor.click();
-  document.body.removeChild(anchor);
+  anchor.remove();
 
   URL.revokeObjectURL(url);
 };
@@ -299,7 +297,7 @@ export const formatInputtedTimes = (
 ) => {
   const timesArray = toRaw(inputtedTimes);
 
-  if (event != "333fm") {
+  if (event !== "333fm") {
     return timesArray;
   }
 

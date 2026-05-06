@@ -17,9 +17,9 @@ import {
 } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
-  eventNames,
   type CountryResult,
   type RankingSnapshot,
+  eventNames,
 } from "@/lib/types";
 import { API_URL, isToday, renderTime, toNaiveDate } from "@/lib/utils";
 
@@ -32,7 +32,7 @@ const MAX_ITEMS = 512;
 const selectedEvent = ref("all");
 const rankDate = ref(new Date());
 const committedDate = ref(new Date());
-const selectedCountry = ref<CountryResult | null>(null);
+const selectedCountry = ref<CountryResult | undefined>(undefined);
 
 const isDirty = computed(
   () => rankDate.value.toDateString() !== committedDate.value.toDateString(),
@@ -101,10 +101,10 @@ const getRankColName = (selectedCategory: string) => {
 };
 
 const formatScore = (score: number, selectedCategory: string) => {
-  if (selectedCategory == "all") return score.toFixed(0);
+  if (selectedCategory === "all") return score.toFixed(0);
   if (["kinch", "kinch_strict"].includes(selectedCategory))
     return score.toFixed(2);
-  return renderTime(score, selectedCategory == "333fm");
+  return renderTime(score, selectedCategory === "333fm");
 };
 
 const queryKey = computed(() => [
@@ -123,37 +123,36 @@ const {
   hasNextPage,
   isFetchingNextPage,
 } = useInfiniteQuery({
-  queryKey,
+  getNextPageParam: (lastPage: RankingSnapshot[], allPages) => {
+    const totalLoaded = allPages.flat().length;
+    if (lastPage.length < PAGE_SIZE || totalLoaded >= MAX_ITEMS) return;
+    return totalLoaded;
+  },
+  initialPageParam: 0,
   queryFn: async ({ pageParam }) => {
     const res = await fetch(`${API_URL}/api/rankings`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
-        event_id: selectedEvent.value,
+        country_id: selectedCountry.value?.id ?? undefined,
         date: isToday(committedDate.value)
           ? undefined
           : toNaiveDate(committedDate.value),
-        country_id: selectedCountry.value?.id ?? undefined,
+        event_id: selectedEvent.value,
         offset: pageParam,
       }),
+      headers: { "Content-Type": "application/json" },
+      method: "POST",
     });
     const page: RankingSnapshot[] = await res.json();
     return page;
   },
-  initialPageParam: 0,
-  getNextPageParam: (lastPage, allPages) => {
-    const totalLoaded = allPages.flat().length;
-    if (lastPage.length < PAGE_SIZE || totalLoaded >= MAX_ITEMS)
-      return undefined;
-    return totalLoaded;
-  },
+  queryKey,
 });
 
 const allItems = computed(() => data.value?.pages.flat() ?? []);
 
 // Infinite scroll sentinel
-const sentinelRef = ref<HTMLElement | null>(null);
-let observer: IntersectionObserver | null = null;
+const sentinelRef = ref<HTMLElement | undefined>(undefined);
+let observer: IntersectionObserver | undefined;
 
 watch(sentinelRef, (el) => {
   observer?.disconnect();
@@ -215,7 +214,7 @@ const setToday = () => {
       <div class="flex items-center gap-2">
         <DatePicker v-model="rankDate" :allow-future="false" />
       </div>
-      <div class="-mb-6 flex h-9 items-center gap-2">
+      <div class="flex h-9 items-center gap-2">
         <Button
           v-if="!isToday(rankDate)"
           @click="setToday"

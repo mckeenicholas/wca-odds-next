@@ -12,13 +12,13 @@ export function useRankDetail(params: {
   isOpen: Ref<boolean>;
 }) {
   const selectedDateRange = ref({
-    start: subYears(params.rankDate.value, 1),
     end: params.rankDate.value,
+    start: subYears(params.rankDate.value, 1),
   });
 
   const appliedDateRange = ref({
-    start: subYears(params.rankDate.value, 1),
     end: params.rankDate.value,
+    start: subYears(params.rankDate.value, 1),
   });
 
   watch(
@@ -26,8 +26,8 @@ export function useRankDetail(params: {
     (newDate) => {
       const start = subYears(newDate, 1);
       const end = newDate;
-      selectedDateRange.value = { start, end };
-      appliedDateRange.value = { start, end };
+      selectedDateRange.value = { end, start };
+      appliedDateRange.value = { end, start };
     },
     { immediate: true },
   );
@@ -44,23 +44,17 @@ export function useRankDetail(params: {
     isFetching,
     error,
   } = useQuery({
-    queryKey: computed(() => [
-      "rank-detail",
-      params.competitorId.value,
-      params.eventId.value,
-      appliedDateRange.value.start.getTime(),
-      appliedDateRange.value.end.getTime(),
-    ]),
+    enabled: params.isOpen,
     queryFn: async () => {
       const res = await fetch(`${API_URL}/api/rankings/competitor`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           competitor_id: params.competitorId.value,
+          end_date: format(appliedDateRange.value.end, "yyyy-MM-dd"),
           event_id: params.eventId.value,
           start_date: format(appliedDateRange.value.start, "yyyy-MM-dd"),
-          end_date: format(appliedDateRange.value.end, "yyyy-MM-dd"),
         }),
+        headers: { "Content-Type": "application/json" },
+        method: "POST",
       });
       if (!res.ok) {
         const body = await res.json().catch(() => ({}));
@@ -68,9 +62,15 @@ export function useRankDetail(params: {
       }
       return res.json();
     },
-    enabled: params.isOpen,
-    staleTime: 1000 * 60 * 5,
+    queryKey: computed(() => [
+      "rank-detail",
+      params.competitorId.value,
+      params.eventId.value,
+      appliedDateRange.value.start.getTime(),
+      appliedDateRange.value.end.getTime(),
+    ]),
     retry: false,
+    staleTime: 1000 * 60 * 5,
   });
 
   const mappedHistory = computed<RankingHistoryPoint[]>(() => {
@@ -78,29 +78,29 @@ export function useRankDetail(params: {
 
     return detailData.value.map(
       (d: { snapshot_date: string; rank: number; value: number }) => ({
-        date: d.snapshot_date,
         competitors: [
           {
+            color: "#3b82f6",
             id: params.competitorId.value,
             name: params.competitorName.value,
             rank: d.rank,
             value: d.value,
-            color: "#3b82f6",
           },
         ],
+        date: d.snapshot_date,
       }),
     );
   });
 
   return {
-    selectedDateRange,
     appliedDateRange,
     applyDateRange,
-    metric,
     detailData,
-    isPending,
-    isFetching,
     error,
+    isFetching,
+    isPending,
     mappedHistory,
+    metric,
+    selectedDateRange,
   };
 }

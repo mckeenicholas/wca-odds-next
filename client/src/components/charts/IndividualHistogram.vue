@@ -1,8 +1,8 @@
 <script setup lang="ts">
 import { computed, ref } from "vue";
+import type { ChartData, SupportedWCAEvent } from "@/lib/types";
 import HistogramCustomTooltip from "@/components/charts/HistogramCustomTooltip.vue";
 import { AreaChart } from "@/components/ui/chart-area";
-import { ChartData, SupportedWCAEvent } from "@/lib/types";
 import { computeCDF, renderTime } from "@/lib/utils";
 import MultiLabelSwitch from "./MultiLabelSwitch.vue";
 
@@ -29,7 +29,7 @@ const histData = computed(() => {
 });
 
 const xFormatter = (value: number | Date) => {
-  let timeVal = parseInt(histData.value[value as number].name as string);
+  const timeVal = parseInt(histData.value[value as number].name as string);
   return renderTime(timeVal, event === "333fm");
 };
 </script>

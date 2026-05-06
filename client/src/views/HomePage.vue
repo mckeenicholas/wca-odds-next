@@ -20,7 +20,7 @@ const router = useRouter();
 const input = ref<string>((route.query.q as string) || "");
 const listContainerRef = useTemplateRef<HTMLDivElement>("listContainer");
 
-const comboboxRef = ref<HTMLElement | null>(null);
+const comboboxRef = ref<HTMLElement | undefined>(undefined);
 const dropdownOpen = ref(false);
 
 onClickOutside(comboboxRef, () => {
@@ -29,8 +29,7 @@ onClickOutside(comboboxRef, () => {
 
 onMounted(() => {
   refetch();
-  const inputField = document.getElementById("input-field");
-  inputField?.focus();
+  document.querySelector<HTMLInputElement>("#input-field")?.focus();
 });
 
 watch(
@@ -50,14 +49,14 @@ watch(
 );
 
 const { isFetching, isError, data, error, refetch } = useQuery({
-  queryKey: computed(() => ["competitionSearch", input.value]),
+  enabled: false,
   queryFn: () => {
     if (!input.value.trim()) return Promise.resolve([]);
     return fetchWCAInfo<Competition[]>(
       `https://api.worldcubeassociation.org/competitions?q=${input.value.trim()}`,
     );
   },
-  enabled: false,
+  queryKey: computed(() => ["competitionSearch", input.value]),
 });
 
 const { selectedResult, handleKeydown, resetSelection } = useListNavigation({

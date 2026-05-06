@@ -1,39 +1,39 @@
 export const eventNames: Record<SupportedWCAEvent, string> = {
-  "333": "3x3x3 Cube",
   "222": "2x2x2 Cube",
-  "444": "4x4x4 Cube",
-  "555": "5x5x5 Cube",
-  "666": "6x6x6 Cube",
-  "777": "7x7x7 Cube",
+  "333": "3x3x3 Cube",
   "333bf": "3x3x3 Blindfolded",
   "333fm": "3x3x3 Fewest Moves",
   "333oh": "3x3x3 One-Handed",
+  "444": "4x4x4 Cube",
+  "444bf": "4x4x4 Blindfolded",
+  "555": "5x5x5 Cube",
+  "555bf": "5x5x5 Blindfolded",
+  "666": "6x6x6 Cube",
+  "777": "7x7x7 Cube",
+  clock: "Clock",
   minx: "Megaminx",
   pyram: "Pyraminx",
-  clock: "Clock",
   skewb: "Skewb",
   sq1: "Square-1",
-  "444bf": "4x4x4 Blindfolded",
-  "555bf": "5x5x5 Blindfolded",
 };
 
 export const eventAttempts: Record<SupportedWCAEvent, number> = {
-  "333": 5,
   "222": 5,
-  "444": 5,
-  "555": 5,
-  "666": 3,
-  "777": 3,
+  "333": 5,
   "333bf": 3,
   "333fm": 3,
   "333oh": 5,
+  "444": 5,
+  "444bf": 3,
+  "555": 5,
+  "555bf": 3,
+  "666": 3,
+  "777": 3,
+  clock: 5,
   minx: 5,
   pyram: 5,
-  clock: 5,
   skewb: 5,
   sq1: 5,
-  "444bf": 3,
-  "555bf": 3,
 };
 
 export const supportedWCAEvents = [
@@ -56,22 +56,22 @@ export const supportedWCAEvents = [
 ] as const;
 
 export const eventOrder: Record<SupportedWCAEvent, number> = {
-  "333": 1,
   "222": 2,
-  "444": 3,
-  "555": 4,
-  "666": 5,
-  "777": 6,
+  "333": 1,
   "333bf": 7,
   "333fm": 8,
   "333oh": 9,
+  "444": 3,
+  "444bf": 15,
+  "555": 4,
+  "555bf": 16,
+  "666": 5,
+  "777": 6,
+  clock: 12,
   minx: 10,
   pyram: 11,
-  clock: 12,
   skewb: 13,
   sq1: 14,
-  "444bf": 15,
-  "555bf": 16,
 };
 
 export type SupportedWCAEvent = (typeof supportedWCAEvents)[number];
@@ -187,7 +187,7 @@ export interface WCALiveRoundDataWrapper {
 
 export interface FetchRoundResultsGraphQLResponse {
   data?: WCALiveRoundDataWrapper;
-  errors?: Array<{ message: string; [key: string]: string }>;
+  errors?: { message: string; [key: string]: string }[];
 }
 
 export interface Competitor {

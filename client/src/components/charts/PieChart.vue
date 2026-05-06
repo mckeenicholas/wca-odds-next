@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed } from "vue";
+import type { SimulationAPIResults } from "@/lib/types";
 import { DonutChart } from "@/components/ui/chart-donut";
-import { SimulationAPIResults } from "@/lib/types";
 import PercentageTooltip from "./PercentageTooltip.vue";
 
 const { data, colors } = defineProps<{

@@ -43,13 +43,13 @@ const props = withDefaults(
     }
   >(),
   {
-    margin: () => ({ top: 0, bottom: 0, left: 0, right: 0 }),
-    sortFunction: () => undefined,
-    valueFormatter: (tick: number) => `${tick}`,
-    type: "donut",
     filterOpacity: 0.2,
-    showTooltip: true,
+    margin: () => ({ bottom: 0, left: 0, right: 0, top: 0 }),
     showLegend: true,
+    showTooltip: true,
+    sortFunction: () => undefined,
+    type: "donut",
+    valueFormatter: (tick: number) => `${tick}`,
   },
 );
 
@@ -70,9 +70,9 @@ const colors = computed(() =>
 );
 const legendItems = computed(() =>
   props.data.map((item, i) => ({
-    name: item[props.index],
     color: colors.value[i],
     inactive: false,
+    name: item[props.index],
   })),
 );
 

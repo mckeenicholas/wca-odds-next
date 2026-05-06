@@ -1,7 +1,9 @@
 <script setup lang="ts">
+import type { RouteParams } from "vue-router";
 import { LoaderCircle } from "lucide-vue-next";
 import { computed, onMounted } from "vue";
-import { RouteParams, useRoute, useRouter } from "vue-router";
+import { useRoute, useRouter } from "vue-router";
+import type { SimulationRouteQuery, SupportedWCAEvent } from "@/lib/types";
 import FullHistogram from "@/components/charts/FullHistogram.vue";
 import HistoryHistogram from "@/components/charts/HistoryHistogram.vue";
 import RankHistogram from "@/components/charts/RankHistogram.vue";
@@ -12,12 +14,7 @@ import LoadingMessage from "@/components/custom/LoadingMessage.vue";
 import ResultsSummary from "@/components/custom/ResultsSummary.vue";
 import { Button } from "@/components/ui/button";
 import { useSimulation } from "@/lib/composables/useSimulation";
-import {
-  eventAttempts,
-  eventNames,
-  SimulationRouteQuery,
-  SupportedWCAEvent,
-} from "@/lib/types";
+import { eventAttempts, eventNames } from "@/lib/types";
 import {
   createCSVExport,
   createJSONExport,
@@ -28,7 +25,7 @@ import {
 
 const router = useRouter();
 const currentVueRoute = useRoute();
-const path = currentVueRoute.path;
+const { path } = currentVueRoute;
 
 const queryParams = currentVueRoute.query as SimulationRouteQuery & RouteParams;
 
@@ -79,35 +76,35 @@ const {
   reset,
   syncResultsWithWCALive: syncResultsWithWCALiveBase,
 } = useSimulation({
-  event,
+  attemptsCount,
   competitorsList,
   decayHalfLife,
+  endDate,
+  event,
   includeDNF,
   startDate,
-  endDate,
-  attemptsCount,
 });
 
 const sharedProps = computed(() => ({
-  data: simulationResults.value!,
   colors,
+  data: simulationResults.value!,
   event,
 }));
 
 const historyCompetitors = computed(
   () =>
     simulationResults.value?.competitor_results.map((c, index) => ({
-      id: c.id,
       color: colors[index],
+      id: c.id,
     })) ?? [],
 );
 
 const historyDataParams = computed(() => ({
-  event_id: event,
-  start_date: startDate.toISOString().split("T")[0],
   end_date: endDate.toISOString().split("T")[0],
+  event_id: event,
   half_life: decayHalfLife,
   include_dnf: includeDNF,
+  start_date: startDate.toISOString().split("T")[0],
 }));
 
 onMounted(() => {
@@ -145,14 +142,14 @@ const showWCALiveImport = computed(() => {
 const exportJson = () => {
   const jsonText = createJSONExport({
     competitionName: name,
-    results: simulationResults.value!,
-    ids: competitorsList,
     currentTimes: inputtedTimes.value,
-    startDate,
-    endDate,
     decayRate: decayHalfLife,
-    includeDnf: includeDNF,
+    endDate,
     event,
+    ids: competitorsList,
+    includeDnf: includeDNF,
+    results: simulationResults.value!,
+    startDate,
   });
 
   downloadTextBlob(jsonText, `${name}_results.json`, "application/json");

@@ -5,11 +5,11 @@ const { message } = defineProps<{ message: string }>();
 
 const loadingText = ref(message);
 const dots = ref("");
-let intervalId: number;
+let intervalId: number | undefined;
 
 const updateDots = () => {
-  dots.value = dots.value.length < 3 ? dots.value + "." : "";
-  loadingText.value = message + dots.value;
+  dots.value = dots.value.length < 3 ? `${dots.value}.` : "";
+  loadingText.value = `${message}${dots.value}`;
 };
 
 onMounted(() => {

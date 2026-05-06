@@ -17,16 +17,16 @@ import {
 } from "@/components/ui/select";
 import { useRankDetail } from "@/lib/composables/useRankDetail";
 import {
-  eventNames,
   type PersonRankInfo,
   type SupportedWCAEvent,
+  eventNames,
 } from "@/lib/types";
 import { renderTime } from "@/lib/utils";
 import CubingIcon from "./CubingIcon.vue";
 import DateRangePicker from "./DateRangePicker.vue";
 import RotatableChevron from "./RotatableChevron.vue";
 
-const props = defineProps<{
+const { eventRank, personId, personName, rankDate, index } = defineProps<{
   eventRank: PersonRankInfo;
   personId: string;
   personName: string;
@@ -46,15 +46,15 @@ const {
   error,
   mappedHistory,
 } = useRankDetail({
-  competitorId: computed(() => props.personId),
-  eventId: computed(() => props.eventRank.event_id),
-  competitorName: computed(() => props.personName),
-  rankDate: computed(() => props.rankDate),
+  competitorId: computed(() => personId),
+  competitorName: computed(() => personName),
+  eventId: computed(() => eventRank.event_id),
   isOpen,
+  rankDate: computed(() => rankDate),
 });
 
 const eventLabel = computed(() => {
-  switch (props.eventRank.event_id) {
+  switch (eventRank.event_id) {
     case "all":
       return "Sum of Ranks";
     case "kinch":
@@ -62,25 +62,25 @@ const eventLabel = computed(() => {
     case "kinch_strict":
       return "Kinch Strict";
     default:
-      return eventNames[props.eventRank.event_id as keyof typeof eventNames];
+      return eventNames[eventRank.event_id as keyof typeof eventNames];
   }
 });
 
 const isTimeEvent = computed(
-  () => !["all", "kinch", "kinch_strict"].includes(props.eventRank.event_id),
+  () => !["all", "kinch", "kinch_strict"].includes(eventRank.event_id),
 );
 
-const isFMC = computed(() => props.eventRank.event_id === "333fm");
+const isFMC = computed(() => eventRank.event_id === "333fm");
 
 const formatScore = (score: number) => {
-  const eid = props.eventRank.event_id;
+  const eid = eventRank.event_id;
   if (eid === "all") return score.toFixed(0);
   if (["kinch", "kinch_strict"].includes(eid)) return score.toFixed(2);
   return renderTime(score, eid === "333fm");
 };
 
 const ariaId = computed(
-  () => `event-details-${props.personId}-${props.eventRank.event_id}`,
+  () => `event-details-${personId}-${eventRank.event_id}`,
 );
 </script>
 
@@ -99,7 +99,7 @@ const ariaId = computed(
         <div class="flex-2 text-left">
           <CubingIcon
             v-if="isTimeEvent"
-            :event="props.eventRank.event_id as SupportedWCAEvent"
+            :event="eventRank.event_id as SupportedWCAEvent"
             class="me-2"
             :show-tooltip="false"
           />

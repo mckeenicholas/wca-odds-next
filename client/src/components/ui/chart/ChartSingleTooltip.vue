@@ -29,19 +29,21 @@ function template(d: any, i: number, elements: (HTMLElement | SVGElement)[]) {
       const omittedData = Object.entries(omit(d, [props.index])).map(
         ([key, value]) => {
           const legendReference = props.items?.find((i) => i.name === key);
-          return { ...legendReference, value: props.valueFormatter(value) };
+          return Object.assign({}, legendReference, {
+            value: props.valueFormatter(value),
+          });
         },
       );
       const TooltipComponent = props.customTooltip ?? ChartTooltip;
       createApp(TooltipComponent, {
-        title: d[props.index],
         data: omittedData,
+        title: d[props.index],
       }).mount(componentDiv);
       wm.set(d, componentDiv.innerHTML);
       return componentDiv.innerHTML;
     }
   } else {
-    const data = d.data;
+    const { data } = d;
 
     if (wm.has(data)) {
       return wm.get(data);
@@ -49,16 +51,16 @@ function template(d: any, i: number, elements: (HTMLElement | SVGElement)[]) {
       const style = getComputedStyle(elements[i]);
       const omittedData = [
         {
+          color: style.fill,
           name: data.name,
           value: props.valueFormatter(data[props.index]),
-          color: style.fill,
         },
       ];
       const componentDiv = document.createElement("div");
       const TooltipComponent = props.customTooltip ?? ChartTooltip;
       createApp(TooltipComponent, {
-        title: d[props.index],
         data: omittedData,
+        title: d[props.index],
       }).mount(componentDiv);
       wm.set(d, componentDiv.innerHTML);
       return componentDiv.innerHTML;

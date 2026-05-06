@@ -14,8 +14,8 @@ import {
   ChevronsRight,
 } from "lucide-vue-next";
 import { type DateRange, RangeCalendarRoot, useDateFormatter } from "reka-ui";
-import { createMonth, type Grid, toDate } from "reka-ui/date";
-import { computed, type Ref, ref, watch } from "vue";
+import { type Grid, createMonth, toDate } from "reka-ui/date";
+import { type Ref, computed, ref, watch } from "vue";
 import { Button, buttonVariants } from "@/components/ui/button";
 import {
   Popover,
@@ -33,7 +33,7 @@ import {
 } from "@/components/ui/range-calendar";
 import { cn } from "@/lib/utils";
 
-const props = defineProps<{
+const { startDate, endDate, allowFuture } = defineProps<{
   startDate?: Date;
   endDate?: Date;
   allowFuture?: boolean;
@@ -58,11 +58,9 @@ const calendarDateToDate = (calendarDate: CalendarDate): Date => {
 
 const value = computed({
   get(): DateRange {
-    const start = props.startDate
-      ? dateToCalendarDate(props.startDate)
-      : undefined;
-    const end = props.endDate ? dateToCalendarDate(props.endDate) : undefined;
-    return { start, end };
+    const start = startDate ? dateToCalendarDate(startDate) : undefined;
+    const end = endDate ? dateToCalendarDate(endDate) : undefined;
+    return { end, start };
   },
   set(newValue: DateRange) {
     emit(
@@ -93,8 +91,8 @@ const secondMonthPlaceholder = ref(
 const firstMonth = ref<Grid<DateValue>>(
   createMonth({
     dateObj: placeholder.value,
-    locale: locale.value,
     fixedWeeks: true,
+    locale: locale.value,
     weekStartsOn: 0,
   }),
 );
@@ -102,8 +100,8 @@ const firstMonth = ref<Grid<DateValue>>(
 const secondMonth = ref<Grid<DateValue>>(
   createMonth({
     dateObj: secondMonthPlaceholder.value,
-    locale: locale.value,
     fixedWeeks: true,
+    locale: locale.value,
     weekStartsOn: 0,
   }),
 );
@@ -129,9 +127,9 @@ const updateYear = (reference: "first" | "second", years: number) => {
 watch(placeholder, (_placeholder) => {
   firstMonth.value = createMonth({
     dateObj: _placeholder,
-    weekStartsOn: 0,
     fixedWeeks: false,
     locale: locale.value,
+    weekStartsOn: 0,
   });
   if (isEqualMonth(secondMonthPlaceholder.value, _placeholder)) {
     secondMonthPlaceholder.value = secondMonthPlaceholder.value.add({
@@ -143,9 +141,9 @@ watch(placeholder, (_placeholder) => {
 watch(secondMonthPlaceholder, (_secondMonthPlaceholder) => {
   secondMonth.value = createMonth({
     dateObj: _secondMonthPlaceholder,
-    weekStartsOn: 0,
     fixedWeeks: false,
     locale: locale.value,
+    weekStartsOn: 0,
   });
   if (isEqualMonth(_secondMonthPlaceholder, placeholder.value))
     placeholder.value = placeholder.value.subtract({ months: 1 });
@@ -153,7 +151,7 @@ watch(secondMonthPlaceholder, (_secondMonthPlaceholder) => {
 
 // Watch for prop changes to update placeholders
 watch(
-  () => props.startDate,
+  () => startDate,
   (newStartDate) => {
     if (newStartDate) {
       const calendarDate = dateToCalendarDate(newStartDate);
@@ -165,7 +163,7 @@ watch(
 );
 
 watch(
-  () => props.endDate,
+  () => endDate,
   (newEndDate) => {
     if (newEndDate) {
       const calendarDate = dateToCalendarDate(newEndDate);
@@ -177,7 +175,7 @@ watch(
 );
 
 const maxValue = computed(() =>
-  props.allowFuture ? undefined : today(getLocalTimeZone()),
+  allowFuture ? undefined : today(getLocalTimeZone()),
 );
 </script>
 

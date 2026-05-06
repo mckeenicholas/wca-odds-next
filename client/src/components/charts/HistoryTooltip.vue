@@ -20,8 +20,8 @@ const { title, data, percent, isTime, isFMC } =
 const formatDate = (dateNum: number) => {
   const dateObj = new Date(dateNum);
   return dateObj.toLocaleDateString(undefined, {
-    year: "numeric",
     month: "long",
+    year: "numeric",
   });
 };
 

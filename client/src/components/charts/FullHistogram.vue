@@ -1,12 +1,12 @@
 <script setup lang="ts">
 import { computed, ref, watchEffect } from "vue";
+import type { ChartData, SimulationResultProps } from "@/lib/types";
 import HistogramCustomTooltip from "@/components/charts/HistogramCustomTooltip.vue";
 import ColoredCircle from "@/components/custom/ColoredCircle.vue";
 import { AreaChart } from "@/components/ui/chart-area";
 import Checkbox from "@/components/ui/checkbox/Checkbox.vue";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectTrigger } from "@/components/ui/select";
-import { ChartData, SimulationResultProps } from "@/lib/types";
 import { computeCDF, renderTime } from "@/lib/utils";
 import MultiLabelSwitch from "./MultiLabelSwitch.vue";
 
@@ -19,14 +19,14 @@ const isCDF = ref<boolean>(false);
 
 const trimChartItems = (chart: ChartData, selected: boolean[]): ChartData => {
   const labels = chart.labels.filter((_, idx) => selected[idx]);
-  const data = chart.data.map((v) => ({
+  const trimmedChartData = chart.data.map((v) => ({
     ...v,
     values: v.values.filter((_, idx) => selected[idx]),
   }));
 
   return {
+    data: trimmedChartData,
     labels,
-    data,
   };
 };
 
@@ -40,12 +40,14 @@ const names = computed(() => {
   return histValues.value.labels;
 });
 
-const enabled = ref<boolean[]>(Array(names.value.length).fill(true));
+const enabled = ref<boolean[]>(
+  Array.from({ length: names.value.length }, () => true),
+);
 
 watchEffect(() => {
   const len = names.value.length;
   if (enabled.value.length !== len) {
-    enabled.value = Array(len).fill(true);
+    enabled.value = Array.from({ length: len }, () => true);
   }
 });
 
@@ -69,7 +71,7 @@ const chartData = computed(() => {
 });
 
 const xFormatter = (value: number | Date) => {
-  let timeVal = parseInt(chartData.value[value as number].name as string);
+  const timeVal = parseInt(chartData.value[value as number].name as string);
   return renderTime(timeVal, event === "333fm");
 };
 </script>

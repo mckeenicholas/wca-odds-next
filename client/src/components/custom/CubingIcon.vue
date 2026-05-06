@@ -6,26 +6,25 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { eventNames, SupportedWCAEvent } from "@/lib/types";
+import { type SupportedWCAEvent, eventNames } from "@/lib/types";
 
-const props = withDefaults(
-  defineProps<{
-    event: SupportedWCAEvent;
-    showTooltip?: boolean;
-    class?: string;
-  }>(),
-  {
-    showTooltip: true,
-  },
-);
+const {
+  event,
+  showTooltip = true,
+  class: className,
+} = defineProps<{
+  event: SupportedWCAEvent;
+  showTooltip?: boolean;
+  class?: string;
+}>();
 
 const eventName = computed(() => {
-  return eventNames[props.event];
+  return eventNames[event];
 });
 </script>
 
 <template>
-  <span :class="props.class">
+  <span :class="className">
     <TooltipProvider v-if="showTooltip" :delay-duration="300">
       <Tooltip>
         <TooltipTrigger :aria-label="`${eventName} icon`">

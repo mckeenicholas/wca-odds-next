@@ -8,12 +8,12 @@ export const useCompSettingsStore = defineStore("compSettings", () => {
   // Default values
   const defaultValues = {
     competitorsByEvent: () => ({}) as Record<string, Competitor[]>,
-    selectedEventId: () => "333" as SupportedWCAEvent,
-    includeDnf: () => true,
     decayHalfLife: () => 180,
+    endDate: () => new Date(),
+    includeDnf: () => true,
+    selectedEventId: () => "333" as SupportedWCAEvent,
     startDate: () =>
       new Date(new Date().setFullYear(new Date().getFullYear() - 1)),
-    endDate: () => new Date(),
   };
 
   // State
@@ -40,11 +40,11 @@ export const useCompSettingsStore = defineStore("compSettings", () => {
   return {
     compId,
     competitorsByEvent,
-    selectedEventId,
-    includeDnf,
     decayHalfLife,
-    startDate,
     endDate,
+    includeDnf,
     reset,
+    selectedEventId,
+    startDate,
   };
 });

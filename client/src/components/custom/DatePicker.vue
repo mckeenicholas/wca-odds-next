@@ -58,7 +58,7 @@ watch(
 );
 
 const maxDate = computed(() => {
-  if (props.allowFuture) return undefined;
+  if (props.allowFuture) return;
   return today(getLocalTimeZone());
 });
 </script>

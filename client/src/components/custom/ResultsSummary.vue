@@ -2,8 +2,8 @@
 import { computed } from "vue";
 import PieChart from "@/components/charts/PieChart.vue";
 import {
-  SimulationAPIResults,
-  SupportedWCAEvent,
+  type SimulationAPIResults,
+  type SupportedWCAEvent,
   eventNames,
 } from "@/lib/types";
 import { formatPercentage, toClockFormat } from "@/lib/utils";
@@ -24,9 +24,9 @@ const topCompetitor = computed(() =>
 
 const topCompetitorStats = computed(() => ({
   avgRank: topCompetitor.value.expected_rank.toFixed(2),
-  winChance: formatPercentage(topCompetitor.value.win_chance, true),
-  podiumChance: formatPercentage(topCompetitor.value.pod_chance, true),
   expectedAvg: toClockFormat(topCompetitor.value.mean_no_dnf),
+  podiumChance: formatPercentage(topCompetitor.value.pod_chance, true),
+  winChance: formatPercentage(topCompetitor.value.win_chance, true),
 }));
 </script>
 

@@ -2,12 +2,14 @@ import { type Ref, computed, ref } from "vue";
 import type { SimulationAPIResults, SupportedWCAEvent } from "@/lib/types";
 import {
   API_URL,
-  ArrEq2D,
+  arrEq2D,
   clone2DArr,
   formatInputtedTimes,
   generateDefaultTimesArray,
 } from "@/lib/utils";
 import fetchWCALiveResults from "@/lib/wcaLive";
+
+const formatDate = (d: Date) => d.toISOString().split("T")[0];
 
 export function useSimulation({
   event,
@@ -31,8 +33,8 @@ export function useSimulation({
     attemptsCount,
   );
 
-  const error = ref<string>("");
-  const simulationResults = ref<SimulationAPIResults | null>(null);
+  const errorMessage = ref<string>("");
+  const simulationResults = ref<SimulationAPIResults | undefined>(undefined);
   const loading = ref<boolean>(true);
   const recalculateLoading = ref<boolean>(false);
   const wcaLiveLoading = ref<boolean>(false);
@@ -43,28 +45,26 @@ export function useSimulation({
     const hasNonZero = inputtedTimes.value.some((competitor: number[]) =>
       competitor.some((time) => time !== 0),
     );
-    const isModified = !ArrEq2D(inputtedTimes.value, inputtedTimesPrev.value);
+    const isModified = !arrEq2D(inputtedTimes.value, inputtedTimesPrev.value);
 
     return { hasNonZero, isModified };
   });
 
   const fetchSimulationResults = async () => {
-    const formatDate = (d: Date) => d.toISOString().split("T")[0];
-
     const payload = {
       competitor_ids: competitorsList,
-      event_id: event,
-      start_date: formatDate(startDate),
       end_date: formatDate(endDate),
-      half_life: decayHalfLife,
       entered_times: formatInputtedTimes(inputtedTimes.value, event),
+      event_id: event,
+      half_life: decayHalfLife,
       include_dnf: includeDNF,
+      start_date: formatDate(startDate),
     };
 
     const response = await fetch(`${API_URL}/api/simulation`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
       body: JSON.stringify(payload),
+      headers: { "Content-Type": "application/json" },
+      method: "POST",
     });
 
     if (!response.ok) {
@@ -80,17 +80,17 @@ export function useSimulation({
 
   const runSimulation = async (loadingRef: Ref<boolean>) => {
     loadingRef.value = true;
-    error.value = "";
+    errorMessage.value = "";
     try {
       const results = await fetchSimulationResults();
       if (results) {
         simulationResults.value = results;
         inputtedTimesPrev.value = clone2DArr(inputtedTimes.value);
       }
-    } catch (err) {
-      console.error("Simulation error:", err);
-      error.value =
-        err instanceof Error ? err.message : "Unknown error occurred";
+    } catch (error) {
+      console.error("Simulation error:", error);
+      errorMessage.value =
+        error instanceof Error ? error.message : "Unknown error occurred";
     } finally {
       loadingRef.value = false;
     }
@@ -116,25 +116,25 @@ export function useSimulation({
 
       inputtedTimes.value = results;
       await handleRecalculation();
-    } catch (err) {
-      console.error(err);
+    } catch (error) {
+      console.error(error);
     } finally {
       wcaLiveLoading.value = false;
     }
   };
 
   return {
-    error,
-    simulationResults,
-    loading,
-    recalculateLoading,
-    wcaLiveLoading,
+    error: errorMessage,
+    handleRecalculation,
     inputtedTimes,
     inputtedTimesPrev,
     inputtedTimesState,
-    runInitialSimulation,
-    handleRecalculation,
+    loading,
+    recalculateLoading,
     reset,
+    runInitialSimulation,
+    simulationResults,
     syncResultsWithWCALive,
+    wcaLiveLoading,
   };
 }

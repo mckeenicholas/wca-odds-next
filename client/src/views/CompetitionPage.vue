@@ -30,8 +30,8 @@ const {
 const { width } = useWindowSize();
 
 const { isPending, isError, data, error } = useQuery({
-  queryKey: ["competition", route.params.id],
   queryFn: () => fetchWCIF(route.params.id as string),
+  queryKey: ["competition", route.params.id],
   staleTime: Infinity,
 });
 
@@ -77,15 +77,15 @@ const runSimulation = () => {
   const selectedIds = currentSelectedCompetitors.value.map((item) => item.id);
 
   const query = buildSimulationQuery({
-    name: data.value.name,
-    eventId: selectedEventId.value,
-    startDate: startDate.value,
-    endDate: endDate.value,
-    includeDnf: includeDnf.value,
-    decayRate: decayHalfLife.value,
-    competitors: selectedIds,
     competitionId: data.value.id,
+    competitors: selectedIds,
     date: data.value.schedule.startDate,
+    decayRate: decayHalfLife.value,
+    endDate: endDate.value,
+    eventId: selectedEventId.value,
+    includeDnf: includeDnf.value,
+    name: data.value.name,
+    startDate: startDate.value,
   });
 
   router.push({

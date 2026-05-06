@@ -1,4 +1,5 @@
-import { Ref, nextTick, ref, type TemplateRef } from "vue";
+import type { Ref } from "vue";
+import { type TemplateRef, nextTick, ref } from "vue";
 import { useRouter } from "vue-router";
 
 export interface NavigationItem {
@@ -36,8 +37,8 @@ export function useListNavigation<T extends NavigationItem>({
             selectedResult.value
           ] as HTMLElement;
           selectedItemEl.scrollIntoView({
-            block: "nearest",
             behavior: "smooth",
+            block: "nearest",
           });
         }
       }
@@ -89,8 +90,8 @@ export function useListNavigation<T extends NavigationItem>({
   };
 
   return {
-    selectedResult,
     handleKeydown,
     resetSelection,
+    selectedResult,
   };
 }

@@ -37,15 +37,15 @@ const props = withDefaults(
     }
   >(),
   {
-    type: "grouped",
-    margin: () => ({ top: 0, bottom: 0, left: 0, right: 0 }),
     filterOpacity: 0.2,
+    margin: () => ({ bottom: 0, left: 0, right: 0, top: 0 }),
     roundedCorners: 0,
+    showGridLine: true,
+    showLegend: true,
+    showTooltip: true,
     showXAxis: true,
     showYAxis: true,
-    showTooltip: true,
-    showLegend: true,
-    showGridLine: true,
+    type: "grouped",
   },
 );
 const emits = defineEmits<{
@@ -61,9 +61,9 @@ const colors = computed(() =>
 );
 const legendItems = ref<BulletLegendItemInterface[]>(
   props.categories.map((category, i) => ({
-    name: category,
     color: colors.value[i],
     inactive: false,
+    name: category,
   })),
 );
 

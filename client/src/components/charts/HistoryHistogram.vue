@@ -2,6 +2,7 @@
 import { useQuery } from "@tanstack/vue-query";
 import { LoaderCircle } from "lucide-vue-next";
 import { computed, ref } from "vue";
+import type { HistoryChartMetric, HistoryPoint } from "@/lib/types";
 import {
   Select,
   SelectContent,
@@ -9,12 +10,11 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { HistoryChartMetric, HistoryPoint } from "@/lib/types";
 import { API_URL } from "@/lib/utils";
 import MultiLabelSwitch from "./MultiLabelSwitch.vue";
 import StackedAreaChart from "./StackedAreaChart.vue";
 
-const props = defineProps<{
+const { competitors, data } = defineProps<{
   competitors: { id: string; color: string }[];
   data: {
     event_id: string;
@@ -30,14 +30,14 @@ const isOverlap = ref(false);
 
 const fetchHistory = async (): Promise<HistoryPoint[]> => {
   const payload = {
-    competitor_ids: props.competitors.map((c) => c.id),
-    ...props.data,
+    competitor_ids: competitors.map((c) => c.id),
+    ...data,
   };
 
   const response = await fetch(`${API_URL}/api/history`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
     body: JSON.stringify(payload),
+    headers: { "Content-Type": "application/json" },
+    method: "POST",
   });
 
   if (!response.ok) {
@@ -46,33 +46,35 @@ const fetchHistory = async (): Promise<HistoryPoint[]> => {
 
   const result: HistoryPoint[] = await response.json();
 
-  return result.map((point) => ({
-    ...point,
-    competitors: point.competitors.map((competitor) => ({
-      ...competitor,
-      color: props.competitors.find((c) => c.id === competitor.id)!.color,
-    })),
-  })) as HistoryPoint[];
+  for (const point of result) {
+    for (const competitor of point.competitors) {
+      (competitor as HistoryPoint["competitors"][number]).color =
+        competitors.find((c) => c.id === competitor.id)!.color;
+    }
+  }
+
+  return result;
 };
 
-const { isPending, isError, error, data, refetch } = useQuery({
-  queryKey: computed(() => [
-    "simulation-history",
-    props.competitors,
-    props.data,
-  ]),
+const {
+  isPending,
+  isError,
+  error,
+  data: historyData,
+  refetch,
+} = useQuery({
+  enabled: computed(() => Boolean(competitors) && competitors.length > 0),
   queryFn: fetchHistory,
-  enabled: computed(() => !!props.competitors && props.competitors.length > 0),
-  staleTime: Infinity,
+  queryKey: computed(() => ["simulation-history", competitors, data]),
   retry: false,
+  staleTime: Infinity,
 });
 
 const chartData = computed(() => {
-  if (!data.value) return null;
+  if (!historyData.value) return;
 
-  return data.value.map((point) => ({
-    ...point,
-    competitors: point.competitors.map((c) => {
+  return historyData.value.map((point) => {
+    const competitorList = point.competitors.map((c) => {
       let value = 0;
 
       if (metric.value === "win") {
@@ -83,12 +85,11 @@ const chartData = computed(() => {
         value = c.expected_rank;
       }
 
-      return {
-        ...c,
-        displayValue: value,
-      };
-    }),
-  }));
+      return Object.assign({}, c, { displayValue: value });
+    });
+
+    return Object.assign({}, point, { competitors: competitorList });
+  });
 });
 </script>
 

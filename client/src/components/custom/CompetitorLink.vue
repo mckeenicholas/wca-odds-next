@@ -1,11 +1,17 @@
 <script setup lang="ts">
-import { ClassValue } from "clsx";
+import type { ClassValue } from "clsx";
 import { computed } from "vue";
 import { RouterLink } from "vue-router";
 import FlagIcon from "./FlagIcon.vue";
 import WCALogo from "./WCALogo.vue";
 
-const props = defineProps<{
+const {
+  name,
+  id,
+  iso2,
+  class: className,
+  event,
+} = defineProps<{
   name: string;
   id: string | null;
   iso2: string | null;
@@ -14,28 +20,26 @@ const props = defineProps<{
 }>();
 
 const wcaLink = computed(() => {
-  if (!props.id) return "#";
+  if (!id) return "#";
 
-  const url = new URL(
-    `https://www.worldcubeassociation.org/persons/${props.id}`,
-  );
-  if (props.event) {
-    url.searchParams.append("event", props.event);
+  const url = new URL(`https://www.worldcubeassociation.org/persons/${id}`);
+  if (event) {
+    url.searchParams.append("event", event);
   }
 
   return url.toString();
 });
 
 const personalLink = computed(() => {
-  const base = `/rankings/personal/${props.id}`;
-  if (!props.event) return base;
-  const params = new URLSearchParams({ event: props.event });
+  const base = `/rankings/personal/${id}`;
+  if (!event) return base;
+  const params = new URLSearchParams({ event });
   return `${base}?${params}`;
 });
 </script>
 
 <template>
-  <div :class="props.class" class="min-w-0">
+  <div :class="className" class="min-w-0">
     <FlagIcon v-if="iso2" :code="iso2" />
     <RouterLink
       :to="personalLink"

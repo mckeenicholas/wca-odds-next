@@ -9,9 +9,9 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import {
-  CompetitorSimulationResult,
+  type CompetitorSimulationResult,
+  type SupportedWCAEvent,
   eventAttempts,
-  SupportedWCAEvent,
 } from "@/lib/types";
 import { formatPercentage } from "@/lib/utils";
 import {

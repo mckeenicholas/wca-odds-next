@@ -10,42 +10,43 @@ import { VisArea, VisAxis, VisLine, VisXYContainer } from "@unovis/vue";
 import { useMounted } from "@vueuse/core";
 import { useId } from "radix-vue";
 import { computed, h, ref, watchEffect } from "vue";
+import type { RankingHistoryPoint } from "@/lib/types";
 import { ChartCrosshair } from "@/components/ui/chart";
-import { RankingHistoryPoint } from "@/lib/types";
 import { renderTime } from "@/lib/utils";
 import HistoryTooltip, { type HistoryTooltipProps } from "./HistoryTooltip.vue";
 
 const STACKED_OPACITY = 0.8;
 
-const props = withDefaults(
-  defineProps<{
-    history: RankingHistoryPoint[];
-    stacked?: boolean;
-    filterOpacity?: number;
-    showGradient?: boolean;
-    metric: "value" | "rank";
-    isTime?: boolean;
-    isFMC?: boolean;
-  }>(),
-  {
-    stacked: true,
-    filterOpacity: 0.2,
-    showGradient: true,
-  },
-);
+const {
+  history,
+  stacked = true,
+  filterOpacity = 0.2,
+  showGradient = true,
+  metric,
+  isTime,
+  isFMC,
+} = defineProps<{
+  history: RankingHistoryPoint[];
+  stacked?: boolean;
+  filterOpacity?: number;
+  showGradient?: boolean;
+  metric: "value" | "rank";
+  isTime?: boolean;
+  isFMC?: boolean;
+}>();
 
 const rawId = useId();
-const chartRef = computed(() => rawId.replace(/:/g, "-"));
+const chartRef = computed(() => rawId.replaceAll(":", "-"));
 const isMounted = useMounted();
 
 const competitorMeta = computed(() => {
-  if (!props.history?.length) return [];
+  if (!history?.length) return [];
 
-  const lastEntry = props.history[props.history.length - 1];
+  const lastEntry = history.at(-1)!;
 
   const meta = lastEntry.competitors.map((c) => {
     let finalVal = 0;
-    switch (props.metric) {
+    switch (metric) {
       case "value":
         finalVal = c.value;
         break;
@@ -55,10 +56,10 @@ const competitorMeta = computed(() => {
     }
 
     return {
-      id: c.id,
-      name: c.name,
       color: c.color!,
       finalVal,
+      id: c.id,
+      name: c.name,
     };
   });
 
@@ -67,18 +68,18 @@ const competitorMeta = computed(() => {
 });
 
 const processedData = computed(() => {
-  if (!props.history?.length) return [];
+  if (!history?.length) return [];
 
-  return props.history.map((point) => {
+  return history.map((point) => {
     const dataPoint: Record<string, number> = {
       date: new Date(point.date).getTime(),
     };
 
     point.competitors.forEach((c) => {
       let val = 0;
-      if (props.metric === "value") {
+      if (metric === "value") {
         val = c.value;
-      } else if (props.metric === "rank") {
+      } else if (metric === "rank") {
         val = c.rank;
       }
       dataPoint[c.name] = val;
@@ -93,10 +94,10 @@ const yRange = computed(() => {
     competitorMeta.value.map((m) => d[m.name]),
   );
 
-  if (allValues.length === 0) return undefined;
+  if (allValues.length === 0) return;
 
-  if (props.metric === "rank") {
-    return undefined;
+  if (metric === "rank") {
+    return;
   }
 
   const maxVal = Math.max(...allValues);
@@ -112,8 +113,8 @@ const yRange = computed(() => {
 });
 
 const yTickFormat = (v: number) => {
-  if (props.metric === "rank") return v.toFixed(0);
-  if (props.isTime) return renderTime(v, props.isFMC);
+  if (metric === "rank") return v.toFixed(0);
+  if (isTime) return renderTime(v, isFMC);
   return v.toFixed(1);
 };
 
@@ -122,9 +123,9 @@ const x = (d: Record<string, number>) => d.date;
 const legendItems = ref<BulletLegendItemInterface[]>([]);
 watchEffect(() => {
   legendItems.value = competitorMeta.value.map((meta) => ({
-    name: meta.name,
     color: meta.color,
     inactive: false,
+    name: meta.name,
   }));
 });
 
@@ -154,9 +155,9 @@ const tooltip = computed(() => {
   return (tooltipProps: HistoryTooltipProps) =>
     h(HistoryTooltip, {
       ...tooltipProps,
+      isFMC,
+      isTime: metric === "value" && isTime,
       percent: isPercent,
-      isTime: props.metric === "value" && props.isTime,
-      isFMC: props.isFMC,
     });
 });
 </script>
