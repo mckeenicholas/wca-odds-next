@@ -6,7 +6,8 @@ import {
   getLocalTimeZone,
   today,
 } from "@internationalized/date";
-
+import { CalendarIcon } from "lucide-vue-next";
+import { computed, shallowRef, watch } from "vue";
 import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
 import {
@@ -15,8 +16,6 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 import { cn } from "@/lib/utils";
-import { CalendarIcon } from "lucide-vue-next";
-import { computed, shallowRef, watch } from "vue";
 
 const props = defineProps<{
   modelValue?: Date;
@@ -95,7 +94,7 @@ const maxDate = computed(() => {
       <div v-if="message !== undefined" class="border-t p-3">
         <input
           :value="message"
-          class="placeholder:text-muted-foreground w-full bg-transparent text-sm outline-none"
+          class="w-full bg-transparent text-sm outline-none placeholder:text-muted-foreground"
           placeholder="Add a message..."
           @input="
             emit('update:message', ($event.target as HTMLInputElement).value)

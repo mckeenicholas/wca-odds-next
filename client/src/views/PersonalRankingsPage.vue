@@ -1,4 +1,9 @@
 <script setup lang="ts">
+import { useQuery } from "@tanstack/vue-query";
+import { onClickOutside, useDebounceFn } from "@vueuse/core";
+import { LoaderCircle, Search, X } from "lucide-vue-next";
+import { computed, ref, watch } from "vue";
+import { useRoute, useRouter } from "vue-router";
 import DatePicker from "@/components/custom/DatePicker.vue";
 import ErrorDisplay from "@/components/custom/ErrorPanel.vue";
 import EventRankDropdown from "@/components/custom/EventRankDropdown.vue";
@@ -11,13 +16,7 @@ import {
   type PersonRankInfo,
   type PersonSearchResult,
 } from "@/lib/types";
-import { API_URL } from "@/lib/utils";
-import { useQuery } from "@tanstack/vue-query";
-import { onClickOutside, useDebounceFn } from "@vueuse/core";
-import { LoaderCircle, Search, X } from "lucide-vue-next";
-import { computed, ref, watch } from "vue";
-import { useRoute, useRouter } from "vue-router";
-import "../style.css";
+import { API_URL, isToday, toNaiveDate } from "@/lib/utils";
 
 const route = useRoute();
 const router = useRouter();
@@ -35,14 +34,6 @@ const committedDate = ref(new Date());
 const isDirty = computed(
   () => rankDate.value.toDateString() !== committedDate.value.toDateString(),
 );
-
-const toNaiveDate = (date: Date) =>
-  `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
-
-const isToday = (date: Date) => {
-  const today = new Date();
-  return date.toDateString() === today.toDateString();
-};
 
 const debouncedSearch = useDebounceFn((term: string) => {
   debouncedTerm.value = term;
@@ -194,7 +185,7 @@ const {
 
 const applyDate = () => {
   committedDate.value = new Date(rankDate.value);
-  router.push({
+  router.replace({
     path: selectedPerson.value
       ? `/rankings/personal/${selectedPerson.value.person_id}`
       : "/rankings/personal",
@@ -213,12 +204,12 @@ const setToday = () => {
 <template>
   <div class="mx-auto flex w-full max-w-4xl flex-col items-center px-4 pb-12">
     <h1 class="my-6 text-2xl font-bold">Personal Rankings</h1>
-    <div class="mb-6 flex w-full flex-col items-center gap-4">
+    <div class="mb-4 flex w-full flex-col items-center gap-4">
       <div ref="comboboxRef" class="relative w-full max-w-md">
         <div
-          class="border-input bg-background ring-offset-background focus-within:ring-ring flex items-center gap-2 rounded-md border px-3 py-2 text-sm shadow-sm focus-within:ring-2"
+          class="flex items-center gap-2 rounded-md border border-input bg-background px-3 py-2 text-sm shadow-sm ring-offset-background focus-within:ring-2 focus-within:ring-ring"
         >
-          <Search class="text-muted-foreground h-4 w-4 shrink-0" />
+          <Search class="h-4 w-4 shrink-0 text-muted-foreground" />
           <template v-if="selectedPerson">
             <div class="flex flex-1 items-center gap-2 truncate">
               <FlagIcon
@@ -228,13 +219,13 @@ const setToday = () => {
               <span class="truncate font-medium">{{
                 selectedPerson.name
               }}</span>
-              <span class="text-muted-foreground text-xs"
+              <span class="text-xs text-muted-foreground"
                 >({{ selectedPerson.person_id }})</span
               >
             </div>
             <button
               @click="clearPerson"
-              class="text-muted-foreground hover:text-foreground transition-colors"
+              class="text-muted-foreground transition-colors hover:text-foreground"
               aria-label="Clear selection"
             >
               <X class="h-4 w-4" />
@@ -245,7 +236,7 @@ const setToday = () => {
             ref="searchInputRef"
             v-model="searchTerm"
             placeholder="Search for a person..."
-            class="placeholder:text-muted-foreground flex-1 bg-transparent outline-none"
+            class="flex-1 bg-transparent outline-none placeholder:text-muted-foreground"
           />
         </div>
         <div
@@ -254,7 +245,7 @@ const setToday = () => {
             !selectedPerson &&
             (searchResults?.length || isSearching)
           "
-          class="bg-popover text-popover-foreground animate-in fade-in-0 zoom-in-95 absolute z-50 mt-2 w-full rounded-md border shadow-lg"
+          class="absolute z-50 mt-2 w-full rounded-md border bg-popover text-popover-foreground shadow-lg animate-in fade-in-0 zoom-in-95"
         >
           <div class="no-scrollbar max-h-64 overflow-y-auto p-1">
             <div
@@ -262,7 +253,7 @@ const setToday = () => {
               class="flex justify-center py-6"
             >
               <LoaderCircle
-                class="text-muted-foreground h-5 w-5 animate-spin"
+                class="h-5 w-5 animate-spin text-muted-foreground"
               />
             </div>
             <template v-else-if="showResults && searchResults?.length">
@@ -270,21 +261,21 @@ const setToday = () => {
                 v-for="person in searchResults"
                 :key="person.person_id"
                 @click="selectPerson(person)"
-                class="hover:bg-accent hover:text-accent-foreground flex w-full items-center gap-2 rounded-sm px-3 py-2 text-left text-sm transition-colors"
+                class="flex w-full items-center gap-2 rounded-sm px-3 py-2 text-left text-sm transition-colors hover:bg-accent hover:text-accent-foreground"
               >
                 <FlagIcon
                   v-if="person.country_iso2"
                   :code="person.country_iso2"
                 />
                 <span class="truncate">{{ person.name }}</span>
-                <span class="text-muted-foreground ms-auto text-xs">{{
+                <span class="ms-auto text-xs text-muted-foreground">{{
                   person.person_id
                 }}</span>
               </button>
             </template>
             <div
               v-else-if="showResults"
-              class="text-muted-foreground py-6 text-center text-sm"
+              class="py-6 text-center text-sm text-muted-foreground"
             >
               No results found.
             </div>
@@ -329,7 +320,7 @@ const setToday = () => {
       </div>
       <div v-else-if="rankData?.length" class="rounded-md border shadow-sm">
         <header
-          class="text-muted-foreground flex items-center justify-between px-4 py-2 text-xs font-semibold tracking-wider uppercase"
+          class="flex items-center justify-between px-4 py-2 text-xs font-semibold tracking-wider text-muted-foreground uppercase"
         >
           <span class="w-16 md:w-28">Rank</span>
           <span class="flex-1">Event</span>
@@ -352,7 +343,7 @@ const setToday = () => {
           </li>
         </ol>
       </div>
-      <div v-else class="text-muted-foreground mt-12 text-center">
+      <div v-else class="mt-12 text-center text-muted-foreground">
         <p class="text-lg">{{ selectedPerson.name }}</p>
         <p class="text-sm">No competition data found for this timeframe.</p>
       </div>

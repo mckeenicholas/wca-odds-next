@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { computed } from "vue";
 import PieChart from "@/components/charts/PieChart.vue";
 import {
   SimulationAPIResults,
@@ -6,7 +7,6 @@ import {
   eventNames,
 } from "@/lib/types";
 import { formatPercentage, toClockFormat } from "@/lib/utils";
-import { computed } from "vue";
 
 const { data, colors, event } = defineProps<{
   data: SimulationAPIResults;

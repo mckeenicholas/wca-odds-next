@@ -97,14 +97,14 @@ interface PersonalBest {
   worldRanking: number;
 }
 
-export interface wcifEvent {
+export interface WcifEvent {
   id: SupportedWCAEvent;
 }
 
-export interface wcif {
+export interface Wcif {
   name: string;
   id: string;
-  events: wcifEvent[];
+  events: WcifEvent[];
   persons: Person[];
   schedule: {
     startDate: string;

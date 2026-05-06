@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { CircleAlert } from "lucide-vue-next";
+import { computed, ref } from "vue";
 import IndividualHistogram from "@/components/charts/IndividualHistogram.vue";
 import {
   Tooltip,
@@ -12,8 +14,6 @@ import {
   SupportedWCAEvent,
 } from "@/lib/types";
 import { formatPercentage } from "@/lib/utils";
-import { CircleAlert } from "lucide-vue-next";
-import { computed, ref } from "vue";
 import {
   Collapsible,
   CollapsibleContent,
@@ -52,7 +52,7 @@ const ariaId = computed(() => `dropdown-${result.id}`);
       <button
         type="button"
         :aria-label="`Details for ${result.id}`"
-        class="hover:bg-secondary focus-visible:bg-secondary flex w-full items-center justify-between rounded-md p-2 ps-1 text-left focus:outline-none"
+        class="flex w-full items-center justify-between rounded-md p-2 ps-1 text-left hover:bg-secondary focus:outline-none focus-visible:bg-secondary"
       >
         <div class="flex min-w-0 flex-2 items-center gap-3 lg:flex-[1.5]">
           <ColoredCircle :color class="ms-2" />

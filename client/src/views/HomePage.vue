@@ -1,14 +1,13 @@
 <script setup lang="ts">
-import { LoaderCircle, Search } from "lucide-vue-next";
-import { onClickOutside } from "@vueuse/core";
-import { fetchWCAInfo, formatDate } from "@/lib/utils";
 import { useQuery } from "@tanstack/vue-query";
+import { onClickOutside } from "@vueuse/core";
 import { useDebounceFn } from "@vueuse/core";
+import { LoaderCircle, Search } from "lucide-vue-next";
 import { computed, onMounted, ref, useTemplateRef, watch } from "vue";
 import { RouterLink, useRoute, useRouter } from "vue-router";
 import { Button } from "@/components/ui/button";
-
 import { useListNavigation } from "@/lib/composables/useListNavigation";
+import { fetchWCAInfo, formatDate } from "@/lib/utils";
 
 interface Competition {
   start_date: string;
@@ -81,9 +80,9 @@ watch(data, () => {
       <h1 class="m-4 text-center text-xl">View stats for competition</h1>
       <div ref="comboboxRef" class="relative flex min-w-[70vw] flex-row">
         <div
-          class="border-input bg-background ring-offset-background flex w-full items-center gap-2 rounded-md border px-3 py-2 text-sm"
+          class="flex w-full items-center gap-2 rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background"
         >
-          <Search class="text-muted-foreground h-4 w-4 shrink-0" />
+          <Search class="h-4 w-4 shrink-0 text-muted-foreground" />
           <input
             id="input-field"
             v-model="input"
@@ -91,7 +90,7 @@ watch(data, () => {
             @keydown="handleKeydown"
             @focus="dropdownOpen = true"
             placeholder="Search for a competition..."
-            class="placeholder:text-muted-foreground flex-1 bg-transparent outline-none"
+            class="flex-1 bg-transparent outline-none placeholder:text-muted-foreground"
             aria-label="Competition search"
             aria-describedby="search-instructions"
           />
@@ -104,7 +103,7 @@ watch(data, () => {
             input &&
             ((data?.length ?? 0) > 0 || isFetching || isError)
           "
-          class="bg-popover text-popover-foreground animate-in fade-in-0 zoom-in-95 absolute top-full left-0 z-50 mt-1 w-full rounded-md border shadow-md"
+          class="absolute top-full left-0 z-50 mt-1 w-full rounded-md border bg-popover text-popover-foreground shadow-md animate-in fade-in-0 zoom-in-95"
         >
           <div
             class="no-scrollbar max-h-64 overflow-y-scroll p-1"
@@ -117,19 +116,19 @@ watch(data, () => {
               class="flex items-center justify-center py-4"
             >
               <LoaderCircle
-                class="text-muted-foreground h-5 w-5 animate-spin"
+                class="h-5 w-5 animate-spin text-muted-foreground"
               />
             </div>
             <div
               v-else-if="isError"
-              class="text-muted-foreground py-4 text-center text-sm"
+              class="py-4 text-center text-sm text-muted-foreground"
             >
               Error fetching data:
               {{ error?.message || "Unknown error occurred" }}
             </div>
             <div
               v-else-if="!data?.length"
-              class="text-muted-foreground py-4 text-center text-sm"
+              class="py-4 text-center text-sm text-muted-foreground"
             >
               No competitions found.
             </div>
@@ -148,7 +147,7 @@ watch(data, () => {
                 :aria-selected="index === selectedResult"
               >
                 <span>{{ result.name }}</span>
-                <span class="text-secondary-foreground text-xs">
+                <span class="text-xs text-secondary-foreground">
                   {{ formatDate(result.start_date) }}
                 </span>
               </RouterLink>

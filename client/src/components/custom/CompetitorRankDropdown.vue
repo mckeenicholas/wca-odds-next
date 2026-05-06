@@ -1,5 +1,11 @@
 <script setup lang="ts">
+import { LoaderCircle } from "lucide-vue-next";
+import { computed, ref } from "vue";
+import type { RankingSnapshot } from "@/lib/types";
 import RankingsAreaChart from "@/components/charts/RankingsAreaChart.vue";
+import CompetitorLink from "@/components/custom/CompetitorLink.vue";
+import DateRangePicker from "@/components/custom/DateRangePicker.vue";
+import RotatableChevron from "@/components/custom/RotatableChevron.vue";
 import { Button } from "@/components/ui/button";
 import {
   Collapsible,
@@ -13,15 +19,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import type { RankingSnapshot } from "@/lib/types";
-import { API_URL } from "@/lib/utils";
-import { useQuery } from "@tanstack/vue-query";
-import { format, subYears } from "date-fns";
-import { LoaderCircle } from "lucide-vue-next";
-import { computed, ref, watch } from "vue";
-import DateRangePicker from "./DateRangePicker.vue";
-import RotatableChevron from "./RotatableChevron.vue";
-import CompetitorLink from "./CompetitorLink.vue";
+import { useRankDetail } from "@/lib/composables/useRankDetail";
 
 const props = defineProps<{
   competitor: RankingSnapshot;
@@ -34,87 +32,24 @@ const props = defineProps<{
 
 const isOpen = ref(false);
 
-const selectedDateRange = ref({
-  start: subYears(props.rankDate, 1),
-  end: props.rankDate,
-});
-
-const appliedDateRange = ref({
-  start: subYears(props.rankDate, 1),
-  end: props.rankDate,
-});
-
-watch(
-  () => props.rankDate,
-  (newDate) => {
-    const start = subYears(newDate, 1);
-    const end = newDate;
-
-    selectedDateRange.value = { start, end };
-    appliedDateRange.value = { start, end };
-  },
-  { immediate: true },
-);
-
-const applyDateRange = () => {
-  appliedDateRange.value = { ...selectedDateRange.value };
-};
-
 const {
-  data: detailData,
+  selectedDateRange,
+  applyDateRange,
+  metric,
+  detailData,
   isPending,
   isFetching,
   error,
-} = useQuery({
-  queryKey: computed(() => [
-    "competitor-detail",
-    props.competitor.person_id,
-    props.selectedEvent,
-    appliedDateRange.value.start.getTime(),
-    appliedDateRange.value.end.getTime(),
-  ]),
-  queryFn: async () => {
-    const res = await fetch(`${API_URL}/api/rankings/competitor`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        competitor_id: props.competitor.person_id,
-        event_id: props.selectedEvent,
-        start_date: format(appliedDateRange.value.start, "yyyy-MM-dd"),
-        end_date: format(appliedDateRange.value.end, "yyyy-MM-dd"),
-      }),
-    });
-    if (!res.ok) {
-      const body = await res.json().catch(() => ({}));
-      throw new Error(body.error ?? "Failed to fetch details");
-    }
-    return res.json();
-  },
-  enabled: isOpen,
-  staleTime: 1000 * 60 * 5,
-  retry: false,
+  mappedHistory,
+} = useRankDetail({
+  competitorId: computed(() => props.competitor.person_id),
+  eventId: computed(() => props.selectedEvent),
+  competitorName: computed(() => props.competitor.name),
+  rankDate: computed(() => props.rankDate),
+  isOpen,
 });
 
 const ariaId = computed(() => `details-${props.competitor.person_id}`);
-
-const metric = ref<"value" | "rank">("rank");
-
-const mappedHistory = computed(() => {
-  if (!detailData.value || !Array.isArray(detailData.value)) return [];
-
-  return detailData.value.map((d) => ({
-    date: d.snapshot_date,
-    competitors: [
-      {
-        id: props.competitor.person_id,
-        name: props.competitor.name,
-        rank: d.rank,
-        value: d.value,
-        color: "#3b82f6",
-      },
-    ],
-  }));
-});
 </script>
 
 <template>
@@ -124,7 +59,7 @@ const mappedHistory = computed(() => {
         role="button"
         tabindex="0"
         :aria-label="`Details for ${competitor.person_id}`"
-        class="hover:bg-secondary focus-visible:bg-secondary flex w-full cursor-pointer justify-between rounded-md border-0 bg-transparent p-2 ps-1 text-left focus:outline-none"
+        class="flex w-full cursor-pointer justify-between rounded-md border-0 bg-transparent p-2 ps-1 text-left hover:bg-secondary focus:outline-none focus-visible:bg-secondary"
         :class="{ 'bg-muted/20': index % 2 === 0 }"
       >
         <div
@@ -133,7 +68,7 @@ const mappedHistory = computed(() => {
         >
           {{ index + 1 }}
         </div>
-        <div class="text-foreground w-20 shrink-0 ps-3 text-left md:w-28">
+        <div class="w-20 shrink-0 ps-3 text-left text-foreground md:w-28">
           {{ competitor.rank }}
         </div>
         <div class="min-w-0 flex-2 text-left">
@@ -155,12 +90,12 @@ const mappedHistory = computed(() => {
 
     <CollapsibleContent class="space-y-2" :id="ariaId">
       <div v-if="isPending" class="flex justify-center py-4">
-        <LoaderCircle class="text-muted-foreground h-6 w-6 animate-spin" />
+        <LoaderCircle class="h-6 w-6 animate-spin text-muted-foreground" />
       </div>
 
       <div
         v-else-if="error"
-        class="text-destructive mt-2 py-4 text-center text-sm"
+        class="mt-2 py-4 text-center text-sm text-destructive"
       >
         {{ error.message }}
       </div>
@@ -168,9 +103,9 @@ const mappedHistory = computed(() => {
       <div v-if="detailData?.length > 0" class="relative px-4 py-2">
         <div
           v-if="isFetching && !isPending"
-          class="bg-background/50 absolute inset-0 z-10 flex items-center justify-center rounded-md"
+          class="absolute inset-0 z-10 flex items-center justify-center rounded-md bg-background/50"
         >
-          <LoaderCircle class="text-muted-foreground h-6 w-6 animate-spin" />
+          <LoaderCircle class="h-6 w-6 animate-spin text-muted-foreground" />
         </div>
 
         <RankingsAreaChart
@@ -186,7 +121,7 @@ const mappedHistory = computed(() => {
         v-else-if="
           detailData && Array.isArray(detailData) && detailData.length === 0
         "
-        class="text-muted-foreground py-4 text-center text-sm"
+        class="py-4 text-center text-sm text-muted-foreground"
       >
         No history available.
       </div>

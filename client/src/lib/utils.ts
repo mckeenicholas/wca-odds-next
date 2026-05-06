@@ -6,7 +6,7 @@ import {
   SimulationAPIResults,
   SimulationRouteQuery,
   SupportedWCAEvent,
-  wcif,
+  Wcif,
 } from "./types";
 
 export const API_URL = import.meta.env.VITE_API_URL || "http://localhost:3000";
@@ -18,13 +18,18 @@ export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
 }
 
-export const fetchWCIF = async (id: string): Promise<wcif> => {
+export const fetchWCIF = async (id: string): Promise<Wcif> => {
   const wcaURL = `https://api.worldcubeassociation.org/competitions/${id}/wcif/public`;
-  return fetchWCAInfo<wcif>(wcaURL);
+  return fetchWCAInfo<Wcif>(wcaURL);
 };
 
 export const fetchWCAInfo = async <T>(url: string | URL): Promise<T> => {
   const response = await fetch(url);
+  if (!response.ok) {
+    throw new Error(
+      `WCA API request failed: ${response.status} ${response.statusText}`,
+    );
+  }
   const data: T = await response.json();
   return data;
 };
@@ -62,7 +67,7 @@ export const toClockFormat = (centiseconds: number): string => {
   }
   return new Date(centiseconds * 10)
     .toISOString()
-    .substr(11, 11)
+    .substring(11, 22)
     .replace(/^[0:]*(?!\.)/g, "");
 };
 
@@ -323,3 +328,9 @@ export const computeCDF = (data: ChartPoint[]): ChartPoint[] => {
     };
   });
 };
+
+export const toNaiveDate = (date: Date): string =>
+  `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
+
+export const isToday = (date: Date): boolean =>
+  date.toDateString() === new Date().toDateString();

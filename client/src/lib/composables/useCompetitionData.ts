@@ -1,4 +1,4 @@
-import type { Competitor, Person, SupportedWCAEvent, wcif } from "@/lib/types";
+import type { Competitor, Person, SupportedWCAEvent, Wcif } from "@/lib/types";
 
 // Extracted from CompetitionPage.vue
 type EventRegistration = Partial<Record<SupportedWCAEvent, Competitor[]>>;
@@ -27,7 +27,7 @@ export function useCompetitionData() {
   };
 
   const getCompetitorData = (
-    data: wcif | undefined | null,
+    data: Wcif | undefined | null,
     isError: boolean,
     selectedEventIdRef: { value: SupportedWCAEvent },
   ): EventRegistration => {

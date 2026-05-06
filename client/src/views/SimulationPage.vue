@@ -1,4 +1,7 @@
 <script setup lang="ts">
+import { LoaderCircle } from "lucide-vue-next";
+import { computed, onMounted } from "vue";
+import { RouteParams, useRoute, useRouter } from "vue-router";
 import FullHistogram from "@/components/charts/FullHistogram.vue";
 import HistoryHistogram from "@/components/charts/HistoryHistogram.vue";
 import RankHistogram from "@/components/charts/RankHistogram.vue";
@@ -22,9 +25,6 @@ import {
   generateColors,
   getParentPath,
 } from "@/lib/utils";
-import { LoaderCircle } from "lucide-vue-next";
-import { computed, onMounted } from "vue";
-import { RouteParams, useRoute, useRouter } from "vue-router";
 
 const router = useRouter();
 const currentVueRoute = useRoute();
@@ -54,6 +54,7 @@ if (
   !(eventIdParam in eventNames)
 ) {
   router.push(getParentPath(path));
+  throw new Error("Missing required simulation parameters");
 }
 
 const name = nameParam!;
@@ -114,7 +115,7 @@ onMounted(() => {
 });
 
 const syncResultsWithWCALive = async () => {
-  if (!showWCALiveImport()) {
+  if (!showWCALiveImport.value) {
     return;
   }
 
@@ -123,7 +124,7 @@ const syncResultsWithWCALive = async () => {
   }
 };
 
-const showWCALiveImport = () => {
+const showWCALiveImport = computed(() => {
   if (!competitionIdParam || !competitionDateParam) {
     return false;
   }
@@ -139,7 +140,7 @@ const showWCALiveImport = () => {
   removalCutoff.setDate(today.getDate() - 90);
 
   return competitionDate > removalCutoff;
-};
+});
 
 const exportJson = () => {
   const jsonText = createJSONExport({
@@ -209,7 +210,7 @@ const exportCSV = () => {
         v-model="inputtedTimes"
       />
 
-      <p class="text-muted-foreground m-2 mb-6">
+      <p class="m-2 mb-6 text-muted-foreground">
         Export as:
         <button
           class="me-1 underline hover:text-gray-300"
@@ -227,7 +228,7 @@ const exportCSV = () => {
           <Button
             @click="syncResultsWithWCALive"
             class="me-2"
-            v-if="showWCALiveImport()"
+            v-if="showWCALiveImport"
             :disabled="wcaLiveLoading || recalculateLoading"
           >
             Import Current Results From WCA Live

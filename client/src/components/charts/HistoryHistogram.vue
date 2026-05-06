@@ -1,4 +1,7 @@
 <script setup lang="ts">
+import { useQuery } from "@tanstack/vue-query";
+import { LoaderCircle } from "lucide-vue-next";
+import { computed, ref } from "vue";
 import {
   Select,
   SelectContent,
@@ -8,9 +11,6 @@ import {
 } from "@/components/ui/select";
 import { HistoryChartMetric, HistoryPoint } from "@/lib/types";
 import { API_URL } from "@/lib/utils";
-import { useQuery } from "@tanstack/vue-query";
-import { LoaderCircle } from "lucide-vue-next";
-import { computed, ref } from "vue";
 import MultiLabelSwitch from "./MultiLabelSwitch.vue";
 import StackedAreaChart from "./StackedAreaChart.vue";
 
@@ -97,10 +97,10 @@ const chartData = computed(() => {
     <div class="relative min-h-75">
       <div
         v-if="isPending"
-        class="bg-background/50 absolute inset-0 z-10 flex flex-col items-center justify-center space-y-2"
+        class="absolute inset-0 z-10 flex flex-col items-center justify-center space-y-2 bg-background/50"
       >
-        <LoaderCircle class="text-muted-foreground h-8 w-8 animate-spin" />
-        <p class="text-muted-foreground text-sm">Generating...</p>
+        <LoaderCircle class="h-8 w-8 animate-spin text-muted-foreground" />
+        <p class="text-sm text-muted-foreground">Generating...</p>
       </div>
       <div
         v-else-if="isError"
@@ -111,7 +111,7 @@ const chartData = computed(() => {
         </p>
         <button
           @click="refetch()"
-          class="text-muted-foreground hover:text-foreground text-xs underline"
+          class="text-xs text-muted-foreground underline hover:text-foreground"
         >
           Try Again
         </button>

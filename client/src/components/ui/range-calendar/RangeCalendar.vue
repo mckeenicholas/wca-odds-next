@@ -1,5 +1,5 @@
 <script lang="ts" setup>
-import { cn } from "@/lib/utils";
+import type { HTMLAttributes } from "vue";
 import { reactiveOmit } from "@vueuse/core";
 import {
   RangeCalendarRoot,
@@ -7,7 +7,7 @@ import {
   type RangeCalendarRootProps,
   useForwardPropsEmits,
 } from "reka-ui";
-import type { HTMLAttributes } from "vue";
+import { cn } from "@/lib/utils";
 import {
   RangeCalendarCell,
   RangeCalendarCellTrigger,

@@ -152,9 +152,24 @@ export default defineConfig({
     options: {},
   },
   fmt: {
-    sortTailwindcss: {},
+    sortTailwindcss: {
+      stylesheet: "./src/style.css",
+      functions: ["clsx", "cn"],
+    },
+    sortImports: {
+      newlinesBetween: false,
+      groups: [
+        "type-import",
+        ["value-builtin", "value-external"],
+        "type-internal",
+        "value-internal",
+        ["type-parent", "type-sibling", "type-index"],
+        ["value-parent", "value-sibling", "value-index"],
+        "unknown",
+      ],
+    },
     printWidth: 80,
-    sortPackageJson: false,
+    sortPackageJson: true,
     ignorePatterns: [],
   },
   plugins: [vue(), tailwindcss()],

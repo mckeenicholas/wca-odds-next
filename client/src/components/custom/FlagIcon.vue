@@ -1,12 +1,12 @@
 <script setup lang="ts">
+import { computed } from "vue";
+import "flag-icons/css/flag-icons.min.css";
 import {
   Tooltip,
   TooltipContent,
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import "flag-icons/css/flag-icons.min.css";
-import { computed } from "vue";
 
 const props = withDefaults(
   defineProps<{
@@ -20,9 +20,10 @@ const props = withDefaults(
   },
 );
 
+const regionNames = new Intl.DisplayNames(["en"], { type: "region" });
+
 const countryName = computed(() => {
   try {
-    const regionNames = new Intl.DisplayNames(["en"], { type: "region" });
     return regionNames.of(props.code) || props.code;
   } catch {
     return props.code;

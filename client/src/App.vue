@@ -1,13 +1,20 @@
 <script setup lang="ts">
-import ColorModeSwitcher from "@/components/custom/ColorModeSwitcher.vue";
 import { Github } from "lucide-vue-next";
+import { onErrorCaptured, ref } from "vue";
 import { useRoute } from "vue-router";
-import BackButton from "./components/custom/BackButton.vue";
-import "./style.css";
+import BackButton from "@/components/custom/BackButton.vue";
+import ColorModeSwitcher from "@/components/custom/ColorModeSwitcher.vue";
 
 const route = useRoute();
 
 const versionNum = "1.1.4";
+
+const fatalError = ref<string | null>(null);
+onErrorCaptured((err) => {
+  fatalError.value = err instanceof Error ? err.message : String(err);
+  console.error("Uncaught component error:", err);
+  return false;
+});
 </script>
 
 <template>
@@ -15,10 +22,22 @@ const versionNum = "1.1.4";
   <div class="flex min-h-screen flex-col">
     <main class="grow">
       <ColorModeSwitcher />
-      <RouterView />
+      <div
+        v-if="fatalError"
+        class="flex flex-col items-center justify-center p-8 text-center"
+      >
+        <p class="text-lg font-semibold text-destructive">
+          Something went wrong
+        </p>
+        <p class="mt-2 text-sm text-muted-foreground">{{ fatalError }}</p>
+        <button class="mt-4 underline" @click="fatalError = null">
+          Try again
+        </button>
+      </div>
+      <RouterView v-else />
     </main>
     <footer
-      class="text-muted-foreground flex h-10 items-center justify-end px-4 text-sm font-semibold"
+      class="flex h-10 items-center justify-end px-4 text-sm font-semibold text-muted-foreground"
     >
       <span class="mr-3"
         >This website is not affiliated with or endorsed by the

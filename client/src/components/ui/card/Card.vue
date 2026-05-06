@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import { cn } from "@/lib/utils";
 import type { HTMLAttributes } from "vue";
+import { cn } from "@/lib/utils";
 
 const props = defineProps<{
   class?: HTMLAttributes["class"];
@@ -11,7 +11,7 @@ const props = defineProps<{
   <div
     :class="
       cn(
-        'bg-card text-card-foreground rounded-lg border shadow-sm',
+        'rounded-lg border bg-card text-card-foreground shadow-sm',
         props.class,
       )
     "

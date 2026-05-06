@@ -1,4 +1,8 @@
 <script setup lang="ts">
+import { useInfiniteQuery } from "@tanstack/vue-query";
+import { LoaderCircle } from "lucide-vue-next";
+import { computed, onUnmounted, ref, watch } from "vue";
+import { useRoute, useRouter } from "vue-router";
 import CompetitorRankDropdown from "@/components/custom/CompetitorRankDropdown.vue";
 import CountryFilterButton from "@/components/custom/CountryFilterButton.vue";
 import DatePicker from "@/components/custom/DatePicker.vue";
@@ -17,11 +21,7 @@ import {
   type CountryResult,
   type RankingSnapshot,
 } from "@/lib/types";
-import { API_URL, renderTime } from "@/lib/utils";
-import { useInfiniteQuery } from "@tanstack/vue-query";
-import { LoaderCircle } from "lucide-vue-next";
-import { computed, onUnmounted, ref, watch } from "vue";
-import { useRoute, useRouter } from "vue-router";
+import { API_URL, isToday, renderTime, toNaiveDate } from "@/lib/utils";
 
 const route = useRoute();
 const router = useRouter();
@@ -37,14 +37,6 @@ const selectedCountry = ref<CountryResult | null>(null);
 const isDirty = computed(
   () => rankDate.value.toDateString() !== committedDate.value.toDateString(),
 );
-
-const toNaiveDate = (date: Date) =>
-  `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
-
-const isToday = (date: Date) => {
-  const today = new Date();
-  return date.toDateString() === today.toDateString();
-};
 
 watch(
   () => route.query.date,
@@ -87,7 +79,7 @@ const updateUrl = () => {
     query.event = selectedEvent.value;
   }
   // Preserve country if we add it later
-  router.push({ query });
+  router.replace({ query });
 };
 
 watch(selectedEvent, (newVal, oldVal) => {
@@ -209,7 +201,7 @@ const setToday = () => {
           <SelectItem value="kinch_strict"
             >Kinch (All Events Strict)</SelectItem
           >
-          <div class="bg-muted my-1 h-px" />
+          <div class="my-1 h-px bg-muted" />
           <SelectItem v-for="(label, id) in eventNames" :key="id" :value="id">
             {{ label }}
           </SelectItem>
@@ -251,7 +243,7 @@ const setToday = () => {
     <div v-else-if="allItems.length > 0" class="w-full max-w-4xl">
       <div class="mt-2 rounded-md border">
         <div
-          class="text-muted-foreground flex w-full justify-between p-2 ps-1 text-sm font-medium"
+          class="flex w-full justify-between p-2 ps-1 text-sm font-medium text-muted-foreground"
         >
           <div
             v-if="selectedCountry"
@@ -291,20 +283,20 @@ const setToday = () => {
 
         <!-- Loading more indicator -->
         <div v-if="isFetchingNextPage" class="flex justify-center py-4">
-          <LoaderCircle class="text-muted-foreground h-5 w-5 animate-spin" />
+          <LoaderCircle class="h-5 w-5 animate-spin text-muted-foreground" />
         </div>
 
         <!-- End of results -->
         <div
           v-else-if="!hasNextPage && allItems.length > PAGE_SIZE"
-          class="text-muted-foreground py-3 text-center text-sm"
+          class="py-3 text-center text-sm text-muted-foreground"
         >
           Showing all {{ allItems.length }} results
         </div>
       </div>
     </div>
 
-    <div v-else class="text-muted-foreground mt-4 text-center">
+    <div v-else class="mt-4 text-center text-muted-foreground">
       No ranking data found for the selected event and timeframe.
     </div>
   </div>

@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import { Input } from "@/components/ui/input";
 import { onMounted, ref, watch } from "vue";
+import { Input } from "@/components/ui/input";
 
 const model = defineModel<number>({ required: true });
 const inputValue = ref("");

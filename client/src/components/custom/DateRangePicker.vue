@@ -1,20 +1,4 @@
 <script setup lang="ts">
-import { Button, buttonVariants } from "@/components/ui/button";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
-import {
-  RangeCalendarCell,
-  RangeCalendarCellTrigger,
-  RangeCalendarGrid,
-  RangeCalendarGridBody,
-  RangeCalendarGridHead,
-  RangeCalendarGridRow,
-  RangeCalendarHeadCell,
-} from "@/components/ui/range-calendar";
-import { cn } from "@/lib/utils";
 import {
   CalendarDate,
   type DateValue,
@@ -32,6 +16,22 @@ import {
 import { type DateRange, RangeCalendarRoot, useDateFormatter } from "reka-ui";
 import { createMonth, type Grid, toDate } from "reka-ui/date";
 import { computed, type Ref, ref, watch } from "vue";
+import { Button, buttonVariants } from "@/components/ui/button";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import {
+  RangeCalendarCell,
+  RangeCalendarCellTrigger,
+  RangeCalendarGrid,
+  RangeCalendarGridBody,
+  RangeCalendarGridHead,
+  RangeCalendarGridRow,
+  RangeCalendarHeadCell,
+} from "@/components/ui/range-calendar";
+import { cn } from "@/lib/utils";
 
 const props = defineProps<{
   startDate?: Date;

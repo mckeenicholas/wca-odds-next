@@ -1,9 +1,9 @@
 <script setup lang="ts">
-import { AreaChart } from "@/components/ui/chart-area";
+import { computed, ref } from "vue";
 import HistogramCustomTooltip from "@/components/charts/HistogramCustomTooltip.vue";
+import { AreaChart } from "@/components/ui/chart-area";
 import { ChartData, SupportedWCAEvent } from "@/lib/types";
 import { computeCDF, renderTime } from "@/lib/utils";
-import { computed, ref } from "vue";
 import MultiLabelSwitch from "./MultiLabelSwitch.vue";
 
 const { data, color, event } = defineProps<{

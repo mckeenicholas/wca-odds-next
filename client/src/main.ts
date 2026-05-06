@@ -1,9 +1,9 @@
 import { VueQueryPlugin, VueQueryPluginOptions } from "@tanstack/vue-query";
 import { createPinia } from "pinia";
 import { createApp } from "vue";
-import App from "./App.vue";
-import router from "./router";
-import "./style.css";
+import App from "@/App.vue";
+import router from "@/router";
+import "@/style.css";
 import "@cubing/icons";
 
 const vueQueryPluginOptions: VueQueryPluginOptions = {
@@ -24,6 +24,8 @@ const app = createApp(App)
   .use(pinia)
   .use(VueQueryPlugin, vueQueryPluginOptions);
 
-app.config.performance = true;
+if (import.meta.env.DEV) {
+  app.config.performance = true;
+}
 
 app.mount("#app");

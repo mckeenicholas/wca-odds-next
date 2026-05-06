@@ -1,3 +1,4 @@
+import { type Ref, computed, ref } from "vue";
 import type { SimulationAPIResults, SupportedWCAEvent } from "@/lib/types";
 import {
   API_URL,
@@ -7,7 +8,6 @@ import {
   generateDefaultTimesArray,
 } from "@/lib/utils";
 import fetchWCALiveResults from "@/lib/wcaLive";
-import { computed, ref } from "vue";
 
 export function useSimulation({
   event,
@@ -78,27 +78,8 @@ export function useSimulation({
     return rawData as SimulationAPIResults;
   };
 
-  const runInitialSimulation = async () => {
-    loading.value = true;
-    try {
-      const results = await fetchSimulationResults();
-      if (results) {
-        simulationResults.value = results;
-        inputtedTimesPrev.value = clone2DArr(inputtedTimes.value);
-      }
-    } catch (err) {
-      console.error("Error in initial simulation:", err);
-      error.value =
-        err instanceof Error
-          ? err.message
-          : "Unknown error occurred during initial simulation";
-    } finally {
-      loading.value = false;
-    }
-  };
-
-  const handleRecalculation = async () => {
-    recalculateLoading.value = true;
+  const runSimulation = async (loadingRef: Ref<boolean>) => {
+    loadingRef.value = true;
     error.value = "";
     try {
       const results = await fetchSimulationResults();
@@ -107,15 +88,17 @@ export function useSimulation({
         inputtedTimesPrev.value = clone2DArr(inputtedTimes.value);
       }
     } catch (err) {
-      console.error("Error in recalculation:", err);
+      console.error("Simulation error:", err);
       error.value =
-        err instanceof Error
-          ? err.message
-          : "Unknown error occurred during recalculation";
+        err instanceof Error ? err.message : "Unknown error occurred";
     } finally {
-      recalculateLoading.value = false;
+      loadingRef.value = false;
     }
   };
+
+  const runInitialSimulation = () => runSimulation(loading);
+
+  const handleRecalculation = () => runSimulation(recalculateLoading);
 
   const reset = async () => {
     inputtedTimes.value = clone2DArr(defaultTimesArray);

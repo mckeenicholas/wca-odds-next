@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { useWindowSize } from "@vueuse/core";
 import { Button } from "@/components/ui/button";
 import {
   Select,
@@ -9,10 +10,9 @@ import {
 } from "@/components/ui/select";
 import { eventNames, SupportedWCAEvent } from "@/lib/types";
 import { BREAKPOINT } from "@/lib/utils";
-import { useWindowSize } from "@vueuse/core";
+import CubingIcon from "./CubingIcon.vue";
 import ExpandableBox from "./ExpandableBox.vue";
 import SimulationOptions from "./SimulationOptions.vue";
-import CubingIcon from "./CubingIcon.vue";
 
 const selectedEventId = defineModel<string>("selectedEventId");
 const includeDnf = defineModel<boolean>("includeDnf");
@@ -26,7 +26,7 @@ const { eventIds, disableRun = false } = defineProps<{
 }>();
 
 const emit = defineEmits<{
-  (event: "runSimulation"): void;
+  runSimulation: [];
 }>();
 
 const { width } = useWindowSize();

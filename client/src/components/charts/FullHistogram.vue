@@ -1,13 +1,13 @@
 <script setup lang="ts">
+import { computed, ref, watchEffect } from "vue";
+import HistogramCustomTooltip from "@/components/charts/HistogramCustomTooltip.vue";
+import ColoredCircle from "@/components/custom/ColoredCircle.vue";
 import { AreaChart } from "@/components/ui/chart-area";
+import Checkbox from "@/components/ui/checkbox/Checkbox.vue";
+import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectTrigger } from "@/components/ui/select";
 import { ChartData, SimulationResultProps } from "@/lib/types";
-import HistogramCustomTooltip from "@/components/charts/HistogramCustomTooltip.vue";
 import { computeCDF, renderTime } from "@/lib/utils";
-import { computed, ref } from "vue";
-import ColoredCircle from "../custom/ColoredCircle.vue";
-import Checkbox from "../ui/checkbox/Checkbox.vue";
-import { Label } from "../ui/label";
 import MultiLabelSwitch from "./MultiLabelSwitch.vue";
 
 const { data, event, colors } = defineProps<SimulationResultProps>();
@@ -41,6 +41,13 @@ const names = computed(() => {
 });
 
 const enabled = ref<boolean[]>(Array(names.value.length).fill(true));
+
+watchEffect(() => {
+  const len = names.value.length;
+  if (enabled.value.length !== len) {
+    enabled.value = Array(len).fill(true);
+  }
+});
 
 const chartData = computed(() => {
   const includedPersons = trimChartItems(histValues.value, enabled.value);

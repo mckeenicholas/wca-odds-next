@@ -1,16 +1,16 @@
 <script setup lang="ts">
-import ControlPanel from "@/components/custom/ControlPanel.vue";
-import FlagIcon from "@/components/custom/FlagIcon.vue";
-import CompetitorLink from "@/components/custom/CompetitorLink.vue";
-import { supportedWCAEvents } from "@/lib/types";
-import { buildSimulationQuery, API_URL } from "@/lib/utils";
 import { useQuery } from "@tanstack/vue-query";
+import { useStorage, onClickOutside, refDebounced } from "@vueuse/core";
 import { LoaderCircle, Search, X } from "lucide-vue-next";
+import { storeToRefs } from "pinia";
 import { computed, ref } from "vue";
 import { useRouter } from "vue-router";
-import { useStorage, onClickOutside, refDebounced } from "@vueuse/core";
+import CompetitorLink from "@/components/custom/CompetitorLink.vue";
+import ControlPanel from "@/components/custom/ControlPanel.vue";
+import FlagIcon from "@/components/custom/FlagIcon.vue";
 import { useCompSettingsStore } from "@/lib/stores/compSettings";
-import { storeToRefs } from "pinia";
+import { supportedWCAEvents } from "@/lib/types";
+import { buildSimulationQuery, API_URL } from "@/lib/utils";
 
 interface Person {
   name: string;
@@ -85,38 +85,38 @@ const runSimulation = () => {
     <h1 class="my-4 text-center text-xl font-semibold">Add a competitor</h1>
     <div class="relative w-full" ref="comboboxRef">
       <div
-        class="border-input bg-background ring-offset-background focus-within:ring-ring flex w-full items-center gap-2 rounded-md border px-3 py-2 text-sm focus-within:ring-2 focus-within:ring-offset-2"
+        class="flex w-full items-center gap-2 rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-within:ring-2 focus-within:ring-ring focus-within:ring-offset-2"
       >
-        <Search class="text-muted-foreground h-4 w-4 shrink-0" />
+        <Search class="h-4 w-4 shrink-0 text-muted-foreground" />
         <input
           v-model="input"
           @keyup.enter="dropdownOpen = true"
           @input="dropdownOpen = true"
           @focus="dropdownOpen = true"
           placeholder="Search for a person..."
-          class="placeholder:text-muted-foreground flex-1 bg-transparent outline-none"
+          class="flex-1 bg-transparent outline-none placeholder:text-muted-foreground"
           aria-label="Search for competitors"
         />
       </div>
       <div
         v-if="dropdownOpen && input && (data?.length || isFetching || isError)"
-        class="bg-popover text-popover-foreground animate-in fade-in-0 zoom-in-95 absolute top-full left-0 z-50 mt-2 w-full rounded-md border shadow-md"
+        class="absolute top-full left-0 z-50 mt-2 w-full rounded-md border bg-popover text-popover-foreground shadow-md animate-in fade-in-0 zoom-in-95"
       >
         <div class="no-scrollbar max-h-64 overflow-y-auto p-1">
           <div v-if="isFetching" class="flex items-center justify-center py-6">
-            <LoaderCircle class="text-muted-foreground h-5 w-5 animate-spin" />
+            <LoaderCircle class="h-5 w-5 animate-spin text-muted-foreground" />
           </div>
 
           <div
             v-else-if="isError"
-            class="text-muted-foreground py-4 text-center text-sm"
+            class="py-4 text-center text-sm text-muted-foreground"
           >
             Error: {{ error?.message || "Unknown error occurred" }}
           </div>
 
           <div
             v-else-if="!data?.length"
-            class="text-muted-foreground py-4 text-center text-sm"
+            class="py-4 text-center text-sm text-muted-foreground"
           >
             No results found.
           </div>
@@ -126,11 +126,11 @@ const runSimulation = () => {
               v-for="person in data"
               :key="person.wca_id"
               @click="addCompetitor(person)"
-              class="hover:bg-accent hover:text-accent-foreground flex w-full items-center gap-2 rounded-sm px-3 py-2 text-left text-sm transition-colors"
+              class="flex w-full items-center gap-2 rounded-sm px-3 py-2 text-left text-sm transition-colors hover:bg-accent hover:text-accent-foreground"
             >
               <FlagIcon :code="person.country.iso2" />
               <span class="truncate">{{ person.name }}</span>
-              <span class="text-muted-foreground ms-auto text-xs">{{
+              <span class="ms-auto text-xs text-muted-foreground">{{
                 person.wca_id
               }}</span>
             </button>
@@ -158,7 +158,7 @@ const runSimulation = () => {
         <li
           v-for="competitor in competitors"
           :key="competitor.wca_id"
-          class="hover:bg-muted/50 flex items-center justify-between rounded-md transition-colors"
+          class="flex items-center justify-between rounded-md transition-colors hover:bg-muted/50"
         >
           <CompetitorLink
             :name="competitor.name"
@@ -167,7 +167,7 @@ const runSimulation = () => {
             class="flex items-center p-2"
           />
           <button
-            class="text-muted-foreground hover:text-destructive hover:bg-secondary me-1 rounded-md p-1 transition-colors"
+            class="me-1 rounded-md p-1 text-muted-foreground transition-colors hover:bg-secondary hover:text-destructive"
             aria-label="remove competitor"
             @click="removeCompetitor(competitor.wca_id)"
           >

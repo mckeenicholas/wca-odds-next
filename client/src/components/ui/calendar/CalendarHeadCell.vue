@@ -1,9 +1,9 @@
 <script lang="ts" setup>
-import { cn } from "@/lib/utils";
-import { reactiveOmit } from "@vueuse/core";
 import type { CalendarHeadCellProps } from "reka-ui";
-import { CalendarHeadCell, useForwardProps } from "reka-ui";
 import type { HTMLAttributes } from "vue";
+import { reactiveOmit } from "@vueuse/core";
+import { CalendarHeadCell, useForwardProps } from "reka-ui";
+import { cn } from "@/lib/utils";
 
 const props = defineProps<
   CalendarHeadCellProps & { class?: HTMLAttributes["class"] }
@@ -18,7 +18,7 @@ const forwardedProps = useForwardProps(delegatedProps);
   <CalendarHeadCell
     :class="
       cn(
-        'text-muted-foreground w-8 rounded-md text-[0.8rem] font-normal',
+        'w-8 rounded-md text-[0.8rem] font-normal text-muted-foreground',
         props.class,
       )
     "

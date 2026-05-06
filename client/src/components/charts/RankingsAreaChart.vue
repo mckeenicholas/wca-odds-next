@@ -1,7 +1,4 @@
 <script setup lang="ts">
-import { ChartCrosshair } from "@/components/ui/chart";
-import { RankingHistoryPoint } from "@/lib/types";
-import { renderTime } from "@/lib/utils";
 import {
   Area,
   Axis,
@@ -13,6 +10,9 @@ import { VisArea, VisAxis, VisLine, VisXYContainer } from "@unovis/vue";
 import { useMounted } from "@vueuse/core";
 import { useId } from "radix-vue";
 import { computed, h, ref, watchEffect } from "vue";
+import { ChartCrosshair } from "@/components/ui/chart";
+import { RankingHistoryPoint } from "@/lib/types";
+import { renderTime } from "@/lib/utils";
 import HistoryTooltip, { type HistoryTooltipProps } from "./HistoryTooltip.vue";
 
 const STACKED_OPACITY = 0.8;
@@ -274,7 +274,7 @@ const tooltip = computed(() => {
 
     <div
       v-else
-      class="text-muted-foreground flex h-full w-full items-center justify-center text-sm"
+      class="flex h-full w-full items-center justify-center text-sm text-muted-foreground"
     >
       No data available
     </div>

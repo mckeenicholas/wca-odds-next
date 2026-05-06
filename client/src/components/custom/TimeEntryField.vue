@@ -1,7 +1,7 @@
 <script setup lang="ts">
+import { onMounted, ref, watch } from "vue";
 import { Input } from "@/components/ui/input";
 import { toClockFormat } from "@/lib/utils";
-import { onMounted, ref, watch } from "vue";
 
 const model = defineModel<number>({ required: true });
 const inputValue = ref<string>("");

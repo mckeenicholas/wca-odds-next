@@ -1,10 +1,10 @@
 <script setup lang="ts">
-import { cn } from "@/lib/utils";
-import { reactiveOmit, useCurrentElement } from "@vueuse/core";
 import type { ListboxItemEmits, ListboxItemProps } from "reka-ui";
-import { ListboxItem, useForwardPropsEmits, useId } from "reka-ui";
 import type { HTMLAttributes } from "vue";
+import { reactiveOmit, useCurrentElement } from "@vueuse/core";
+import { ListboxItem, useForwardPropsEmits, useId } from "reka-ui";
 import { computed, onMounted, onUnmounted, ref } from "vue";
+import { cn } from "@/lib/utils";
 import { useCommand, useCommandGroup } from ".";
 
 const props = defineProps<
@@ -69,7 +69,7 @@ onUnmounted(() => {
     ref="itemRef"
     :class="
       cn(
-        'data-[highlighted]:bg-accent data-[highlighted]:text-accent-foreground relative flex cursor-default items-center gap-2 rounded-sm px-2 py-1.5 text-sm outline-none select-none data-[disabled]:pointer-events-none data-[disabled]:opacity-50 [&_svg]:size-4 [&_svg]:shrink-0',
+        'relative flex cursor-default items-center gap-2 rounded-sm px-2 py-1.5 text-sm outline-none select-none data-[disabled]:pointer-events-none data-[disabled]:opacity-50 data-[highlighted]:bg-accent data-[highlighted]:text-accent-foreground [&_svg]:size-4 [&_svg]:shrink-0',
         props.class,
       )
     "

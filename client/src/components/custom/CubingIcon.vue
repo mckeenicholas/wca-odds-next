@@ -1,5 +1,4 @@
 <script setup lang="ts">
-import { eventNames, SupportedWCAEvent } from "@/lib/types";
 import { computed } from "vue";
 import {
   Tooltip,
@@ -7,6 +6,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import { eventNames, SupportedWCAEvent } from "@/lib/types";
 
 const props = withDefaults(
   defineProps<{

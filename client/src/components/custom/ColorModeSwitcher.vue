@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { useColorMode } from "@vueuse/core";
+import { Moon, Sun } from "lucide-vue-next";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -6,8 +8,6 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { useColorMode } from "@vueuse/core";
-import { Moon, Sun } from "lucide-vue-next";
 
 const mode = useColorMode();
 </script>

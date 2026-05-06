@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import { CompetitorSimulationResult, SupportedWCAEvent } from "@/lib/types";
 import { computed, ref } from "vue";
+import { CompetitorSimulationResult, SupportedWCAEvent } from "@/lib/types";
 import CompetitorDropdown from "./CompetitorDropdown.vue";
 import Chevron from "./RotatableChevron.vue";
 
@@ -62,17 +62,36 @@ const setSortBy = (col: sortCol) => {
 };
 
 const groupedProps = computed(() => {
-  const sortFn = (a: groupedResults, b: groupedResults) => {
-    const comparison =
-      sortBy.value === "name"
-        ? -a.results.name.localeCompare(b.results.name) // This is inverted to be consistent as we sort by descending for stats
-        : sortBy.value === "win"
-          ? a.results.win_chance - b.results.win_chance
-          : sortBy.value === "pod"
-            ? a.results.pod_chance - b.results.pod_chance
-            : -(a.results.expected_rank - b.results.expected_rank); // This is also inverted for the same reason as above
+  const getSortValue = (item: groupedResults): number | string => {
+    switch (sortBy.value) {
+      case "name":
+        return item.results.name;
+      case "win":
+        return item.results.win_chance;
+      case "pod":
+        return item.results.pod_chance;
+      case "rank":
+        return item.results.expected_rank;
+    }
+  };
 
-    return sortAsc.value ? comparison : -comparison;
+  const sortFn = (a: groupedResults, b: groupedResults) => {
+    const aVal = getSortValue(a);
+    const bVal = getSortValue(b);
+
+    let comparison: number;
+    if (typeof aVal === "string" && typeof bVal === "string") {
+      comparison = aVal.localeCompare(bVal);
+    } else {
+      comparison = (aVal as number) - (bVal as number);
+    }
+
+    // For stats (win/pod), higher is better so default descending;
+    // for rank, lower is better so also default descending (shows best first).
+    // Name sorts alphabetically ascending by default.
+    const defaultAsc = sortBy.value === "name" || sortBy.value === "rank";
+    const effectiveAsc = defaultAsc ? !sortAsc.value : sortAsc.value;
+    return effectiveAsc ? comparison : -comparison;
   };
 
   return simulationResults
@@ -112,7 +131,7 @@ const model = defineModel<number[][]>({ required: true });
     </div>
     <hr class="mx-2" />
     <ol class="space-y-0.5 p-1">
-      <li v-for="(person, idx) in groupedProps" :key="person.idx || idx">
+      <li v-for="person in groupedProps" :key="person.results.id">
         <CompetitorDropdown
           v-model="model[person.idx]"
           :result="person.results"

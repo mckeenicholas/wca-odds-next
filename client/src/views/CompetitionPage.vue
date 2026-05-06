@@ -1,19 +1,17 @@
 <script setup lang="ts">
-import ControlPanel from "@/components/custom/ControlPanel.vue";
-import CompetitorLink from "@/components/custom/CompetitorLink.vue";
-import WCALogo from "@/components/custom/WCALogo.vue";
-import LoadingMessage from "@/components/custom/LoadingMessage.vue";
-import { Checkbox } from "@/components/ui/checkbox";
-import { useCompSettingsStore } from "@/lib/stores/compSettings";
-
-import { BREAKPOINT, buildSimulationQuery, fetchWCIF } from "@/lib/utils";
 import { useQuery } from "@tanstack/vue-query";
 import { useWindowSize } from "@vueuse/core";
 import { storeToRefs } from "pinia";
 import { computed, watch, watchEffect } from "vue";
 import { useRoute, useRouter } from "vue-router";
-
+import CompetitorLink from "@/components/custom/CompetitorLink.vue";
+import ControlPanel from "@/components/custom/ControlPanel.vue";
+import LoadingMessage from "@/components/custom/LoadingMessage.vue";
+import WCALogo from "@/components/custom/WCALogo.vue";
+import { Checkbox } from "@/components/ui/checkbox";
 import { useCompetitionData } from "@/lib/composables/useCompetitionData";
+import { useCompSettingsStore } from "@/lib/stores/compSettings";
+import { BREAKPOINT, buildSimulationQuery, fetchWCIF } from "@/lib/utils";
 
 const route = useRoute();
 const router = useRouter();
@@ -141,7 +139,7 @@ const runSimulation = () => {
           <li
             v-for="person in competitorsByEvent[selectedEventId]"
             :key="person.id"
-            class="hover:bg-secondary rounded-md transition-colors"
+            class="rounded-md transition-colors hover:bg-secondary"
           >
             <label
               :for="`select-${person.id}`"

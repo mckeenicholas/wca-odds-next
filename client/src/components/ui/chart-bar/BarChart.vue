@@ -1,10 +1,4 @@
 <script setup lang="ts" generic="T extends Record<string, any>">
-import {
-  ChartCrosshair,
-  ChartLegend,
-  defaultColors,
-} from "@/components/ui/chart";
-import { cn } from "@/lib/utils";
 import type { BulletLegendItemInterface } from "@unovis/ts";
 import { Axis, GroupedBar, StackedBar } from "@unovis/ts";
 import {
@@ -15,6 +9,12 @@ import {
 } from "@unovis/vue";
 import { useMounted } from "@vueuse/core";
 import { type Component, computed, ref } from "vue";
+import {
+  ChartCrosshair,
+  ChartLegend,
+  defaultColors,
+} from "@/components/ui/chart";
+import { cn } from "@/lib/utils";
 import type { BaseChartProps } from ".";
 
 const props = withDefaults(

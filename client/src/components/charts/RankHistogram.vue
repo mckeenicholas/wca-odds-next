@@ -1,7 +1,7 @@
 <script setup lang="ts">
+import { computed } from "vue";
 import { BarChart } from "@/components/ui/chart-bar";
 import { ChartData } from "@/lib/types";
-import { computed } from "vue";
 import PercentageTooltip from "./PercentageTooltip.vue";
 
 const { data, colors } = defineProps<{ data: ChartData; colors: string[] }>();
@@ -17,8 +17,6 @@ const chartData = computed(() =>
     return result;
   }),
 );
-
-console.log(chartData);
 </script>
 
 <template>
@@ -32,6 +30,13 @@ console.log(chartData);
       :showLegend="false"
       :customTooltip="PercentageTooltip"
       :yFormatter="(tick) => `${tick}%`"
+      :xFormatter="
+        (tick) => {
+          const n = Number(chartData[tick as number]?.name);
+          if (!Number.isInteger(n)) return '';
+          return n.toString();
+        }
+      "
     />
   </div>
 </template>

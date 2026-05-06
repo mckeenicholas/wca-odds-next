@@ -1,4 +1,9 @@
 <script setup lang="ts">
+import { useQuery } from "@tanstack/vue-query";
+import { useVirtualizer } from "@tanstack/vue-virtual";
+import { Check, ChevronDown, Globe, Search, X } from "lucide-vue-next";
+import { computed, nextTick, ref, watch } from "vue";
+import type { CountryResult } from "@/lib/types";
 import FlagIcon from "@/components/custom/FlagIcon.vue";
 import { Button } from "@/components/ui/button";
 import {
@@ -6,12 +11,7 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
-import type { CountryResult } from "@/lib/types";
 import { API_URL } from "@/lib/utils";
-import { useQuery } from "@tanstack/vue-query";
-import { useVirtualizer } from "@tanstack/vue-virtual";
-import { Check, ChevronDown, Globe, Search, X } from "lucide-vue-next";
-import { computed, nextTick, ref, watch } from "vue";
 
 const props = withDefaults(
   defineProps<{
@@ -204,16 +204,16 @@ const clear = (e: MouseEvent) => {
         </span>
         <span class="flex shrink-0 items-center gap-1">
           <span v-if="modelValue" @click.stop="clear" class="flex items-center">
-            <X class="text-muted-foreground h-3.5 w-3.5 hover:text-current" />
+            <X class="h-3.5 w-3.5 text-muted-foreground hover:text-current" />
           </span>
-          <ChevronDown class="text-muted-foreground h-4 w-4" />
+          <ChevronDown class="h-4 w-4 text-muted-foreground" />
         </span>
       </Button>
     </PopoverTrigger>
 
     <PopoverContent class="w-64 p-0">
       <div
-        class="bg-popover text-popover-foreground flex h-full w-full flex-col overflow-hidden rounded-md"
+        class="flex h-full w-full flex-col overflow-hidden rounded-md bg-popover text-popover-foreground"
       >
         <!-- Search input -->
         <div class="flex items-center border-b px-3">
@@ -223,7 +223,7 @@ const clear = (e: MouseEvent) => {
             v-model="search"
             placeholder="Search countries..."
             id="country-filter-input"
-            class="placeholder:text-muted-foreground flex h-10 w-full rounded-md bg-transparent py-3 text-sm outline-none disabled:cursor-not-allowed disabled:opacity-50"
+            class="flex h-10 w-full rounded-md bg-transparent py-3 text-sm outline-none placeholder:text-muted-foreground disabled:cursor-not-allowed disabled:opacity-50"
             @keydown="onKeydown"
           />
         </div>
@@ -231,7 +231,7 @@ const clear = (e: MouseEvent) => {
         <!-- Empty state -->
         <div
           v-if="flatList.length === 0"
-          class="text-muted-foreground py-6 text-center text-sm"
+          class="py-6 text-center text-sm text-muted-foreground"
         >
           No countries found.
         </div>
@@ -269,7 +269,7 @@ const clear = (e: MouseEvent) => {
               <!-- Group header -->
               <div
                 v-if="flatList[row.index].type === 'header'"
-                class="text-muted-foreground px-3 py-1.5 text-xs font-medium"
+                class="px-3 py-1.5 text-xs font-medium text-muted-foreground"
               >
                 {{
                   (flatList[row.index] as { type: "header"; label: string })
@@ -282,7 +282,7 @@ const clear = (e: MouseEvent) => {
                 v-else-if="flatList[row.index].type === 'separator'"
                 class="px-1 py-1"
               >
-                <div class="bg-border h-px" />
+                <div class="h-px bg-border" />
               </div>
 
               <!-- Country item -->

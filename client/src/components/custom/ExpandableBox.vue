@@ -1,10 +1,10 @@
 <script setup lang="ts">
+import { ref, useId } from "vue";
 import {
   Collapsible,
   CollapsibleContent,
   CollapsibleTrigger,
 } from "@/components/ui/collapsible";
-import { ref, useId } from "vue";
 import Chevron from "./RotatableChevron.vue";
 
 const { title = "", id = useId() } = defineProps<{
@@ -20,7 +20,7 @@ const open = ref<boolean>(false);
     <CollapsibleTrigger as-child :aria-controls="id">
       <button
         type="button"
-        class="hover:bg-secondary flex w-full cursor-pointer flex-row rounded-sm border-none bg-transparent py-2 ps-4 pe-3 text-left text-inherit"
+        class="flex w-full cursor-pointer flex-row rounded-sm border-none bg-transparent py-2 ps-4 pe-3 text-left text-inherit hover:bg-secondary"
       >
         <div class="grow">
           {{ title }}

@@ -1,9 +1,9 @@
 <script setup lang="ts">
 import { ClassValue } from "clsx";
 import { computed } from "vue";
-import WCALogo from "./WCALogo.vue";
-import FlagIcon from "./FlagIcon.vue";
 import { RouterLink } from "vue-router";
+import FlagIcon from "./FlagIcon.vue";
+import WCALogo from "./WCALogo.vue";
 
 const props = defineProps<{
   name: string;
@@ -16,8 +16,21 @@ const props = defineProps<{
 const wcaLink = computed(() => {
   if (!props.id) return "#";
 
-  const baseUrl = `https://www.worldcubeassociation.org/persons/${props.id}`;
-  return props.event ? `${baseUrl}?event=${props.event}` : baseUrl;
+  const url = new URL(
+    `https://www.worldcubeassociation.org/persons/${props.id}`,
+  );
+  if (props.event) {
+    url.searchParams.append("event", props.event);
+  }
+
+  return url.toString();
+});
+
+const personalLink = computed(() => {
+  const base = `/rankings/personal/${props.id}`;
+  if (!props.event) return base;
+  const params = new URLSearchParams({ event: props.event });
+  return `${base}?${params}`;
 });
 </script>
 
@@ -25,7 +38,7 @@ const wcaLink = computed(() => {
   <div :class="props.class" class="min-w-0">
     <FlagIcon v-if="iso2" :code="iso2" />
     <RouterLink
-      :to="`/rankings/personal/${id}?event=${event}`"
+      :to="personalLink"
       @click.stop
       class="ms-2 min-w-0 truncate hover:underline"
     >
