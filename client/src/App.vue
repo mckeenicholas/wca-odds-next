@@ -15,7 +15,7 @@ const versionNum = "1.1.4";
   <div class="flex min-h-screen flex-col">
     <main class="grow">
       <ColorModeSwitcher />
-      <RouterView class="-mt-4" />
+      <RouterView />
     </main>
     <footer
       class="text-muted-foreground flex h-10 items-center justify-end px-4 text-sm font-semibold"

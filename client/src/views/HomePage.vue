@@ -78,7 +78,7 @@ watch(data, () => {
       <h1 class="m-6 text-center text-3xl font-bold">
         WCA Competition Predictor
       </h1>
-      <h1 class="m-4 text-center text-xl">Find a competition</h1>
+      <h1 class="m-4 text-center text-xl">View stats for competition</h1>
       <div ref="comboboxRef" class="relative flex min-w-[70vw] flex-row">
         <div
           class="border-input bg-background ring-offset-background flex w-full items-center gap-2 rounded-md border px-3 py-2 text-sm"
