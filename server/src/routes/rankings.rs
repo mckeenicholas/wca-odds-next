@@ -1,4 +1,5 @@
 use axum::{Json, extract::State, response::IntoResponse};
+use serde::Serialize;
 use sqlx::PgPool;
 
 use crate::utils::competitor::validate_date_range;
@@ -10,6 +11,29 @@ use crate::utils::wca::EventType;
 const MAX_WINDOW_DAYS: i64 = 31 * 12 * 5; // ~5 years
 const PAGE_SIZE: i32 = 32;
 const MAX_ITEMS: i32 = 512;
+
+#[derive(Serialize)]
+pub struct ValueDelta<T> {
+    pub current: T,
+    pub change: Option<T>,
+}
+
+#[derive(Serialize)]
+pub struct SubRank {
+    pub rank: i32,
+    pub rank_change: Option<i32>,
+}
+
+#[derive(Serialize)]
+pub struct RankingSnapshotResponse {
+    pub person_id: String,
+    pub name: String,
+    pub country_iso2: String,
+    pub global_rank: ValueDelta<i32>,
+    pub score: ValueDelta<f32>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub sub_rank: Option<SubRank>,
+}
 
 pub async fn rankings_handler(
     State(pool): State<PgPool>,
@@ -40,7 +64,7 @@ pub async fn rankings_handler(
         }
     });
 
-    let results = database::fetch_ranks_by_date(
+    let rows = database::fetch_ranks_by_date(
         &pool,
         db_event_id,
         limit,
@@ -49,6 +73,40 @@ pub async fn rankings_handler(
         country_filter.as_ref(),
     )
     .await?;
+
+    let has_filter = country_filter.is_some();
+
+    let results: Vec<RankingSnapshotResponse> = rows
+        .into_iter()
+        .enumerate()
+        .map(|(i, row)| {
+            let rank_change = row.prev_rank.map(|prev| prev - row.rank);
+            let score_change = row.prev_value.map(|prev| row.value - prev);
+
+            RankingSnapshotResponse {
+                person_id: row.person_id,
+                name: row.name,
+                country_iso2: row.country_iso2,
+                global_rank: ValueDelta {
+                    current: row.rank,
+                    change: rank_change,
+                },
+                score: ValueDelta {
+                    current: row.value,
+                    change: score_change,
+                },
+                sub_rank: if has_filter {
+                    let current_sub = offset + i as i32 + 1;
+                    Some(SubRank {
+                        rank: current_sub,
+                        rank_change: row.prev_sub_rank.map(|prev| prev - current_sub),
+                    })
+                } else {
+                    None
+                },
+            }
+        })
+        .collect();
 
     Ok(Json(results).into_response())
 }

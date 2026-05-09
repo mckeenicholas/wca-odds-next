@@ -5,6 +5,7 @@ import type { RankingSnapshot } from "@/lib/types";
 import RankingsAreaChart from "@/components/charts/RankingsAreaChart.vue";
 import CompetitorLink from "@/components/custom/CompetitorLink.vue";
 import DateRangePicker from "@/components/custom/DateRangePicker.vue";
+import RankChangeIndicator from "@/components/custom/RankChangeIndicator.vue";
 import RotatableChevron from "@/components/custom/RotatableChevron.vue";
 import { Button } from "@/components/ui/button";
 import {
@@ -70,13 +71,15 @@ const ariaId = computed(() => `details-${competitor.person_id}`);
         :class="{ 'bg-muted/20': index % 2 === 0 }"
       >
         <div
-          v-if="showRegionRank"
+          v-if="showRegionRank && competitor.sub_rank"
           class="w-16 shrink-0 ps-3 text-left text-xs sm:text-sm md:w-28"
         >
-          {{ index + 1 }}
+          <span>{{ competitor.sub_rank.rank }}</span>
+          <RankChangeIndicator :change="competitor.sub_rank.rank_change" />
         </div>
         <div class="w-20 shrink-0 ps-3 text-left text-foreground md:w-28">
-          {{ competitor.rank }}
+          <span>{{ competitor.global_rank.current }}</span>
+          <RankChangeIndicator :change="competitor.global_rank.change" />
         </div>
         <div class="min-w-0 flex-2 text-left">
           <CompetitorLink

@@ -7,7 +7,7 @@ import ColorModeSwitcher from "@/components/custom/ColorModeSwitcher.vue";
 
 const route = useRoute();
 
-const versionNum = "1.1.4";
+const versionNum = "1.2.0";
 
 const fatalError = ref<string | undefined>(undefined);
 onErrorCaptured((err) => {

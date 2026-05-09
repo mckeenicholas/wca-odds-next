@@ -270,7 +270,9 @@ const setToday = () => {
               :competitor="competitor"
               :index="index"
               :selected-event="selectedEvent"
-              :formatted-score="formatScore(competitor.value, selectedEvent)"
+              :formatted-score="
+                formatScore(competitor.score.current, selectedEvent)
+              "
               :rank-date="committedDate"
               :show-region-rank="!!selectedCountry"
             />

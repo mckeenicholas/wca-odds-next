@@ -113,6 +113,9 @@ pub struct RankingSnapshotRow {
     pub country_iso2: String,
     pub value: f32,
     pub rank: i32,
+    pub prev_value: Option<f32>,
+    pub prev_rank: Option<i32>,
+    pub prev_sub_rank: Option<i32>,
 }
 
 pub enum CountryFilter {
@@ -129,20 +132,79 @@ pub async fn fetch_ranks_by_date(
     country_filter: Option<&CountryFilter>,
 ) -> Result<Vec<RankingSnapshotRow>, sqlx::Error> {
     let mut qb: QueryBuilder<Postgres> = QueryBuilder::new(
-        r#"SELECT rs.person_id, p.name, COALESCE(c.iso2, '') AS country_iso2, rs.value, rs.rank
-        FROM ranking_snapshots rs
-        JOIN persons p ON p.person_id = rs.person_id
-        LEFT JOIN countries c ON c.id = p.country_id
-        WHERE rs.event_id = "#,
-    );
-    qb.push_bind(event_id);
-    qb.push(
-        r#" AND rs.snapshot_date = (
+        r#"WITH cur_date AS (
             SELECT snapshot_date FROM ranking_snapshots
             WHERE snapshot_date <= COALESCE("#,
     );
     qb.push_bind(date);
-    qb.push(", CURRENT_DATE) ORDER BY snapshot_date DESC LIMIT 1)");
+    qb.push(
+        r#", CURRENT_DATE) ORDER BY snapshot_date DESC LIMIT 1
+        ), prev_date AS (
+            SELECT snapshot_date FROM ranking_snapshots
+            WHERE snapshot_date < (SELECT snapshot_date FROM cur_date)
+            ORDER BY snapshot_date DESC LIMIT 1
+        )"#,
+    );
+
+    // When a country/continent filter is active, compute each person's
+    // rank within that filter group for the *previous* snapshot so we
+    // can show sub_rank deltas.
+    if let Some(filter) = country_filter {
+        qb.push(
+            r#", prev_filtered_ranks AS (
+            SELECT rs.person_id,
+                   ROW_NUMBER() OVER (ORDER BY rs.rank)::INT AS sub_rank
+            FROM ranking_snapshots rs
+            JOIN persons p ON p.person_id = rs.person_id
+            LEFT JOIN countries c ON c.id = p.country_id
+            WHERE rs.event_id = "#,
+        );
+        qb.push_bind(event_id);
+        qb.push(" AND rs.snapshot_date = (SELECT snapshot_date FROM prev_date)");
+        match filter {
+            CountryFilter::Country(id) => {
+                qb.push(" AND p.country_id = ");
+                qb.push_bind(id.as_str());
+            }
+            CountryFilter::Continent(id) => {
+                qb.push(" AND c.continent_id = ");
+                qb.push_bind(id.as_str());
+            }
+        }
+        qb.push(")");
+    }
+
+    qb.push(
+        r#"
+        SELECT rs.person_id, p.name, COALESCE(c.iso2, '') AS country_iso2,
+               rs.value, rs.rank,
+               prev.value AS prev_value, prev.rank AS prev_rank, "#,
+    );
+
+    if country_filter.is_some() {
+        qb.push("pfr.sub_rank AS prev_sub_rank");
+    } else {
+        qb.push("NULL::INT AS prev_sub_rank");
+    }
+
+    qb.push(
+        r#"
+        FROM ranking_snapshots rs
+        JOIN persons p ON p.person_id = rs.person_id
+        LEFT JOIN countries c ON c.id = p.country_id
+        LEFT JOIN ranking_snapshots prev
+          ON prev.person_id = rs.person_id
+          AND prev.event_id = rs.event_id
+          AND prev.snapshot_date = (SELECT snapshot_date FROM prev_date)"#,
+    );
+
+    if country_filter.is_some() {
+        qb.push(" LEFT JOIN prev_filtered_ranks pfr ON pfr.person_id = rs.person_id");
+    }
+
+    qb.push(" WHERE rs.event_id = ");
+    qb.push_bind(event_id);
+    qb.push(" AND rs.snapshot_date = (SELECT snapshot_date FROM cur_date)");
 
     match country_filter {
         Some(CountryFilter::Country(id)) => {
