@@ -21,7 +21,7 @@ import {
   type SupportedWCAEvent,
   eventNames,
 } from "@/lib/types";
-import { renderTime } from "@/lib/utils";
+import { isTimeEvent, renderTime } from "@/lib/utils";
 import CubingIcon from "./CubingIcon.vue";
 import DateRangePicker from "./DateRangePicker.vue";
 import RotatableChevron from "./RotatableChevron.vue";
@@ -66,10 +66,6 @@ const eventLabel = computed(() => {
   }
 });
 
-const isTimeEvent = computed(
-  () => !["all", "kinch", "kinch_strict"].includes(eventRank.event_id),
-);
-
 const isFMC = computed(() => eventRank.event_id === "333fm");
 
 const formatScore = (score: number) => {
@@ -98,7 +94,7 @@ const ariaId = computed(
         </div>
         <div class="flex-2 text-left">
           <CubingIcon
-            v-if="isTimeEvent"
+            v-if="isTimeEvent(eventRank.event_id)"
             :event="eventRank.event_id as SupportedWCAEvent"
             class="me-2"
             :show-tooltip="false"
@@ -143,7 +139,7 @@ const ariaId = computed(
             :history="mappedHistory"
             :stacked="false"
             :metric="metric"
-            :isTime="isTimeEvent"
+            :isTime="isTimeEvent(eventRank.event_id)"
             :isFMC="isFMC"
           />
         </div>

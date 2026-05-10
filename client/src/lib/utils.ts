@@ -332,3 +332,14 @@ export const toNaiveDate = (date: Date): string =>
 
 export const isToday = (date: Date): boolean =>
   date.toDateString() === new Date().toDateString();
+
+export const isTimeEvent = (event: string) => {
+  switch (event) {
+    case "all":
+    case "kinch":
+    case "kinch_strict":
+      return false;
+    default:
+      return true;
+  }
+};

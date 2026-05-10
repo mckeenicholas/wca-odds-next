@@ -21,6 +21,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { useRankDetail } from "@/lib/composables/useRankDetail";
+import { isTimeEvent } from "@/lib/utils";
 
 const {
   competitor,
@@ -122,7 +123,7 @@ const ariaId = computed(() => `details-${competitor.person_id}`);
           :history="mappedHistory"
           :stacked="false"
           :metric="metric"
-          :isTime="false"
+          :isTime="isTimeEvent(selectedEvent)"
           :isFMC="selectedEvent === '333fm'"
         />
       </div>
