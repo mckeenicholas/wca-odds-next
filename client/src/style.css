@@ -2,6 +2,8 @@ button {
   cursor: pointer;
 }
 
+@import "@cubing/icons";
+
 @import "tailwindcss";
 
 @plugin "tailwindcss-animate";
