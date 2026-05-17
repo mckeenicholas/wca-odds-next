@@ -8,7 +8,7 @@ import {
 } from "@unovis/ts";
 import { VisArea, VisAxis, VisLine, VisXYContainer } from "@unovis/vue";
 import { useMounted } from "@vueuse/core";
-import { useId } from "radix-vue";
+import { useId } from "reka-ui";
 import { computed, h, ref, watchEffect } from "vue";
 import type { RankingHistoryPoint } from "@/lib/types";
 import { ChartCrosshair } from "@/components/ui/chart";

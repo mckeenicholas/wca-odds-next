@@ -31,6 +31,6 @@ const endDate = defineModel<Date>("endDate");
   </div>
   <div class="flex items-center">
     <Label for="includeDNF" class="me-2">Include DNFs</Label>
-    <Switch id="includeDNF" v-model:checked="includeDnf" />
+    <Switch id="includeDNF" v-model="includeDnf" />
   </div>
 </template>

@@ -12,7 +12,7 @@ const inputId = useId();
 <template>
   <div class="flex items-center">
     <Label :for="inputId">{{ left }}</Label>
-    <Switch v-model:checked="model" :id="inputId" class="mx-3" />
+    <Switch v-model="model" :id="inputId" class="mx-3" />
     <Label :for="inputId">{{ right }}</Label>
   </div>
 </template>

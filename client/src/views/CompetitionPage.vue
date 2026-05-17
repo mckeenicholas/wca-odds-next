@@ -156,7 +156,7 @@ const runSimulation = () => {
               />
 
               <Checkbox
-                v-model:checked="person.selected"
+                v-model="person.selected"
                 :id="`select-${person.id}`"
                 :aria-label="`Select competitor ${person.name}`"
               />
