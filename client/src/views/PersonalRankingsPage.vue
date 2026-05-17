@@ -9,6 +9,7 @@ import DatePicker from "@/components/custom/DatePicker.vue";
 import ErrorDisplay from "@/components/custom/ErrorPanel.vue";
 import EventRankDropdown from "@/components/custom/EventRankDropdown.vue";
 import FlagIcon from "@/components/custom/FlagIcon.vue";
+import WCALogo from "@/components/custom/WCALogo.vue";
 import Button from "@/components/ui/button/Button.vue";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
@@ -282,7 +283,7 @@ const setToday = () => {
           </div>
         </div>
       </div>
-      <div class="flex flex-col items-center gap-3">
+      <div class="flex flex-col items-center gap-2">
         <DatePicker
           v-model="rankDate"
           :disabled="!selectedPerson"
@@ -302,6 +303,17 @@ const setToday = () => {
           </Button>
         </div>
       </div>
+      <a
+        v-if="selectedPerson"
+        :href="`https://www.worldcubeassociation.org/persons/${selectedPerson.person_id}`"
+        target="_blank"
+        rel="noopener noreferrer"
+      >
+        <Button variant="outline" class="font-normal">
+          <WCALogo class="h-4 w-4" />
+          View WCA Profile
+        </Button>
+      </a>
     </div>
     <ErrorDisplay
       v-if="isError"

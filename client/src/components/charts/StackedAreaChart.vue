@@ -67,7 +67,7 @@ const processedData = computed(() => {
 
   return history.map((point) => {
     const dataPoint: Record<string, number> = {
-      date: new Date(point.date).getTime(),
+      date: new Date(point.date + "T12:00:00").getTime(),
     };
 
     point.competitors.forEach((c) => {

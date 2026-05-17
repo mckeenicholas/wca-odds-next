@@ -39,6 +39,7 @@ const isOpen = ref(false);
 const {
   selectedDateRange,
   applyDateRange,
+  hasCompleteRange,
   metric,
   detailData,
   isPending,
@@ -169,7 +170,11 @@ const ariaId = computed(
           v-model:end-date="selectedDateRange.end"
           :allow-future="false"
         />
-        <Button size="sm" @click="applyDateRange" :disabled="isFetching">
+        <Button
+          size="sm"
+          @click="applyDateRange"
+          :disabled="isFetching || !hasCompleteRange"
+        >
           Update
         </Button>
       </div>

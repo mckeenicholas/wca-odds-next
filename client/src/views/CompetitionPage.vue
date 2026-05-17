@@ -81,11 +81,11 @@ const runSimulation = () => {
     competitors: selectedIds,
     date: data.value.schedule.startDate,
     decayRate: decayHalfLife.value,
-    endDate: endDate.value,
+    endDate: endDate.value!,
     eventId: selectedEventId.value,
     includeDnf: includeDnf.value,
     name: data.value.name,
-    startDate: startDate.value,
+    startDate: startDate.value!,
   });
 
   router.push({

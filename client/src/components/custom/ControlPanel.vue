@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { useWindowSize } from "@vueuse/core";
+import { computed } from "vue";
 import { Button } from "@/components/ui/button";
 import {
   Select,
@@ -17,8 +18,8 @@ import SimulationOptions from "./SimulationOptions.vue";
 const selectedEventId = defineModel<string>("selectedEventId");
 const includeDnf = defineModel<boolean>("includeDnf");
 const decayHalfLife = defineModel<number>("decayRate");
-const startDate = defineModel<Date>("startDate");
-const endDate = defineModel<Date>("endDate");
+const startDate = defineModel<Date | undefined>("startDate");
+const endDate = defineModel<Date | undefined>("endDate");
 
 const { eventIds, disableRun = false } = defineProps<{
   eventIds: SupportedWCAEvent[];
@@ -30,6 +31,10 @@ const emit = defineEmits<{
 }>();
 
 const { width } = useWindowSize();
+
+const hasCompleteDateRange = computed(
+  () => !!startDate.value && !!endDate.value,
+);
 </script>
 
 <template>
@@ -62,7 +67,9 @@ const { width } = useWindowSize();
       v-model:end-date="endDate"
     />
     <div class="flex grow justify-end">
-      <Button @click="() => emit('runSimulation')" :disabled="disableRun"
+      <Button
+        @click="() => emit('runSimulation')"
+        :disabled="disableRun || !hasCompleteDateRange"
         >Run Simulation</Button
       >
     </div>
@@ -80,7 +87,9 @@ const { width } = useWindowSize();
       </div>
     </ExpandableBox>
     <div class="mb-2 flex flex-col">
-      <Button @click="() => emit('runSimulation')" :disabled="disableRun"
+      <Button
+        @click="() => emit('runSimulation')"
+        :disabled="disableRun || !hasCompleteDateRange"
         >Run Simulation</Button
       >
     </div>

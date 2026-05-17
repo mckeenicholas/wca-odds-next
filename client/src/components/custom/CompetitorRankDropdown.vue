@@ -44,6 +44,7 @@ const isOpen = ref(false);
 const {
   selectedDateRange,
   applyDateRange,
+  hasCompleteRange,
   metric,
   detailData,
   isPending,
@@ -154,7 +155,11 @@ const ariaId = computed(() => `details-${competitor.person_id}`);
           :allow-future="false"
         />
 
-        <Button size="sm" :disabled="isFetching" @click="applyDateRange">
+        <Button
+          size="sm"
+          :disabled="isFetching || !hasCompleteRange"
+          @click="applyDateRange"
+        >
           Update
         </Button>
       </div>
