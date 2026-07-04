@@ -57,7 +57,7 @@ pub fn calculate_average(solves: &mut [i32], event_type: EventType) -> (i32, i32
                 (DNF_VALUE, best_time)
             } else {
                 let sum = solves[1] + solves[2] + solves[3];
-                (sum / 3, best_time)
+                ((sum + 1) / 3, best_time)
             }
         }
         EventType::Mo3 | EventType::Fmc => {
@@ -67,15 +67,7 @@ pub fn calculate_average(solves: &mut [i32], event_type: EventType) -> (i32, i32
                 (DNF_VALUE, best_time)
             } else {
                 let sum: i32 = active_solves.iter().sum();
-                let avg = sum / 3;
-
-                if matches!(event_type, EventType::Fmc) && avg % 10 == 6 {
-                    // WCA rounds to nearest integer for FMC; integer division rounds down.
-                    // For FMC results ending in 66, we manually nudge to 67.
-                    (avg + 1, best_time)
-                } else {
-                    (avg, best_time)
-                }
+                ((sum + 1) / 3, best_time)
             }
         }
         EventType::Bo3 => {
