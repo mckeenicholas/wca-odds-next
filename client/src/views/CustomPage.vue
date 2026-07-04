@@ -69,11 +69,11 @@ const runSimulation = () => {
   const query = buildSimulationQuery({
     competitors: competitors.value.map((c) => c.wca_id),
     decayRate: decayHalfLife.value,
-    endDate: endDate.value,
+    endDate: endDate.value!,
     eventId: selectedEventId.value,
     includeDnf: includeDnf.value,
     name: "Custom Simulation",
-    startDate: startDate.value,
+    startDate: startDate.value!,
   }) as Record<string, string>;
 
   router.push({ path: "/custom/results", query });

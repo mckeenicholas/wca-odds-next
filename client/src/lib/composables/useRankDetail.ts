@@ -11,7 +11,7 @@ export function useRankDetail(params: {
   rankDate: Ref<Date>;
   isOpen: Ref<boolean>;
 }) {
-  const selectedDateRange = ref({
+  const selectedDateRange = ref<{ start?: Date; end?: Date }>({
     end: params.rankDate.value,
     start: subYears(params.rankDate.value, 1),
   });
@@ -33,8 +33,16 @@ export function useRankDetail(params: {
   );
 
   const applyDateRange = () => {
-    appliedDateRange.value = { ...selectedDateRange.value };
+    if (!selectedDateRange.value.start || !selectedDateRange.value.end) return;
+    appliedDateRange.value = {
+      end: selectedDateRange.value.end,
+      start: selectedDateRange.value.start,
+    };
   };
+
+  const hasCompleteRange = computed(
+    () => !!selectedDateRange.value.start && !!selectedDateRange.value.end,
+  );
 
   const metric = ref<"value" | "rank">("rank");
 
@@ -97,6 +105,7 @@ export function useRankDetail(params: {
     applyDateRange,
     detailData,
     error,
+    hasCompleteRange,
     isFetching,
     isPending,
     mappedHistory,

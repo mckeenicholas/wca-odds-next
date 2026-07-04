@@ -8,7 +8,7 @@ import {
 } from "@unovis/ts";
 import { VisArea, VisAxis, VisLine, VisXYContainer } from "@unovis/vue";
 import { useMounted } from "@vueuse/core";
-import { useId } from "radix-vue";
+import { useId } from "reka-ui";
 import { computed, h, ref, watchEffect } from "vue";
 import type { RankingHistoryPoint } from "@/lib/types";
 import { ChartCrosshair } from "@/components/ui/chart";
@@ -72,7 +72,7 @@ const processedData = computed(() => {
 
   return history.map((point) => {
     const dataPoint: Record<string, number> = {
-      date: new Date(point.date).getTime(),
+      date: new Date(point.date + "T12:00:00").getTime(),
     };
 
     point.competitors.forEach((c) => {
@@ -94,10 +94,10 @@ const yRange = computed(() => {
     competitorMeta.value.map((m) => d[m.name]),
   );
 
-  if (allValues.length === 0) return;
+  if (allValues.length === 0) return undefined;
 
   if (metric === "rank") {
-    return;
+    return undefined;
   }
 
   const maxVal = Math.max(...allValues);

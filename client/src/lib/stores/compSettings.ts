@@ -25,8 +25,8 @@ export const useCompSettingsStore = defineStore("compSettings", () => {
   );
   const includeDnf = ref<boolean>(defaultValues.includeDnf());
   const decayHalfLife = ref<number>(defaultValues.decayHalfLife());
-  const startDate = ref<Date>(defaultValues.startDate());
-  const endDate = ref<Date>(defaultValues.endDate());
+  const startDate = ref<Date | undefined>(defaultValues.startDate());
+  const endDate = ref<Date | undefined>(defaultValues.endDate());
 
   function reset() {
     competitorsByEvent.value = defaultValues.competitorsByEvent();

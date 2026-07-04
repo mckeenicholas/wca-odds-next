@@ -71,7 +71,7 @@ const {
 });
 
 const chartData = computed(() => {
-  if (!historyData.value) return;
+  if (!historyData.value) return undefined;
 
   return historyData.value.map((point) => {
     const competitorList = point.competitors.map((c) => {

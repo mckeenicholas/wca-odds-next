@@ -108,7 +108,12 @@ pub fn fit_weighted_skewnorm(data: &[(i32, f32)]) -> SkewNormParams {
 
 /// Remove outliers beyond 2 standard deviations from the mean.
 pub fn trim_outliers(data: Vec<(i32, f32)>, stats: &WeightedStats) -> Vec<(i32, f32)> {
+    if data.len() <= 1 || stats.stdev == 0.0 {
+        return data;
+    }
+
     let threshold = (stats.mean + stats.stdev * 2.0) as i32;
+
     data.into_iter()
         .filter(|&(val, _)| val <= threshold)
         .collect()

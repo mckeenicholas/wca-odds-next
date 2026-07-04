@@ -115,10 +115,7 @@ const xFormatter = (value: number | Date) => {
                 :key="idx"
                 class="mx-2 flex grow items-center"
               >
-                <Checkbox
-                  :id="`checkbox-${idx}`"
-                  v-model:checked="enabled[idx]"
-                />
+                <Checkbox :id="`checkbox-${idx}`" v-model="enabled[idx]" />
                 <Label
                   :for="`checkbox-${idx}`"
                   class="text-md flex items-center font-normal"

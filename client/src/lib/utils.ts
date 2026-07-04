@@ -159,12 +159,17 @@ export const clone2DArr = (arr: number[][]): number[][] => {
   return arr.map((row) => [...row]);
 };
 
-export const formatDate = (date: string | Date | number) =>
-  new Date(date).toLocaleDateString("en-US", {
+export const formatDate = (date: string | Date | number) => {
+  const d =
+    typeof date === "string" && /^\d{4}-\d{2}-\d{2}$/.test(date)
+      ? new Date(date + "T12:00:00")
+      : new Date(date);
+  return d.toLocaleDateString("en-US", {
     day: "numeric",
     month: "short",
     year: "numeric",
   });
+};
 
 export const buildSimulationQuery = (params: {
   name: string;
@@ -332,3 +337,14 @@ export const toNaiveDate = (date: Date): string =>
 
 export const isToday = (date: Date): boolean =>
   date.toDateString() === new Date().toDateString();
+
+export const isTimeEvent = (event: string) => {
+  switch (event) {
+    case "all":
+    case "kinch":
+    case "kinch_strict":
+      return false;
+    default:
+      return true;
+  }
+};

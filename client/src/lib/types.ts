@@ -260,12 +260,23 @@ export interface RankingHistoryPoint {
   competitors: CompetitorRankingHistoryStat[];
 }
 
+export interface ValueDelta {
+  current: number;
+  change: number | null;
+}
+
+export interface SubRank {
+  rank: number;
+  rank_change: number | null;
+}
+
 export interface RankingSnapshot {
   person_id: string;
   name: string;
   country_iso2: string;
-  value: number;
-  rank: number;
+  global_rank: ValueDelta;
+  score: ValueDelta;
+  sub_rank?: SubRank;
 }
 
 export interface CountryResult {
