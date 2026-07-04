@@ -53,7 +53,6 @@ export default defineConfig({
       "node_modules/",
       "dist/",
       "src/components/ui",
-      "wasm/",
       "tailwind.config.js",
     ],
     options: {},
@@ -85,7 +84,7 @@ export default defineConfig({
         },
       },
     ],
-    plugins: ["oxc", "typescript", "unicorn", "react", "vue"],
+    plugins: ["oxc", "typescript", "unicorn", "vue"],
     rules: {
       "constructor-super": "error",
       "for-direction": "error",

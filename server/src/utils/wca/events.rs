@@ -47,21 +47,24 @@ impl EventType {
 }
 
 /// Calculate the official WCA average/result from a set of solves.
-pub fn calculate_average(solves: &mut [i32], event_type: EventType) -> i32 {
+/// Returns a tuple of (average, best)
+pub fn calculate_average(solves: &mut [i32], event_type: EventType) -> (i32, i32) {
     match event_type {
         EventType::Ao5 => {
             solves.sort_unstable();
+            let best_time = solves[0];
             if solves[3] >= DNF_VALUE {
-                DNF_VALUE
+                (DNF_VALUE, best_time)
             } else {
                 let sum = solves[1] + solves[2] + solves[3];
-                sum / 3
+                (sum / 3, best_time)
             }
         }
         EventType::Mo3 | EventType::Fmc => {
             let active_solves = &solves[..3];
+            let best_time = *active_solves.iter().min().unwrap();
             if active_solves.iter().any(|&x| x >= DNF_VALUE) {
-                DNF_VALUE
+                (DNF_VALUE, best_time)
             } else {
                 let sum: i32 = active_solves.iter().sum();
                 let avg = sum / 3;
@@ -69,13 +72,19 @@ pub fn calculate_average(solves: &mut [i32], event_type: EventType) -> i32 {
                 if matches!(event_type, EventType::Fmc) && avg % 10 == 6 {
                     // WCA rounds to nearest integer for FMC; integer division rounds down.
                     // For FMC results ending in 66, we manually nudge to 67.
-                    avg + 1
+                    (avg + 1, best_time)
                 } else {
-                    avg
+                    (avg, best_time)
                 }
             }
         }
-        EventType::Bo3 => *solves[..3].iter().min().unwrap(),
-        EventType::Bo5 => *solves.iter().min().unwrap(),
+        EventType::Bo3 => {
+            let best_time = *solves[..3].iter().min().unwrap();
+            (best_time, best_time)
+        }
+        EventType::Bo5 => {
+            let best_time = *solves.iter().min().unwrap();
+            (best_time, best_time)
+        }
     }
 }

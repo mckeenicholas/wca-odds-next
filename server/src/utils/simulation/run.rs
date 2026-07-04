@@ -90,7 +90,7 @@ fn simulate_round(
     rng: &mut rand::rngs::ThreadRng,
     include_dnf: bool,
     acc: &mut CompetitorAccumulator,
-) -> i32 {
+) -> (i32, i32) {
     let count = event_type.num_solves();
     let mut solves = [DNF_VALUE; 5];
 
@@ -134,23 +134,30 @@ pub fn run_simulations(
         .collect();
 
     for _ in 0..simulation_count {
-        let mut round_results: Vec<(usize, i32)> = Vec::with_capacity(num_competitors);
+        let mut round_results: Vec<(usize, i32, i32)> = Vec::with_capacity(num_competitors);
 
         for (idx, comp) in competitors.iter().enumerate() {
             let acc = &mut accumulators[idx];
 
-            let avg = simulate_round(comp, event_type, &mut rng, include_dnf, acc);
+            let (avg, best) = simulate_round(comp, event_type, &mut rng, include_dnf, acc);
 
             if avg != DNF_VALUE {
                 acc.record_average(avg, event_type.is_fmc());
             }
 
-            round_results.push((idx, avg));
+            round_results.push((idx, avg, best));
         }
 
-        round_results.sort_unstable_by_key(|&(_, time)| time);
+        round_results.sort_unstable_by_key(|&(_, avg, best)| (avg, best));
 
-        for (rank, &(original_idx, _)) in round_results.iter().enumerate() {
+        let mut rank = 0;
+        for (i, &(original_idx, avg, best)) in round_results.iter().enumerate() {
+            if i > 0 {
+                let (_, prev_avg, prev_best) = round_results[i - 1];
+                if avg != prev_avg || best != prev_best {
+                    rank = i;
+                }
+            }
             accumulators[original_idx].add_rank(rank);
         }
     }
@@ -159,4 +166,79 @@ pub fn run_simulations(
         .into_iter()
         .map(|acc| acc.finalize(simulation_count, event_type))
         .collect()
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_simulation_tie_ranking() {
+        // Create competitors with specific entered_results to test tie-breaker scenarios.
+        // We will run simulations with 1 count, so results are exact and deterministic.
+
+        // Competitor A: Ao5 solves = [1000, 1000, 1000, 1000, 1000] -> Avg = 1000, Best = 1000
+        let comp_a = Competitor {
+            name: "A".to_string(),
+            id: "2026A".to_string(),
+            country_iso2: "US".to_string(),
+            entered_results: vec![1000, 1000, 1000, 1000, 1000],
+            stats: None,
+        };
+
+        // Competitor B: Ao5 solves = [900, 1000, 1000, 1000, 1100] -> Avg = 1000, Best = 900
+        // (Ao5 drops 900 and 1100, leaving 1000, 1000, 1000 -> avg = 1000, best = 900)
+        let comp_b = Competitor {
+            name: "B".to_string(),
+            id: "2026B".to_string(),
+            country_iso2: "US".to_string(),
+            entered_results: vec![900, 1000, 1000, 1000, 1100],
+            stats: None,
+        };
+
+        // Competitor C: Ao5 solves = [950, 1050, 1050, 1050, 1150] -> Avg = 1050, Best = 950
+        let comp_c = Competitor {
+            name: "C".to_string(),
+            id: "2026C".to_string(),
+            country_iso2: "US".to_string(),
+            entered_results: vec![950, 1050, 1050, 1050, 1150],
+            stats: None,
+        };
+
+        // Competitor D: Ao5 solves = [900, 1000, 1000, 1000, 1100] -> Avg = 1000, Best = 900 (Identical to B)
+        let comp_d = Competitor {
+            name: "D".to_string(),
+            id: "2026D".to_string(),
+            country_iso2: "US".to_string(),
+            entered_results: vec![900, 1000, 1000, 1000, 1100],
+            stats: None,
+        };
+
+        let competitors = vec![comp_a, comp_b, comp_c, comp_d];
+        let event_type = EventType::Ao5;
+
+        // Run 1 simulation
+        let results = run_simulations(&competitors, &event_type, false, 1);
+
+        // Under WCA tie-breaker rules:
+        // - B and D have Avg = 1000, Best = 900
+        // - A has Avg = 1000, Best = 1000
+        // - C has Avg = 1050, Best = 950
+        // Expected ordering:
+        // Rank 0: B and D (tied, since their averages are 1000 and bests are 900)
+        // Rank 2: A (Avg = 1000, but Best = 1000 which is worse than 900)
+        // Rank 3: C (Avg = 1050, which is worse than 1000)
+        //
+        // Let's verify the ranks recorded (probabilities[0] should correspond to rank 0, probabilities[2] to rank 2, etc.)
+
+        // Competitor B (index 1) and D (index 3) should have rank 0 (100% win probability)
+        assert_eq!(results[1].win_probability(), 1.0);
+        assert_eq!(results[3].win_probability(), 1.0);
+
+        // Competitor A (index 0) should have rank 2 (100% probability for rank 2, i.e., third place 0-indexed rank 2)
+        assert_eq!(results[0].rank_stats().as_slice()[2], 1.0);
+
+        // Competitor C (index 2) should have rank 3 (100% probability for rank 3, i.e., fourth place 0-indexed rank 3)
+        assert_eq!(results[2].rank_stats().as_slice()[3], 1.0);
+    }
 }
