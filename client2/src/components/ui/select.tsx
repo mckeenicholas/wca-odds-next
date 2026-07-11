@@ -1,0 +1,69 @@
+import { Select as KSelect, SelectItemProps as KSelectItemProps } from "@kobalte/core/select";
+import { ChevronDown, Check } from "lucide-solid";
+import { cn } from "../../lib/utils";
+import { splitProps, JSX } from "solid-js";
+
+export interface SelectItemProps extends KSelectItemProps {
+  class?: string;
+  children?: JSX.Element;
+}
+
+export const Select = KSelect;
+export const SelectValue = KSelect.Value;
+
+export function SelectTrigger(props: any) {
+  const [local, others] = splitProps(props, ["class", "children"]);
+  return (
+    <KSelect.Trigger
+      class={cn(
+        "flex h-10 w-full items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50",
+        local.class,
+      )}
+      {...others}
+    >
+      {local.children}
+      <KSelect.Icon>
+        <ChevronDown class="h-4 w-4 opacity-50" />
+      </KSelect.Icon>
+    </KSelect.Trigger>
+  );
+}
+
+export function SelectContent(props: any) {
+  const [local, others] = splitProps(props, ["class"]);
+  return (
+    <KSelect.Portal>
+      <KSelect.Content
+        class={cn(
+          "relative z-50 min-w-[8rem] overflow-hidden rounded-md border bg-popover text-popover-foreground shadow-md",
+          local.class,
+        )}
+        {...others}
+      >
+        <KSelect.Listbox class="p-1 outline-none" />
+      </KSelect.Content>
+    </KSelect.Portal>
+  );
+}
+
+export function SelectItem(props: SelectItemProps) {
+  const [local, others] = splitProps(props, ["class", "children"]);
+  return (
+    <KSelect.Item
+      class={cn(
+        "relative flex w-full cursor-default select-none items-center justify-start rounded-sm py-1.5 pl-8 pr-2 text-sm outline-none focus:bg-accent focus:text-accent-foreground data-[disabled]:pointer-events-none data-[disabled]:opacity-50 data-[highlighted]:bg-muted data-[highlighted]:text-accent-foreground outline-none",
+        local.class,
+      )}
+      {...others}
+    >
+      <span class="absolute left-2 flex h-3.5 w-3.5 items-center justify-center">
+        <KSelect.ItemIndicator>
+          <Check class="h-4 w-4" />
+        </KSelect.ItemIndicator>
+      </span>
+      <KSelect.ItemLabel class="flex items-center justify-start w-full">
+        {local.children}
+      </KSelect.ItemLabel>
+    </KSelect.Item>
+  );
+}

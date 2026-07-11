@@ -1,0 +1,59 @@
+{
+  "ignorePatterns": ["node_modules", ".nitro", ".output", "dist"],
+  "options": {
+    "typeAware": true
+  },
+  "categories": {
+    "correctness": "error",
+    "suspicious": "warn",
+    "pedantic": "warn"
+  },
+  "jsPlugins": [
+    {
+      "name": "solid-js",
+      "specifier": "eslint-plugin-solid"
+    }
+  ],
+  "rules": {
+    "max-lines-per-function": "off",
+    "max-lines": "off",
+    "require-await": "off",
+    "no-inline-comments": "off",
+    "solid-js/components-return-once": "warn",
+    "solid-js/event-handlers": "warn",
+    "solid-js/imports": "warn",
+    "solid-js/jsx-no-duplicate-props": "error",
+    "solid-js/jsx-no-script-url": "error",
+    "solid-js/jsx-no-undef": [
+      "error",
+      {
+        "typescriptEnabled": true
+      }
+    ],
+    "solid-js/jsx-uses-vars": "error",
+    "solid-js/no-array-handlers": "off",
+    "solid-js/no-destructure": "error",
+    "solid-js/no-innerhtml": "error",
+    "solid-js/no-proxy-apis": "off",
+    "solid-js/no-react-deps": "warn",
+    "solid-js/no-react-specific-props": "warn",
+    "solid-js/no-unknown-namespaces": "off",
+    "solid-js/prefer-classlist": "off",
+    "solid-js/prefer-for": "error",
+    "solid-js/prefer-show": "off",
+    "solid-js/reactivity": "warn",
+    "solid-js/self-closing-comp": "warn",
+    "solid-js/style-prop": "warn",
+    "typescript/prefer-readonly-parameter-types": "off",
+    "typescript/strict-void-return": "off",
+    "typescript/no-misused-promises": "off",
+    "typescript/no-unsafe-assignment": "off",
+    "typescript/strict-boolean-expressions": "off",
+    "typescript/no-unsafe-type-assertion": "off",
+    "typescript/no-unsafe-call": "off",
+    "typescript/no-unsafe-member-access": "off",
+    "typescript/no-unsafe-argument": "off",
+    "typescript/no-unsafe-return": "off",
+    "only-throw-error": "off"
+  }
+}

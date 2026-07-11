@@ -46,13 +46,13 @@ const date = computed<DateValue | undefined>({
   },
 });
 
-const placeholder = shallowRef<DateValue | undefined>(date.value);
+const calendarPlaceholder = shallowRef<DateValue | undefined>(date.value);
 
 watch(
   () => props.modelValue,
   (newVal) => {
     if (newVal) {
-      placeholder.value = fromDate(newVal, getLocalTimeZone());
+      calendarPlaceholder.value = fromDate(newVal, getLocalTimeZone());
     }
   },
 );
@@ -79,14 +79,14 @@ const maxDate = computed(() => {
         {{
           props.modelValue
             ? df.format(props.modelValue)
-            : (placeholder ?? "Pick a date")
+            : (props.placeholder ?? "Pick a date")
         }}
       </Button>
     </PopoverTrigger>
     <PopoverContent class="w-auto p-0" align="start">
       <Calendar
         v-model="date"
-        v-model:placeholder="placeholder"
+        v-model:placeholder="calendarPlaceholder"
         layout="month-and-year"
         initial-focus
         :max-value="maxDate"

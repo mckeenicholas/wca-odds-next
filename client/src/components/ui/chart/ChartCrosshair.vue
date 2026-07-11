@@ -1,9 +1,10 @@
 <script setup lang="ts">
 import type { BulletLegendItemInterface } from "@unovis/ts";
+import type { Component } from "vue";
 import { omit } from "@unovis/ts";
 import { VisCrosshair, VisTooltip } from "@unovis/vue";
-import { type Component, createApp } from "vue";
 import { ChartTooltip } from ".";
+import { renderTooltipHtml } from "./tooltipRenderer";
 
 const props = withDefaults(
   defineProps<{
@@ -25,7 +26,6 @@ function template(d: any) {
   if (wm.has(d)) {
     return wm.get(d);
   } else {
-    const componentDiv = document.createElement("div");
     const omittedData = Object.entries(omit(d, [props.index])).map(
       ([key, value]) => {
         const legendReference = props.items.find((i) => i.name === key);
@@ -33,14 +33,11 @@ function template(d: any) {
       },
     );
     const TooltipComponent = props.customTooltip ?? ChartTooltip;
-    const app = createApp(TooltipComponent, {
+    const html = renderTooltipHtml(TooltipComponent, {
       data: omittedData,
       title: d[props.index].toString(),
       ...props.customTooltipProps,
     });
-    app.mount(componentDiv);
-    const html = componentDiv.innerHTML;
-    app.unmount();
     wm.set(d, html);
     return html;
   }
