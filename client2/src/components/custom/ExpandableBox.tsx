@@ -21,7 +21,7 @@ export function ExpandableBox(props: ExpandableBoxProps) {
           <RotatableChevron up={open()} />
         </div>
       </Collapsible.Trigger>
-      <Collapsible.Content class="overflow-hidden duration-100 ease-out animate-in fade-in-0">
+      <Collapsible.Content class="overflow-hidden duration-100 ease-out animate-in fade-in-0 data-[expanded]:overflow-visible">
         {props.children}
       </Collapsible.Content>
     </Collapsible>

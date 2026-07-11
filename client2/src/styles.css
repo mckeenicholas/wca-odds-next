@@ -161,3 +161,8 @@ button {
   );
   @apply duration-150 ease-out animate-in fade-in-0 zoom-in-95;
 }
+
+/* Fix Unovis tooltips from rendering underneath parent components/expandable titles */
+.unovis-tooltip {
+  z-index: 9999 !important;
+}

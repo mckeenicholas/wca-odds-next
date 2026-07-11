@@ -1,4 +1,4 @@
-import { createSignal, createEffect, onCleanup, For, Show } from "solid-js";
+import { createSignal, createEffect, onCleanup, For, Show, Index, Switch, Match } from "solid-js";
 import { createInfiniteQuery } from "@tanstack/solid-query";
 import { createFileRoute, useNavigate } from "@tanstack/solid-router";
 import { LoaderCircle, Globe, Trophy } from "lucide-solid";
@@ -296,87 +296,89 @@ function RankingsPage() {
         </div>
       </div>
 
-      <Show when={query.isError}>
-        <div class="mt-4">
-          <ErrorPanel error={query.error?.message ?? "Unknown error"} />
-        </div>
-      </Show>
-
-      <Show when={query.isPending && !query.isError}>
-        <div class="mt-4 w-full max-w-4xl">
-          <div class="rounded-md border px-4 py-2">
-            <For each={Array.from({ length: 10 })}>
-              {() => <Skeleton class="my-4 h-9 w-full" />}
-            </For>
+      <Switch>
+        <Match when={query.isError}>
+          <div class="mt-4">
+            <ErrorPanel error={query.error?.message ?? "Unknown error"} />
           </div>
-        </div>
-      </Show>
+        </Match>
 
-      <Show when={!query.isPending && !query.isError}>
-        <Show
-          when={allItems().length > 0}
-          fallback={
-            <div class="mt-8 text-center text-muted-foreground">
-              No ranking data found for the selected event and timeframe.
+        <Match when={query.isPending}>
+          <div class="mt-4 w-full max-w-4xl">
+            <div class="rounded-md border px-4 py-2">
+              <Index each={Array.from({ length: 10 })}>
+                {() => <Skeleton class="my-4 h-9 w-full" />}
+              </Index>
             </div>
-          }
-        >
-          <div class="mt-2 w-full max-w-4xl">
-            <div class="rounded-md border">
-              <div class="flex w-full justify-between p-2 ps-1 text-sm font-medium text-muted-foreground">
-                <Show when={selectedCountry()}>
-                  <div class="w-16 shrink-0 ps-3 text-left md:w-28">Region Rank</div>
-                </Show>
-                <div class="w-20 shrink-0 ps-3 text-left md:w-28">
-                  {selectedCountry() ? "Global Rank" : "Rank"}
-                </div>
-                <div class="min-w-0 flex-2 text-left">Name</div>
-                <div class="flex-1 pe-3 text-right">{getRankColName(selectedEvent())}</div>
-                <div class="w-6" />
+          </div>
+        </Match>
+
+        <Match when={!query.isPending && !query.isError}>
+          <Show
+            when={allItems().length > 0}
+            fallback={
+              <div class="mt-8 text-center text-muted-foreground">
+                No ranking data found for the selected event and timeframe.
               </div>
-              <hr class="mx-2" />
-              <ol>
-                <For each={allItems()}>
-                  {(competitor, index) => (
-                    <li class="rounded-md p-1 contain-content">
-                      <CompetitorRankDropdown
-                        competitor={competitor}
-                        index={index()}
-                        selectedEvent={selectedEvent()}
-                        formattedScore={formatScore(competitor.score.current, selectedEvent())}
-                        rankDate={committedDate()}
-                        showRegionRank={Boolean(selectedCountry())}
-                      />
-                    </li>
-                  )}
-                </For>
-              </ol>
-
-              {/* Infinite scroll sentinel */}
-              <div
-                ref={(el) => {
-                  sentinelRef = el;
-                }}
-                class="h-1"
-              />
-
-              {/* Loading more indicator */}
-              <Show when={query.isFetchingNextPage}>
-                <div class="flex justify-center py-4">
-                  <LoaderCircle class="h-5 w-5 animate-spin text-muted-foreground" />
+            }
+          >
+            <div class="mt-2 w-full max-w-4xl">
+              <div class="rounded-md border">
+                <div class="flex w-full justify-between p-2 ps-1 text-sm font-medium text-muted-foreground">
+                  <Show when={selectedCountry()}>
+                    <div class="w-16 shrink-0 ps-3 text-left md:w-28">Region Rank</div>
+                  </Show>
+                  <div class="w-20 shrink-0 ps-3 text-left md:w-28">
+                    {selectedCountry() ? "Global Rank" : "Rank"}
+                  </div>
+                  <div class="min-w-0 flex-2 text-left">Name</div>
+                  <div class="flex-1 pe-3 text-right">{getRankColName(selectedEvent())}</div>
+                  <div class="w-6" />
                 </div>
-              </Show>
+                <hr class="mx-2" />
+                <ol>
+                  <For each={allItems()}>
+                    {(competitor, index) => (
+                      <li class="rounded-md p-1 contain-content">
+                        <CompetitorRankDropdown
+                          competitor={competitor}
+                          index={index()}
+                          selectedEvent={selectedEvent()}
+                          formattedScore={formatScore(competitor.score.current, selectedEvent())}
+                          rankDate={committedDate()}
+                          showRegionRank={Boolean(selectedCountry())}
+                        />
+                      </li>
+                    )}
+                  </For>
+                </ol>
 
-              {/* End of results */}
-              <Show when={!query.hasNextPage && allItems().length > PAGE_SIZE}>
-                <div class="border-t py-3 text-center text-sm text-muted-foreground">
-                  Showing all {allItems().length} results
-                </div>
-              </Show>
+                {/* Infinite scroll sentinel */}
+                <div
+                  ref={(el) => {
+                    sentinelRef = el;
+                  }}
+                  class="h-1"
+                />
+
+                {/* Loading more indicator */}
+                <Show when={query.isFetchingNextPage}>
+                  <div class="flex justify-center py-4">
+                    <LoaderCircle class="h-5 w-5 animate-spin text-muted-foreground" />
+                  </div>
+                </Show>
+
+                {/* End of results */}
+                <Show when={!query.hasNextPage && allItems().length > PAGE_SIZE}>
+                  <div class="border-t py-3 text-center text-sm text-muted-foreground">
+                    Showing all {allItems().length} results
+                  </div>
+                </Show>
+              </div>
             </div>
-          </div>
-        </Show>
-      </Show>
+          </Show>
+        </Match>
+      </Switch>
     </div>
   );
 }

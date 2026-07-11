@@ -19,6 +19,8 @@
     "@tanstack/solid-query": "^5.101.2",
     "@tanstack/solid-router": "^1.131.35",
     "@tanstack/solid-router-devtools": "^1.131.35",
+    "@unovis/solid": "^1.6.7",
+    "@unovis/ts": "^1.6.7",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "date-fns": "^4.4.0",

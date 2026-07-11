@@ -1,4 +1,4 @@
-import { createSignal, Show } from "solid-js";
+import { createSignal, Show, Switch, Match } from "solid-js";
 import { Collapsible } from "@kobalte/core/collapsible";
 import { LoaderCircle } from "lucide-solid";
 import { eventNames, type PersonRankInfo, type SupportedWCAEvent } from "../../lib/types";
@@ -107,25 +107,22 @@ export function EventRankDropdown(props: EventRankDropdownProps) {
         class="space-y-2 overflow-hidden duration-100 ease-out animate-in fade-in-0"
         id={ariaId()}
       >
-        <Show when={query.isPending}>
-          <div class="flex justify-center py-4">
-            <LoaderCircle class="h-6 w-6 animate-spin text-muted-foreground" />
-          </div>
-        </Show>
+        <Switch
+          fallback={
+            <div class="py-4 text-center text-sm text-muted-foreground">No history available.</div>
+          }
+        >
+          <Match when={query.isPending}>
+            <div class="flex justify-center py-4">
+              <LoaderCircle class="h-6 w-6 animate-spin text-muted-foreground" />
+            </div>
+          </Match>
 
-        <Show when={!query.isPending && query.isError}>
-          <div class="mt-2 py-4 text-center text-sm text-destructive">{query.error?.message}</div>
-        </Show>
+          <Match when={query.isError}>
+            <div class="mt-2 py-4 text-center text-sm text-destructive">{query.error?.message}</div>
+          </Match>
 
-        <Show when={!query.isPending && !query.isError}>
-          <Show
-            when={query.data && Array.isArray(query.data) && query.data.length > 0}
-            fallback={
-              <div class="py-4 text-center text-sm text-muted-foreground">
-                No history available.
-              </div>
-            }
-          >
+          <Match when={query.data && Array.isArray(query.data) && query.data.length > 0}>
             <div class="relative px-4 pt-2 pb-2">
               <Show when={query.isFetching}>
                 <div class="absolute inset-0 z-10 flex items-center justify-center rounded-md bg-background/50">
@@ -139,8 +136,8 @@ export function EventRankDropdown(props: EventRankDropdownProps) {
                 isFMC={isFMC()}
               />
             </div>
-          </Show>
-        </Show>
+          </Match>
+        </Switch>
 
         <div class="ms-4 flex items-center space-x-2 pb-2">
           <Select

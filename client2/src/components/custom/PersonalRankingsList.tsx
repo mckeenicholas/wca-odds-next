@@ -1,5 +1,5 @@
 import type { PersonRankInfo, PersonSearchResult } from "../../lib/types";
-import { For, Show } from "solid-js";
+import { For, Show, Index } from "solid-js";
 import { Skeleton } from "../ui/skeleton";
 import { EventRankDropdown } from "./EventRankDropdown";
 
@@ -17,7 +17,7 @@ export function PersonalRankingsList(props: PersonalRankingsListProps) {
         when={!props.isPending}
         fallback={
           <div class="space-y-4 rounded-md border p-4">
-            <For each={Array.from({ length: 8 })}>{() => <Skeleton class="h-9 w-full" />}</For>
+            <Index each={Array.from({ length: 8 })}>{() => <Skeleton class="h-9 w-full" />}</Index>
           </div>
         }
       >

@@ -129,6 +129,39 @@ export interface SimulationResultProps {
   event: SupportedWCAEvent;
 }
 
+export interface WCALiveCompetitionSuccess {
+  data: {
+    competition: {
+      competitionEvents: WCALiveCompetitionEvent[];
+    };
+  };
+}
+
+export interface WCALiveCompetitionError {
+  errors: {
+    detail: string;
+  };
+}
+
+export type WCALiveCompetitionData = WCALiveCompetitionSuccess | WCALiveCompetitionError;
+
+export interface WCALiveEventRound {
+  id: string;
+  number: number;
+}
+
+export interface WCALiveCompetitionEvent {
+  event: {
+    id: string;
+  };
+  rounds: WCALiveEventRound[];
+}
+
+export interface FetchRoundResultsGraphQLResponse {
+  data?: WCALiveRoundDataWrapper;
+  errors?: { message: string; [key: string]: string }[];
+}
+
 export interface WCALiveAttempt {
   result: number;
 }
