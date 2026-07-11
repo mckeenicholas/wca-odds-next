@@ -13,10 +13,10 @@ import { Route as CustomRouteImport } from './routes/custom'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as RankingsIndexRouteImport } from './routes/rankings.index'
 import { Route as RankingsPersonalRouteImport } from './routes/rankings.personal'
-import { Route as CustomResultsRouteImport } from './routes/custom.results'
 import { Route as CompetitionIdRouteImport } from './routes/competition.$id'
+import { Route as RankingsPersonalIndexRouteImport } from './routes/rankings.personal.index'
 import { Route as RankingsPersonalIdRouteImport } from './routes/rankings.personal.$id'
-import { Route as CompetitionIdResultsRouteImport } from './routes/competition.$id.results'
+import { Route as CompetitionIdResultsRouteImport } from './routes/competition.$id_.results'
 
 const CustomRoute = CustomRouteImport.update({
   id: '/custom',
@@ -38,15 +38,15 @@ const RankingsPersonalRoute = RankingsPersonalRouteImport.update({
   path: '/rankings/personal',
   getParentRoute: () => rootRouteImport,
 } as any)
-const CustomResultsRoute = CustomResultsRouteImport.update({
-  id: '/results',
-  path: '/results',
-  getParentRoute: () => CustomRoute,
-} as any)
 const CompetitionIdRoute = CompetitionIdRouteImport.update({
   id: '/competition/$id',
   path: '/competition/$id',
   getParentRoute: () => rootRouteImport,
+} as any)
+const RankingsPersonalIndexRoute = RankingsPersonalIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => RankingsPersonalRoute,
 } as any)
 const RankingsPersonalIdRoute = RankingsPersonalIdRouteImport.update({
   id: '/$id',
@@ -54,41 +54,40 @@ const RankingsPersonalIdRoute = RankingsPersonalIdRouteImport.update({
   getParentRoute: () => RankingsPersonalRoute,
 } as any)
 const CompetitionIdResultsRoute = CompetitionIdResultsRouteImport.update({
-  id: '/results',
-  path: '/results',
-  getParentRoute: () => CompetitionIdRoute,
+  id: '/competition/$id_/results',
+  path: '/competition/$id/results',
+  getParentRoute: () => rootRouteImport,
 } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
-  '/custom': typeof CustomRouteWithChildren
-  '/competition/$id': typeof CompetitionIdRouteWithChildren
-  '/custom/results': typeof CustomResultsRoute
+  '/custom': typeof CustomRoute
+  '/competition/$id': typeof CompetitionIdRoute
   '/rankings/personal': typeof RankingsPersonalRouteWithChildren
   '/rankings': typeof RankingsIndexRoute
   '/competition/$id/results': typeof CompetitionIdResultsRoute
   '/rankings/personal/$id': typeof RankingsPersonalIdRoute
+  '/rankings/personal/': typeof RankingsPersonalIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
-  '/custom': typeof CustomRouteWithChildren
-  '/competition/$id': typeof CompetitionIdRouteWithChildren
-  '/custom/results': typeof CustomResultsRoute
-  '/rankings/personal': typeof RankingsPersonalRouteWithChildren
+  '/custom': typeof CustomRoute
+  '/competition/$id': typeof CompetitionIdRoute
   '/rankings': typeof RankingsIndexRoute
   '/competition/$id/results': typeof CompetitionIdResultsRoute
   '/rankings/personal/$id': typeof RankingsPersonalIdRoute
+  '/rankings/personal': typeof RankingsPersonalIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
-  '/custom': typeof CustomRouteWithChildren
-  '/competition/$id': typeof CompetitionIdRouteWithChildren
-  '/custom/results': typeof CustomResultsRoute
+  '/custom': typeof CustomRoute
+  '/competition/$id': typeof CompetitionIdRoute
   '/rankings/personal': typeof RankingsPersonalRouteWithChildren
   '/rankings/': typeof RankingsIndexRoute
-  '/competition/$id/results': typeof CompetitionIdResultsRoute
+  '/competition/$id_/results': typeof CompetitionIdResultsRoute
   '/rankings/personal/$id': typeof RankingsPersonalIdRoute
+  '/rankings/personal/': typeof RankingsPersonalIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -96,39 +95,39 @@ export interface FileRouteTypes {
     | '/'
     | '/custom'
     | '/competition/$id'
-    | '/custom/results'
     | '/rankings/personal'
     | '/rankings'
     | '/competition/$id/results'
     | '/rankings/personal/$id'
+    | '/rankings/personal/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
     | '/custom'
     | '/competition/$id'
-    | '/custom/results'
-    | '/rankings/personal'
     | '/rankings'
     | '/competition/$id/results'
     | '/rankings/personal/$id'
+    | '/rankings/personal'
   id:
     | '__root__'
     | '/'
     | '/custom'
     | '/competition/$id'
-    | '/custom/results'
     | '/rankings/personal'
     | '/rankings/'
-    | '/competition/$id/results'
+    | '/competition/$id_/results'
     | '/rankings/personal/$id'
+    | '/rankings/personal/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
-  CustomRoute: typeof CustomRouteWithChildren
-  CompetitionIdRoute: typeof CompetitionIdRouteWithChildren
+  CustomRoute: typeof CustomRoute
+  CompetitionIdRoute: typeof CompetitionIdRoute
   RankingsPersonalRoute: typeof RankingsPersonalRouteWithChildren
   RankingsIndexRoute: typeof RankingsIndexRoute
+  CompetitionIdResultsRoute: typeof CompetitionIdResultsRoute
 }
 
 declare module '@tanstack/solid-router' {
@@ -161,19 +160,19 @@ declare module '@tanstack/solid-router' {
       preLoaderRoute: typeof RankingsPersonalRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/custom/results': {
-      id: '/custom/results'
-      path: '/results'
-      fullPath: '/custom/results'
-      preLoaderRoute: typeof CustomResultsRouteImport
-      parentRoute: typeof CustomRoute
-    }
     '/competition/$id': {
       id: '/competition/$id'
       path: '/competition/$id'
       fullPath: '/competition/$id'
       preLoaderRoute: typeof CompetitionIdRouteImport
       parentRoute: typeof rootRouteImport
+    }
+    '/rankings/personal/': {
+      id: '/rankings/personal/'
+      path: '/'
+      fullPath: '/rankings/personal/'
+      preLoaderRoute: typeof RankingsPersonalIndexRouteImport
+      parentRoute: typeof RankingsPersonalRoute
     }
     '/rankings/personal/$id': {
       id: '/rankings/personal/$id'
@@ -182,45 +181,24 @@ declare module '@tanstack/solid-router' {
       preLoaderRoute: typeof RankingsPersonalIdRouteImport
       parentRoute: typeof RankingsPersonalRoute
     }
-    '/competition/$id/results': {
-      id: '/competition/$id/results'
-      path: '/results'
+    '/competition/$id_/results': {
+      id: '/competition/$id_/results'
+      path: '/competition/$id/results'
       fullPath: '/competition/$id/results'
       preLoaderRoute: typeof CompetitionIdResultsRouteImport
-      parentRoute: typeof CompetitionIdRoute
+      parentRoute: typeof rootRouteImport
     }
   }
 }
 
-interface CustomRouteChildren {
-  CustomResultsRoute: typeof CustomResultsRoute
-}
-
-const CustomRouteChildren: CustomRouteChildren = {
-  CustomResultsRoute: CustomResultsRoute,
-}
-
-const CustomRouteWithChildren =
-  CustomRoute._addFileChildren(CustomRouteChildren)
-
-interface CompetitionIdRouteChildren {
-  CompetitionIdResultsRoute: typeof CompetitionIdResultsRoute
-}
-
-const CompetitionIdRouteChildren: CompetitionIdRouteChildren = {
-  CompetitionIdResultsRoute: CompetitionIdResultsRoute,
-}
-
-const CompetitionIdRouteWithChildren = CompetitionIdRoute._addFileChildren(
-  CompetitionIdRouteChildren,
-)
-
 interface RankingsPersonalRouteChildren {
   RankingsPersonalIdRoute: typeof RankingsPersonalIdRoute
+  RankingsPersonalIndexRoute: typeof RankingsPersonalIndexRoute
 }
 
 const RankingsPersonalRouteChildren: RankingsPersonalRouteChildren = {
   RankingsPersonalIdRoute: RankingsPersonalIdRoute,
+  RankingsPersonalIndexRoute: RankingsPersonalIndexRoute,
 }
 
 const RankingsPersonalRouteWithChildren =
@@ -228,10 +206,11 @@ const RankingsPersonalRouteWithChildren =
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
-  CustomRoute: CustomRouteWithChildren,
-  CompetitionIdRoute: CompetitionIdRouteWithChildren,
+  CustomRoute: CustomRoute,
+  CompetitionIdRoute: CompetitionIdRoute,
   RankingsPersonalRoute: RankingsPersonalRouteWithChildren,
   RankingsIndexRoute: RankingsIndexRoute,
+  CompetitionIdResultsRoute: CompetitionIdResultsRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

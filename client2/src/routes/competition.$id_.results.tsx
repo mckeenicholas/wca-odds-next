@@ -13,7 +13,7 @@ const simulationSearchSchema = z.object({
   startDate: z.string().optional(),
 });
 
-export const Route = createFileRoute("/competition/$id/results")({
+export const Route = createFileRoute("/competition/$id_/results")({
   component: CompetitionResultsPage,
   validateSearch: (search) => simulationSearchSchema.parse(search),
 });

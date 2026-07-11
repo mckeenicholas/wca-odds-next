@@ -1,9 +1,9 @@
 import { createFileRoute, useNavigate } from "@tanstack/solid-router";
 import { createQuery } from "@tanstack/solid-query";
-import { createSignal, createEffect, onMount, onCleanup, For, Show } from "solid-js";
+import { createEffect, Index, Show } from "solid-js";
 import { compSettingsStore } from "../lib/stores/compSettings";
 import { getCompetitorData } from "../lib/useCompetitionData";
-import { fetchWCIF, buildSimulationQuery, BREAKPOINT, cn } from "../lib/utils";
+import { fetchWCIF, buildSimulationQuery, cn } from "../lib/utils";
 import { ControlPanel } from "../components/custom/ControlPanel";
 import { CompetitorLink } from "../components/custom/CompetitorLink";
 import { LoadingMessage } from "../components/custom/LoadingMessage";
@@ -72,18 +72,6 @@ function CompetitionPage() {
     }
   });
 
-  const [windowWidth, setWindowWidth] = createSignal(
-    globalThis.window === undefined ? 1200 : globalThis.innerWidth,
-  );
-
-  onMount(() => {
-    const handleResize = () => setWindowWidth(globalThis.innerWidth);
-    globalThis.addEventListener("resize", handleResize);
-    onCleanup(() => {
-      globalThis.removeEventListener("resize", handleResize);
-    });
-  });
-
   const runSimulation = () => {
     const d = query.data;
     if (!d) {
@@ -117,7 +105,7 @@ function CompetitionPage() {
   };
 
   return (
-    <div class="flex w-full flex-col items-center justify-center p-4">
+    <div class="flex h-[calc(100vh-7rem)] w-full flex-col items-center p-4">
       <Show
         when={!query.isPending}
         fallback={<LoadingMessage message="Loading WCA Data" class="text-2xl" />}
@@ -130,7 +118,7 @@ function CompetitionPage() {
             </div>
           }
         >
-          <h1 class="mb-4 text-center text-2xl leading-snug font-bold flex items-center justify-center gap-2">
+          <h1 class="mb-4 text-center text-2xl leading-snug font-bold flex items-center justify-center gap-2 shrink-0">
             {query.data!.name}
             <a
               href={`https://www.worldcubeassociation.org/competitions/${query.data!.id}`}
@@ -141,7 +129,7 @@ function CompetitionPage() {
               <WCALogo class="h-6 w-6" />
             </a>
           </h1>
-          <div class="w-full max-w-5xl">
+          <div class="flex w-full max-w-5xl flex-col min-h-0 grow">
             <ControlPanel
               eventIds={eventIds()}
               selectedEventId={compSettingsStore.selectedEventId()}
@@ -167,44 +155,39 @@ function CompetitionPage() {
                 <div class="mt-6 text-center text-lg">No one is registered for this event</div>
               }
             >
-              <ol
-                class={cn(
-                  "no-scrollbar mt-4 overflow-y-auto rounded-md border p-1",
-                  windowWidth() > BREAKPOINT ? "max-h-[72vh]" : "max-h-[64vh]",
-                )}
-              >
-                <For
+              <ol class="no-scrollbar mt-4 flex-1 min-h-0 overflow-y-auto rounded-md border p-1">
+                <Index
                   each={compSettingsStore.competitorsByEvent()[compSettingsStore.selectedEventId()]}
                 >
                   {(person) => (
                     <li class="rounded-md transition-colors hover:bg-secondary">
                       <div
                         onClick={() => {
-                          toggleCompetitor(person.id);
+                          toggleCompetitor(person().id);
                         }}
                         class={cn(
                           "flex cursor-pointer items-center justify-between p-2",
-                          !person.selected && "text-muted-foreground",
+                          !person().selected && "text-muted-foreground",
                         )}
                       >
                         <CompetitorLink
-                          name={person.name}
-                          id={person.id}
+                          name={person().name}
+                          id={person().id}
                           event={compSettingsStore.selectedEventId()}
-                          iso2={person.country}
-                          class={cn("flex items-center", !person.selected && "opacity-50")}
+                          iso2={person().country}
+                          class={cn("flex items-center", !person().selected && "opacity-50")}
                         />
 
                         <Checkbox
-                          checked={person.selected}
+                          checked={person().selected}
                           class="pointer-events-none"
-                          id={`select-${person.id}`}
-                          aria-label={`Select competitor ${person.name}`}
+                          id={`select-${person().id}`}
+                          aria-label={`Select competitor ${person().name}`}
                         />
                       </div>
                     </li>
                   )}
-                </For>
+                </Index>
               </ol>
             </Show>
           </div>

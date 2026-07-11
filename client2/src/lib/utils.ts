@@ -2,7 +2,8 @@ import { type ClassValue, clsx } from "clsx";
 import { twMerge } from "tailwind-merge";
 import type { Wcif, SimulationRouteQuery } from "./types";
 
-export const API_URL = import.meta.env.VITE_API_URL ?? "http://localhost:3000";
+// Export const API_URL = import.meta.env.VITE_API_URL ?? "http://localhost:3000";
+export const API_URL = import.meta.env.VITE_API_URL ?? "https://odds.nmckee.org";
 export const WCA_API_BASE = "https://api.worldcubeassociation.org";
 
 export const BREAKPOINT = 1255 as const;
@@ -71,4 +72,60 @@ export const formatDate = (date: string | Date | number) => {
     month: "short",
     year: "numeric",
   });
+};
+
+export const toClockFormat = (centiseconds: number): string => {
+  if (centiseconds === -1) {
+    return "DNF";
+  }
+  if (centiseconds === -2) {
+    return "DNS";
+  }
+  if (!Number.isFinite(centiseconds)) {
+    throw new TypeError(`Invalid centiseconds, expected positive number, got ${centiseconds}.`);
+  }
+  return new Date(centiseconds * 10)
+    .toISOString()
+    .slice(11, 22)
+    .replaceAll(/^[0:]*(?!\.)/gu, "");
+};
+
+export const toFMC = (result: number): string => {
+  if (result === -1) {
+    return "DNF";
+  }
+  if (result === -2) {
+    return "DNS";
+  }
+
+  if (result % 100 === 30) {
+    return ((result + 3) / 100).toString();
+  }
+
+  if (result % 100 === 60) {
+    return ((result + 7) / 100).toString();
+  }
+
+  return (result / 100).toFixed(2);
+};
+
+export const renderTime = (time: number, isFMC: boolean) =>
+  isFMC ? toFMC(time) : toClockFormat(time);
+
+export const toNaiveDate = (date: Date): string =>
+  `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
+
+export const isToday = (date: Date): boolean => date.toDateString() === new Date().toDateString();
+
+export const isTimeEvent = (event: string) => {
+  switch (event) {
+    case "all":
+    case "kinch":
+    case "kinch_strict": {
+      return false;
+    }
+    default: {
+      return true;
+    }
+  }
 };

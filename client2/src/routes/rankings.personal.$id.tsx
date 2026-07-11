@@ -1,18 +1,29 @@
+import { Show } from "solid-js";
 import { createFileRoute } from "@tanstack/solid-router";
+import { z } from "zod";
+import { PersonalRankingsList } from "../components/custom/PersonalRankingsList";
+import { usePersonalRankings } from "../lib/PersonalRankingsContext";
 
-export const Route = createFileRoute("/rankings/personal/$id")({
-  component: PersonalRankingsPageWithId,
+const personalSearchSchema = z.object({
+  date: z.string().optional(),
 });
 
-function PersonalRankingsPageWithId() {
-  const params = Route.useParams();
+export const Route = createFileRoute("/rankings/personal/$id")({
+  component: PersonalRankingsDetail,
+  validateSearch: (search) => personalSearchSchema.parse(search),
+});
+
+function PersonalRankingsDetail() {
+  const ctx = usePersonalRankings();
 
   return (
-    <div class="p-6">
-      <h1 class="text-2xl font-bold">Personal Rankings for {params().id}</h1>
-      <p class="mt-2 text-muted-foreground">
-        This is a placeholder for the personal rankings page with a specific competitor ID.
-      </p>
-    </div>
+    <Show when={ctx.selectedPerson() && !ctx.isError()}>
+      <PersonalRankingsList
+        selectedPerson={ctx.selectedPerson()!}
+        committedDate={ctx.committedDate()}
+        isPending={ctx.isPending()}
+        data={ctx.data()}
+      />
+    </Show>
   );
 }

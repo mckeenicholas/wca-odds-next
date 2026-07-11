@@ -68,6 +68,8 @@
     "max-statements": "off",
     "no-null": "off",
     "oxc/no-map-spread": "off",
-    "sort-keys": "off"
+    "sort-keys": "off",
+    "switch-case-braces": "off",
+    "max-nested-calls": "off"
   }
 }
