@@ -1,8 +1,20 @@
 import type { RankingHistoryPoint } from "./types";
 import { createSignal, createEffect, untrack } from "solid-js";
 import { createQuery } from "@tanstack/solid-query";
-import { subYears, format } from "date-fns";
 import { API_URL } from "./utils";
+
+const subYears = (d: Date, amount: number): Date => {
+  const newDate = new Date(d);
+  newDate.setFullYear(newDate.getFullYear() - amount);
+  return newDate;
+};
+
+const format = (d: Date): string => {
+  const year = d.getFullYear();
+  const month = String(d.getMonth() + 1).padStart(2, "0");
+  const day = String(d.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+};
 
 export function useRankDetail(params: {
   competitorId: () => string;
@@ -45,8 +57,8 @@ export function useRankDetail(params: {
   const query = createQuery(() => ({
     enabled: params.isOpen(),
     queryFn: async () => {
-      const end = format(appliedEndDate(), "yyyy-MM-dd");
-      const start = format(appliedStartDate(), "yyyy-MM-dd");
+      const end = format(appliedEndDate());
+      const start = format(appliedStartDate());
       const competitor_id = params.competitorId();
       const event_id = params.eventId();
       const res = await fetch(`${API_URL}/api/rankings/competitor`, {

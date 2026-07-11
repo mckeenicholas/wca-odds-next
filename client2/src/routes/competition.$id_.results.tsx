@@ -1,7 +1,6 @@
 import { createEffect, createMemo, onMount, Show, Suspense } from "solid-js";
 import { createFileRoute, useNavigate } from "@tanstack/solid-router";
 import { LoaderCircle } from "lucide-solid";
-import { z } from "zod";
 import { FullHistogram } from "../components/charts/FullHistogram";
 import { HistoryHistogram } from "../components/charts/HistoryHistogram";
 import { RankHistogram } from "../components/charts/RankHistogram";
@@ -22,21 +21,35 @@ import {
   toInt,
 } from "../lib/utils";
 
-const simulationSearchSchema = z.object({
-  competitionId: z.string().optional(),
-  competitors: z.string().optional(),
-  date: z.string().optional(),
-  decayRate: z.string().optional(),
-  endDate: z.string().optional(),
-  eventId: z.string().optional(),
-  includeDnf: z.string().optional(),
-  name: z.string().optional(),
-  startDate: z.string().optional(),
-});
+interface SimulationSearch {
+  competitionId?: string;
+  competitors?: string;
+  date?: string;
+  decayRate?: string;
+  endDate?: string;
+  eventId?: string;
+  includeDnf?: string;
+  name?: string;
+  startDate?: string;
+}
+
+const SIMULATION_SEARCH_KEYS = [
+  "competitionId", "competitors", "date", "decayRate",
+  "endDate", "eventId", "includeDnf", "name", "startDate",
+] as const satisfies readonly (keyof SimulationSearch)[];
 
 export const Route = createFileRoute("/competition/$id_/results")({
   component: CompetitionResultsPage,
-  validateSearch: (search) => simulationSearchSchema.parse(search),
+  validateSearch: (search: Record<string, unknown>): SimulationSearch => {
+    const result: SimulationSearch = {};
+    for (const key of SIMULATION_SEARCH_KEYS) {
+      const value = search[key];
+      if (typeof value === "string") {
+        result[key] = value;
+      }
+    }
+    return result;
+  },
 });
 
 function CompetitionResultsPage() {
