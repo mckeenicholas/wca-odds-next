@@ -1,9 +1,9 @@
 import { createSignal, createEffect, untrack } from "solid-js";
-import { Popover, PopoverContent, PopoverTrigger } from "../ui/popover";
-import { cn } from "../../lib/utils";
 import { Calendar as CalendarIcon } from "lucide-solid";
-import { CalendarPanel } from "./CalendarPanel";
 import { addMonths, addYears, isFuture } from "../../lib/dateUtils";
+import { cn } from "../../lib/utils";
+import { Popover, PopoverContent, PopoverTrigger } from "../ui/popover";
+import { CalendarPanel } from "./CalendarPanel";
 
 interface DatePickerProps {
   value: Date | undefined;
@@ -63,13 +63,13 @@ export function DatePicker(props: DatePickerProps) {
     <Popover open={isOpen()} onOpenChange={setIsOpen} gutter={4}>
       <PopoverTrigger
         class={cn(
-          "w-60 justify-start px-3 text-left font-normal h-9 flex items-center border border-input rounded-md bg-background text-sm shadow-sm ring-offset-background",
+          "flex h-9 w-60 items-center justify-start rounded-md border border-input bg-background px-3 text-left text-sm font-normal shadow-sm ring-offset-background",
           !props.value && "text-muted-foreground",
           props.disabled && "cursor-not-allowed opacity-50",
         )}
         disabled={props.disabled}
       >
-        <CalendarIcon class="h-4 w-4 me-2 opacity-50" />
+        <CalendarIcon class="me-2 h-4 w-4 opacity-50" />
         <span>{formatDateLong(props.value)}</span>
       </PopoverTrigger>
 

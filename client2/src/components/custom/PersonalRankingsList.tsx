@@ -1,7 +1,7 @@
-import { For, Show } from "solid-js";
-import { EventRankDropdown } from "./EventRankDropdown";
-import { Skeleton } from "../ui/skeleton";
 import type { PersonRankInfo, PersonSearchResult } from "../../lib/types";
+import { For, Show } from "solid-js";
+import { Skeleton } from "../ui/skeleton";
+import { EventRankDropdown } from "./EventRankDropdown";
 
 interface PersonalRankingsListProps {
   selectedPerson: PersonSearchResult;
@@ -12,7 +12,7 @@ interface PersonalRankingsListProps {
 
 export function PersonalRankingsList(props: PersonalRankingsListProps) {
   return (
-    <section class="w-full mt-6">
+    <section class="mt-6 w-full">
       <Show
         when={!props.isPending}
         fallback={

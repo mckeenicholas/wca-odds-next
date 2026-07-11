@@ -1,7 +1,7 @@
 import { Show } from "solid-js";
+import { QueryClient, QueryClientProvider } from "@tanstack/solid-query";
 import { Outlet, createRootRoute, useLocation } from "@tanstack/solid-router";
 import { TanStackRouterDevtools } from "@tanstack/solid-router-devtools";
-import { QueryClient, QueryClientProvider } from "@tanstack/solid-query";
 import { BackButton } from "../components/custom/BackButton";
 import { ColorModeSwitcher } from "../components/custom/ColorModeSwitcher";
 import { initTheme } from "../lib/colorMode";

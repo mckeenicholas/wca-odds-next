@@ -1,8 +1,8 @@
 import { createSignal, createEffect, onCleanup, For, Show } from "solid-js";
 import { createInfiniteQuery } from "@tanstack/solid-query";
 import { createFileRoute, useNavigate } from "@tanstack/solid-router";
-import { z } from "zod";
 import { LoaderCircle, Globe, Trophy } from "lucide-solid";
+import { z } from "zod";
 import { CompetitorRankDropdown } from "../components/custom/CompetitorRankDropdown";
 import { CountryFilterButton } from "../components/custom/CountryFilterButton";
 import { CubingIcon } from "../components/custom/CubingIcon";
@@ -260,7 +260,7 @@ function RankingsPage() {
             </SelectItem>
           )}
         >
-          <SelectTrigger class="w-64 h-9">
+          <SelectTrigger class="h-9 w-64">
             <SelectValue>
               {(state) => {
                 const val = state.selectedOption();
@@ -303,7 +303,7 @@ function RankingsPage() {
       </Show>
 
       <Show when={query.isPending && !query.isError}>
-        <div class="w-full max-w-4xl mt-4">
+        <div class="mt-4 w-full max-w-4xl">
           <div class="rounded-md border px-4 py-2">
             <For each={Array.from({ length: 10 })}>
               {() => <Skeleton class="my-4 h-9 w-full" />}
@@ -321,7 +321,7 @@ function RankingsPage() {
             </div>
           }
         >
-          <div class="w-full max-w-4xl mt-2">
+          <div class="mt-2 w-full max-w-4xl">
             <div class="rounded-md border">
               <div class="flex w-full justify-between p-2 ps-1 text-sm font-medium text-muted-foreground">
                 <Show when={selectedCountry()}>
@@ -369,7 +369,7 @@ function RankingsPage() {
 
               {/* End of results */}
               <Show when={!query.hasNextPage && allItems().length > PAGE_SIZE}>
-                <div class="py-3 text-center text-sm text-muted-foreground border-t">
+                <div class="border-t py-3 text-center text-sm text-muted-foreground">
                   Showing all {allItems().length} results
                 </div>
               </Show>

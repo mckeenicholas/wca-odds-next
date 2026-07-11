@@ -1,5 +1,5 @@
-import { createSignal } from "solid-js";
 import type { Competitor, SupportedWCAEvent } from "../types";
+import { createSignal } from "solid-js";
 
 // Default values
 const defaultValues = {

@@ -1,9 +1,9 @@
-import { createFileRoute, useNavigate, Link } from "@tanstack/solid-router";
-import { createQuery } from "@tanstack/solid-query";
 import { createSignal, createEffect, onCleanup, Show } from "solid-js";
-import { z } from "zod";
 import { Search } from "@kobalte/core/search";
+import { createQuery } from "@tanstack/solid-query";
+import { createFileRoute, useNavigate, Link } from "@tanstack/solid-router";
 import { Search as SearchIcon, LoaderCircle } from "lucide-solid";
+import { z } from "zod";
 import { buttonVariants } from "../components/ui/button";
 import { fetchWCAInfo, formatDate } from "../lib/utils";
 
@@ -83,7 +83,7 @@ function Home() {
 
   return (
     <div class="flex flex-col items-center justify-center p-4">
-      <div class="flex w-full max-w-[70vw] flex-col items-center justify-center mt-[12vh]">
+      <div class="mt-[12vh] flex w-full max-w-[70vw] flex-col items-center justify-center">
         <h1 class="m-6 text-center text-3xl font-bold">WCA Competition Predictor</h1>
         <h1 class="m-4 text-center text-xl">View stats for competition</h1>
 
@@ -107,7 +107,7 @@ function Home() {
             itemComponent={(props) => (
               <Search.Item
                 item={props.item}
-                class="flex w-full cursor-pointer flex-col rounded-md px-3 py-2 text-left text-sm transition-colors hover:bg-accent hover:text-accent-foreground data-[highlighted]:bg-muted data-[highlighted]:text-accent-foreground outline-none"
+                class="flex w-full cursor-pointer flex-col rounded-md px-3 py-2 text-left text-sm transition-colors outline-none hover:bg-accent hover:text-accent-foreground data-[highlighted]:bg-muted data-[highlighted]:text-accent-foreground"
               >
                 <Search.ItemLabel>{props.item.rawValue.name}</Search.ItemLabel>
                 <span class="text-xs text-muted-foreground">
@@ -120,7 +120,7 @@ function Home() {
               <SearchIcon class="h-4 w-4 shrink-0 text-muted-foreground" />
               <Search.Input
                 id="input-field"
-                class="flex-1 bg-transparent outline-none placeholder:text-muted-foreground border-none p-0 focus:ring-0 focus:outline-none"
+                class="flex-1 border-none bg-transparent p-0 outline-none placeholder:text-muted-foreground focus:ring-0 focus:outline-none"
                 placeholder="Search for a competition..."
                 aria-label="Competition search"
                 autofocus
@@ -142,7 +142,7 @@ function Home() {
 
             <Search.Portal>
               <Search.Content
-                class="absolute z-50 mt-1 max-h-64 overflow-y-auto rounded-md border bg-popover p-1 text-popover-foreground shadow-md no-scrollbar"
+                class="no-scrollbar absolute z-50 mt-1 max-h-64 overflow-y-auto rounded-md border bg-popover p-1 text-popover-foreground shadow-md"
                 style={{
                   display: rawInput().trim().length === 0 ? "none" : undefined,
                   width: "var(--kb-popper-anchor-width)",
@@ -150,7 +150,7 @@ function Home() {
               >
                 <Search.Listbox class="outline-none" />
                 <Show when={isSearchingOrDebouncing() && results().length === 0}>
-                  <div class="py-4 text-center text-sm text-muted-foreground flex items-center justify-center gap-2">
+                  <div class="flex items-center justify-center gap-2 py-4 text-center text-sm text-muted-foreground">
                     <LoaderCircle class="h-4 w-4 animate-spin text-muted-foreground" />
                     Searching...
                   </div>

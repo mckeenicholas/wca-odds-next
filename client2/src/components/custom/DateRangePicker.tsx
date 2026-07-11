@@ -1,10 +1,10 @@
 import { createSignal, createEffect, untrack } from "solid-js";
-import { Popover, PopoverContent, PopoverTrigger } from "../ui/popover";
-import { buttonVariants } from "../ui/button";
-import { cn } from "../../lib/utils";
 import { Calendar as CalendarIcon } from "lucide-solid";
-import { CalendarPanel } from "./CalendarPanel";
 import { addMonths, addYears, formatDateRange, isFuture } from "../../lib/dateUtils";
+import { cn } from "../../lib/utils";
+import { buttonVariants } from "../ui/button";
+import { Popover, PopoverContent, PopoverTrigger } from "../ui/popover";
+import { CalendarPanel } from "./CalendarPanel";
 
 interface DateRangePickerProps {
   startDate: Date | undefined;
@@ -103,11 +103,11 @@ export function DateRangePicker(props: DateRangePickerProps) {
       <PopoverTrigger
         class={cn(
           buttonVariants({ variant: "outline" }),
-          "justify-start px-3 text-left font-normal h-9",
+          "h-9 justify-start px-3 text-left font-normal",
           !props.startDate && "text-muted-foreground",
         )}
       >
-        <CalendarIcon class="h-4 w-4 me-2 opacity-50" />
+        <CalendarIcon class="me-2 h-4 w-4 opacity-50" />
         <span class="text-sm">{formatDateRange(props.startDate, props.endDate)}</span>
       </PopoverTrigger>
 

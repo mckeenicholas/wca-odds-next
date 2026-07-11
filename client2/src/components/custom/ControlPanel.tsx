@@ -1,7 +1,7 @@
 import { createSignal, onCleanup, onMount, Show } from "solid-js";
+import { eventNames, type SupportedWCAEvent } from "../../lib/types";
 import { Button } from "../ui/button";
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "../ui/select";
-import { eventNames, type SupportedWCAEvent } from "../../lib/types";
 import { CubingIcon } from "./CubingIcon";
 import { ExpandableBox } from "./ExpandableBox";
 import { SimulationOptions } from "./SimulationOptions";

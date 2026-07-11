@@ -4,12 +4,12 @@ import { LoaderCircle } from "lucide-solid";
 import { eventNames, type PersonRankInfo, type SupportedWCAEvent } from "../../lib/types";
 import { useRankDetail } from "../../lib/useRankDetail";
 import { cn, isTimeEvent, renderTime } from "../../lib/utils";
+import { Button } from "../ui/button";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../ui/select";
 import { CubingIcon } from "./CubingIcon";
 import { DateRangePicker } from "./DateRangePicker";
-import { RotatableChevron } from "./RotatableChevron";
 import { RankingsAreaChart } from "./RankingsAreaChart";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../ui/select";
-import { Button } from "../ui/button";
+import { RotatableChevron } from "./RotatableChevron";
 
 interface EventRankDropdownProps {
   eventRank: PersonRankInfo;
@@ -80,14 +80,14 @@ export function EventRankDropdown(props: EventRankDropdownProps) {
       <Collapsible.Trigger
         aria-controls={ariaId()}
         class={cn(
-          "flex w-full cursor-pointer justify-between rounded-md border-0 bg-transparent p-2 ps-1 text-left hover:bg-secondary focus:outline-none focus-visible:bg-secondary text-sm",
+          "flex w-full cursor-pointer justify-between rounded-md border-0 bg-transparent p-2 ps-1 text-left text-sm hover:bg-secondary focus:outline-none focus-visible:bg-secondary",
           props.index % 2 === 0 && "bg-muted/20",
         )}
       >
-        <div class="w-16 shrink-0 ps-3 text-left text-foreground md:w-28 flex items-center">
+        <div class="flex w-16 shrink-0 items-center ps-3 text-left text-foreground md:w-28">
           {props.eventRank.rank}
         </div>
-        <div class="flex-2 text-left flex items-center">
+        <div class="flex flex-2 items-center text-left">
           <Show when={isTimeEvent(props.eventRank.event_id)}>
             <CubingIcon
               event={props.eventRank.event_id as SupportedWCAEvent}
@@ -104,7 +104,7 @@ export function EventRankDropdown(props: EventRankDropdownProps) {
       </Collapsible.Trigger>
 
       <Collapsible.Content
-        class="space-y-2 animate-in fade-in-0 duration-100 ease-out overflow-hidden"
+        class="space-y-2 overflow-hidden duration-100 ease-out animate-in fade-in-0"
         id={ariaId()}
       >
         <Show when={query.isPending}>
@@ -157,7 +157,7 @@ export function EventRankDropdown(props: EventRankDropdownProps) {
               </SelectItem>
             )}
           >
-            <SelectTrigger class="w-32 text-xs h-9">
+            <SelectTrigger class="h-9 w-32 text-xs">
               <SelectValue>
                 {(state) => (state.selectedOption() === "value" ? "Result" : "Rank")}
               </SelectValue>

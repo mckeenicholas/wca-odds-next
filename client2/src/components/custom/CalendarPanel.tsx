@@ -1,9 +1,9 @@
 import { For, type Component } from "solid-js";
-import { buttonVariants } from "../ui/button";
-import { cn } from "../../lib/utils";
 import { ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight } from "lucide-solid";
-import { DayCell } from "./DayCell";
 import { formatMonthYear, getCalendarWeeks } from "../../lib/dateUtils";
+import { cn } from "../../lib/utils";
+import { buttonVariants } from "../ui/button";
+import { DayCell } from "./DayCell";
 
 const WEEK_DAYS = ["Su", "Mo", "Tu", "We", "Th", "Fr", "Sa"];
 
@@ -82,14 +82,14 @@ export const CalendarPanel: Component<CalendarPanelProps> = (props) => {
           <tr class="flex w-full justify-between">
             <For each={WEEK_DAYS}>
               {(day) => (
-                <th class="w-8 text-[0.8rem] font-normal text-muted-foreground text-center flex-1">
+                <th class="w-8 flex-1 text-center text-[0.8rem] font-normal text-muted-foreground">
                   {day}
                 </th>
               )}
             </For>
           </tr>
         </thead>
-        <tbody class="flex flex-col gap-1 mt-2">
+        <tbody class="mt-2 flex flex-col gap-1">
           <For each={weeks()}>
             {(week) => (
               <tr class="flex w-full">

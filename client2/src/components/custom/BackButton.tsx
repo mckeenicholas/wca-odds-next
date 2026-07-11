@@ -1,6 +1,6 @@
 import { useRouter, useLocation } from "@tanstack/solid-router";
-import { Button } from "../ui/button";
 import { getParentPath } from "../../lib/utils";
+import { Button } from "../ui/button";
 
 export function BackButton() {
   const router = useRouter();

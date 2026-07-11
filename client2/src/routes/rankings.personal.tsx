@@ -208,7 +208,7 @@ function PersonalRankingsLayout() {
       />
 
       <Show when={rankingsQuery.isError}>
-        <div class="w-full mt-4">
+        <div class="mt-4 w-full">
           <ErrorPanel error={rankingsQuery.error?.message ?? "Unknown error"} />
         </div>
       </Show>

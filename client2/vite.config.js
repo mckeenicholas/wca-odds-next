@@ -1,8 +1,8 @@
-import { defineConfig } from "vite";
-import solid from "vite-plugin-solid";
+import tailwindcss from "@tailwindcss/vite";
 import { tanstackRouter } from "@tanstack/router-plugin/vite";
 import devtools from "solid-devtools/vite";
-import tailwindcss from "@tailwindcss/vite";
+import { defineConfig } from "vite";
+import solid from "vite-plugin-solid";
 
 // https://vitejs.dev/config/
 export default defineConfig({

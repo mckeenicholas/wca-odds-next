@@ -1,5 +1,5 @@
-import { createContext, useContext, type Accessor } from "solid-js";
 import type { PersonRankInfo, PersonSearchResult } from "./types";
+import { createContext, useContext, type Accessor } from "solid-js";
 
 export interface PersonalRankingsContextValue {
   selectedPerson: Accessor<PersonSearchResult | undefined>;

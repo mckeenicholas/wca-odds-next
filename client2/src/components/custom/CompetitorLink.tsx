@@ -1,8 +1,8 @@
 import { Show } from "solid-js";
 import { Link } from "@tanstack/solid-router";
+import { cn } from "../../lib/utils";
 import { FlagIcon } from "./FlagIcon";
 import { WCALogo } from "./WCALogo";
-import { cn } from "../../lib/utils";
 
 interface CompetitorLinkProps {
   name: string;
@@ -34,7 +34,7 @@ export function CompetitorLink(props: CompetitorLinkProps) {
   };
 
   return (
-    <div class={cn(props.class, "min-w-0 flex items-center")}>
+    <div class={cn(props.class, "flex min-w-0 items-center")}>
       <Show when={props.iso2}>{(iso2) => <FlagIcon code={iso2()} />}</Show>
       <Link
         to={personalLink()}

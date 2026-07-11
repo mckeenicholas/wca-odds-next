@@ -1,10 +1,10 @@
+import type { CountryResult } from "../../lib/types";
 import { createSignal, createEffect, onCleanup, For, Show } from "solid-js";
 import { createQuery } from "@tanstack/solid-query";
 import { Check, ChevronDown, Globe, Search, X } from "lucide-solid";
-import type { CountryResult } from "../../lib/types";
-import { FlagIcon } from "./FlagIcon";
-import { Popover, PopoverContent, PopoverTrigger } from "../ui/popover";
 import { API_URL, cn } from "../../lib/utils";
+import { Popover, PopoverContent, PopoverTrigger } from "../ui/popover";
+import { FlagIcon } from "./FlagIcon";
 
 interface CountryFilterButtonProps {
   value: CountryResult | undefined;
@@ -80,10 +80,10 @@ export function CountryFilterButton(props: CountryFilterButtonProps) {
   return (
     <Popover open={open()} onOpenChange={setOpen} gutter={4}>
       <PopoverTrigger
-        class="w-40 justify-between gap-2 font-normal h-9 border border-input rounded-md bg-background px-3 py-2 text-sm shadow-sm ring-offset-background flex items-center"
+        class="flex h-9 w-40 items-center justify-between gap-2 rounded-md border border-input bg-background px-3 py-2 text-sm font-normal shadow-sm ring-offset-background"
         id="country-filter-btn"
       >
-        <span class="flex items-center gap-2 truncate min-w-0">
+        <span class="flex min-w-0 items-center gap-2 truncate">
           <Show
             when={props.value}
             fallback={
@@ -103,7 +103,7 @@ export function CountryFilterButton(props: CountryFilterButtonProps) {
         </span>
         <span class="flex shrink-0 items-center gap-1">
           <Show when={props.value}>
-            <span onClick={clear} class="flex items-center cursor-pointer">
+            <span onClick={clear} class="flex cursor-pointer items-center">
               <X class="h-3.5 w-3.5 text-muted-foreground hover:text-foreground" />
             </span>
           </Show>

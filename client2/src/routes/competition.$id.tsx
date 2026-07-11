@@ -1,14 +1,14 @@
-import { createFileRoute, useNavigate } from "@tanstack/solid-router";
-import { createQuery } from "@tanstack/solid-query";
 import { createEffect, Index, Show } from "solid-js";
-import { compSettingsStore } from "../lib/stores/compSettings";
-import { getCompetitorData } from "../lib/useCompetitionData";
-import { fetchWCIF, buildSimulationQuery, cn } from "../lib/utils";
-import { ControlPanel } from "../components/custom/ControlPanel";
+import { createQuery } from "@tanstack/solid-query";
+import { createFileRoute, useNavigate } from "@tanstack/solid-router";
 import { CompetitorLink } from "../components/custom/CompetitorLink";
+import { ControlPanel } from "../components/custom/ControlPanel";
 import { LoadingMessage } from "../components/custom/LoadingMessage";
 import { WCALogo } from "../components/custom/WCALogo";
 import { Checkbox } from "../components/ui/checkbox";
+import { compSettingsStore } from "../lib/stores/compSettings";
+import { getCompetitorData } from "../lib/useCompetitionData";
+import { fetchWCIF, buildSimulationQuery, cn } from "../lib/utils";
 
 const currentSelectedCompetitors = () => {
   const list = compSettingsStore.competitorsByEvent()[compSettingsStore.selectedEventId()];
@@ -118,7 +118,7 @@ function CompetitionPage() {
             </div>
           }
         >
-          <h1 class="mb-4 text-center text-2xl leading-snug font-bold flex items-center justify-center gap-2 shrink-0">
+          <h1 class="mb-4 flex shrink-0 items-center justify-center gap-2 text-center text-2xl leading-snug font-bold">
             {query.data!.name}
             <a
               href={`https://www.worldcubeassociation.org/competitions/${query.data!.id}`}
@@ -129,7 +129,7 @@ function CompetitionPage() {
               <WCALogo class="h-6 w-6" />
             </a>
           </h1>
-          <div class="flex w-full max-w-5xl flex-col min-h-0 grow">
+          <div class="flex min-h-0 w-full max-w-5xl grow flex-col">
             <ControlPanel
               eventIds={eventIds()}
               selectedEventId={compSettingsStore.selectedEventId()}
@@ -155,7 +155,7 @@ function CompetitionPage() {
                 <div class="mt-6 text-center text-lg">No one is registered for this event</div>
               }
             >
-              <ol class="no-scrollbar mt-4 flex-1 min-h-0 overflow-y-auto rounded-md border p-1">
+              <ol class="no-scrollbar mt-4 min-h-0 flex-1 overflow-y-auto rounded-md border p-1">
                 <Index
                   each={compSettingsStore.competitorsByEvent()[compSettingsStore.selectedEventId()]}
                 >

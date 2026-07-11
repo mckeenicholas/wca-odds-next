@@ -1,6 +1,6 @@
 import type { Component } from "solid-js";
-import { cn } from "../../lib/utils";
 import { getDayState, isSameDay, isToday, type DayState } from "../../lib/dateUtils";
+import { cn } from "../../lib/utils";
 
 interface DayCellProps {
   date: Date;
@@ -22,7 +22,7 @@ function getCellClass(state: DayState, props: DayCellProps): string {
     props.hoveredDate > props.startDate;
 
   return cn(
-    "relative p-0 text-center text-sm flex-1 flex items-center justify-center h-8",
+    "relative flex h-8 flex-1 items-center justify-center p-0 text-center text-sm",
     (inRange || inHover) && "bg-accent text-accent-foreground",
     isStart && (props.endDate ?? hoverExtendsForward) && "rounded-l-md",
     isEnd && "rounded-r-md",
@@ -35,19 +35,19 @@ function getButtonClass(state: DayState, date: Date): string {
   const isSelected = isStart || isEnd;
 
   return cn(
-    "h-8 w-8 p-0 font-normal transition-colors flex items-center justify-center text-center text-xs",
+    "flex h-8 w-8 items-center justify-center p-0 text-center text-xs font-normal transition-colors",
     isToday(date) &&
       !isSelected &&
-      "bg-secondary text-secondary-foreground font-semibold rounded-md",
+      "rounded-md bg-secondary font-semibold text-secondary-foreground",
     isSelected &&
-      "bg-primary text-primary-foreground hover:bg-primary hover:text-primary-foreground focus:bg-primary focus:text-primary-foreground rounded-md",
+      "rounded-md bg-primary text-primary-foreground hover:bg-primary hover:text-primary-foreground focus:bg-primary focus:text-primary-foreground",
     (inRange || inHover) && !isSelected && "rounded-none",
     !isSelected &&
       !isToday(date) &&
       !(inRange || inHover) &&
       "rounded-md hover:bg-accent hover:text-accent-foreground",
     isOutside && "text-muted-foreground opacity-50",
-    isDisabled && "text-muted-foreground opacity-20 cursor-not-allowed",
+    isDisabled && "cursor-not-allowed text-muted-foreground opacity-20",
   );
 }
 

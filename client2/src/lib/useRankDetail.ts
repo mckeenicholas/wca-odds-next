@@ -1,7 +1,7 @@
+import type { RankingHistoryPoint } from "./types";
 import { createSignal, createEffect, untrack } from "solid-js";
 import { createQuery } from "@tanstack/solid-query";
 import { subYears, format } from "date-fns";
-import type { RankingHistoryPoint } from "./types";
 import { API_URL } from "./utils";
 
 export function useRankDetail(params: {

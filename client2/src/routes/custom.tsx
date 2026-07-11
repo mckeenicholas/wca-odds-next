@@ -1,7 +1,7 @@
 import { createSignal, createEffect, onCleanup, For, Show } from "solid-js";
+import { Search } from "@kobalte/core/search";
 import { createQuery } from "@tanstack/solid-query";
 import { createFileRoute, useNavigate } from "@tanstack/solid-router";
-import { Search } from "@kobalte/core/search";
 import { Search as SearchIcon, LoaderCircle, X } from "lucide-solid";
 import { CompetitorLink } from "../components/custom/CompetitorLink";
 import { ControlPanel } from "../components/custom/ControlPanel";
@@ -149,7 +149,7 @@ function CustomPage() {
           itemComponent={(props) => (
             <Search.Item
               item={props.item}
-              class="flex w-full cursor-pointer items-center gap-2 rounded-md px-3 py-2 text-left text-sm transition-colors hover:bg-accent hover:text-accent-foreground data-[highlighted]:bg-muted data-[highlighted]:text-accent-foreground outline-none"
+              class="flex w-full cursor-pointer items-center gap-2 rounded-md px-3 py-2 text-left text-sm transition-colors outline-none hover:bg-accent hover:text-accent-foreground data-[highlighted]:bg-muted data-[highlighted]:text-accent-foreground"
             >
               <FlagIcon code={props.item.rawValue.country.iso2} />
               <Search.ItemLabel class="truncate">{props.item.rawValue.name}</Search.ItemLabel>
@@ -163,7 +163,7 @@ function CustomPage() {
             <SearchIcon class="h-4 w-4 shrink-0 text-muted-foreground" />
             <Search.Input
               id="input-field"
-              class="flex-1 bg-transparent outline-none placeholder:text-muted-foreground border-none p-0 focus:ring-0 focus:outline-none"
+              class="flex-1 border-none bg-transparent p-0 outline-none placeholder:text-muted-foreground focus:ring-0 focus:outline-none"
               placeholder="Search for a person..."
               aria-label="Search for competitors"
               value={rawInput()}
@@ -175,7 +175,7 @@ function CustomPage() {
 
           <Search.Portal>
             <Search.Content
-              class="absolute z-50 mt-1 max-h-64 overflow-y-auto rounded-md border bg-popover p-1 text-popover-foreground shadow-md no-scrollbar animate-in fade-in-0 zoom-in-95"
+              class="no-scrollbar absolute z-50 mt-1 max-h-64 overflow-y-auto rounded-md border bg-popover p-1 text-popover-foreground shadow-md animate-in fade-in-0 zoom-in-95"
               style={{
                 display: rawInput().trim().length === 0 ? "none" : undefined,
                 width: "var(--kb-popper-anchor-width)",
@@ -183,7 +183,7 @@ function CustomPage() {
             >
               <Search.Listbox class="outline-none" />
               <Show when={isSearchingOrDebouncing() && results().length === 0}>
-                <div class="py-4 text-center text-sm text-muted-foreground flex items-center justify-center gap-2">
+                <div class="flex items-center justify-center gap-2 py-4 text-center text-sm text-muted-foreground">
                   <LoaderCircle class="h-4 w-4 animate-spin text-muted-foreground" />
                   Searching...
                 </div>

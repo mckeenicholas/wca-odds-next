@@ -1,5 +1,5 @@
-import { createSignal, For, Show } from "solid-js";
 import type { RankingHistoryPoint } from "../../lib/types";
+import { createSignal, For, Show } from "solid-js";
 import { renderTime } from "../../lib/utils";
 
 interface RankingsAreaChartProps {
@@ -179,7 +179,7 @@ export function RankingsAreaChart(props: RankingsAreaChartProps) {
   };
 
   return (
-    <div class="w-full flex flex-col items-center select-none">
+    <div class="flex w-full flex-col items-center select-none">
       <Show
         when={points().length > 0}
         fallback={
@@ -188,9 +188,9 @@ export function RankingsAreaChart(props: RankingsAreaChartProps) {
           </div>
         }
       >
-        <div class="relative w-full max-w-[600px] h-[240px]">
+        <div class="relative h-[240px] w-full max-w-[600px]">
           <svg
-            class="w-full h-full text-muted-foreground"
+            class="h-full w-full text-muted-foreground"
             viewBox={`0 0 ${width} ${height}`}
             onMouseMove={handleMouseMove}
             onMouseLeave={() => {
@@ -213,7 +213,7 @@ export function RankingsAreaChart(props: RankingsAreaChartProps) {
                   <text
                     x={paddingLeft - 8}
                     y={t.y + 4}
-                    class="text-[10px] fill-muted-foreground text-right"
+                    class="fill-muted-foreground text-right text-[10px]"
                     text-anchor="end"
                   >
                     {formatValue(t.val)}
@@ -228,7 +228,7 @@ export function RankingsAreaChart(props: RankingsAreaChartProps) {
                 <text
                   x={t.x}
                   y={height - paddingBottom + 16}
-                  class="text-[10px] fill-muted-foreground text-center"
+                  class="fill-muted-foreground text-center text-[10px]"
                   text-anchor="middle"
                 >
                   {t.label}
@@ -275,7 +275,7 @@ export function RankingsAreaChart(props: RankingsAreaChartProps) {
           <Show when={hoveredPoint()}>
             {(hp) => (
               <div
-                class="absolute z-20 rounded-md border bg-popover p-2 text-popover-foreground shadow-md text-xs pointer-events-none"
+                class="pointer-events-none absolute z-20 rounded-md border bg-popover p-2 text-xs text-popover-foreground shadow-md"
                 style={{
                   left: `${hp().x + 10}px`,
                   top: `${hp().y - 40}px`,
