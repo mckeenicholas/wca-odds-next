@@ -2,8 +2,7 @@ import { Popover as KPopover } from "@kobalte/core/popover";
 import { Portal } from "solid-js/web";
 import { cn } from "../../lib/utils";
 
-export const Popover = KPopover;
-export const PopoverTrigger = KPopover.Trigger;
+export { Popover, Trigger as PopoverTrigger } from "@kobalte/core/popover";
 
 import { splitProps } from "solid-js";
 

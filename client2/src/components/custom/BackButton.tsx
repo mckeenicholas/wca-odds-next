@@ -7,11 +7,11 @@ export function BackButton() {
   const location = useLocation();
 
   const goBack = () => {
-    if (window.history.state?.back) {
-      window.history.back();
+    if (globalThis.history.state?.back) {
+      globalThis.history.back();
     } else {
       const parent = getParentPath(location().pathname);
-      router.navigate({ to: parent });
+      void router.navigate({ to: parent });
     }
   };
 

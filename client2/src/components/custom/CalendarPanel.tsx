@@ -1,4 +1,4 @@
-import { Component, For } from "solid-js";
+import { For, type Component } from "solid-js";
 import { buttonVariants } from "../ui/button";
 import { cn } from "../../lib/utils";
 import { ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight } from "lucide-solid";
@@ -20,10 +20,10 @@ interface CalendarPanelProps {
   onNextYear: () => void;
   startDate: Date | undefined;
   endDate: Date | undefined;
-  hoveredDate: Date | null;
+  hoveredDate: Date | undefined;
   allowFuture: boolean | undefined;
   onDateSelect: (date: Date) => void;
-  onDateHover: (date: Date | null) => void;
+  onDateHover: (date: Date | undefined) => void;
 }
 
 export const CalendarPanel: Component<CalendarPanelProps> = (props) => {
@@ -33,10 +33,22 @@ export const CalendarPanel: Component<CalendarPanelProps> = (props) => {
     <div class="flex flex-col gap-4">
       <div class="flex items-center justify-between">
         <div class="flex items-center gap-0.5">
-          <button type="button" class={navButtonClass} onClick={props.onPrevYear}>
+          <button
+            type="button"
+            class={navButtonClass}
+            onClick={() => {
+              props.onPrevYear();
+            }}
+          >
             <ChevronsLeft class="h-4 w-4" />
           </button>
-          <button type="button" class={navButtonClass} onClick={props.onPrevMonth}>
+          <button
+            type="button"
+            class={navButtonClass}
+            onClick={() => {
+              props.onPrevMonth();
+            }}
+          >
             <ChevronLeft class="h-4 w-4" />
           </button>
         </div>
@@ -44,10 +56,22 @@ export const CalendarPanel: Component<CalendarPanelProps> = (props) => {
         <div class="text-sm font-medium">{formatMonthYear(props.month)}</div>
 
         <div class="flex items-center gap-0.5">
-          <button type="button" class={navButtonClass} onClick={props.onNextMonth}>
+          <button
+            type="button"
+            class={navButtonClass}
+            onClick={() => {
+              props.onNextMonth();
+            }}
+          >
             <ChevronRight class="h-4 w-4" />
           </button>
-          <button type="button" class={navButtonClass} onClick={props.onNextYear}>
+          <button
+            type="button"
+            class={navButtonClass}
+            onClick={() => {
+              props.onNextYear();
+            }}
+          >
             <ChevronsRight class="h-4 w-4" />
           </button>
         </div>

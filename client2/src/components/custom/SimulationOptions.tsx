@@ -36,7 +36,9 @@ export function SimulationOptions(props: SimulationOptionsProps) {
           id="decayRate"
           class="mx-2 h-9 max-w-16 px-2 text-center"
           value={props.decayRate}
-          onInput={(val: string) => props.onDecayRateChange(Number(val) || 0)}
+          onInput={(val: string) => {
+            props.onDecayRateChange(Number(val) || 0);
+          }}
         />
         <Label class="shrink-0" for="decayRate">
           days

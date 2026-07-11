@@ -1,30 +1,30 @@
-import { Component } from "solid-js";
+import type { Component } from "solid-js";
 import { cn } from "../../lib/utils";
-import { DayState, getDayState, isSameDay, isToday } from "../../lib/dateUtils";
+import { getDayState, isSameDay, isToday, type DayState } from "../../lib/dateUtils";
 
 interface DayCellProps {
   date: Date;
   month: Date;
   startDate: Date | undefined;
   endDate: Date | undefined;
-  hoveredDate: Date | null;
+  hoveredDate: Date | undefined;
   allowFuture: boolean | undefined;
   onSelect: (date: Date) => void;
-  onHover: (date: Date | null) => void;
+  onHover: (date?: Date) => void;
 }
 
 function getCellClass(state: DayState, props: DayCellProps): string {
   const { isStart, isEnd, inRange, inHover } = state;
   const hoverExtendsForward =
     !props.endDate &&
-    props.hoveredDate !== null &&
+    props.hoveredDate !== undefined &&
     props.startDate !== undefined &&
     props.hoveredDate > props.startDate;
 
   return cn(
     "relative p-0 text-center text-sm flex-1 flex items-center justify-center h-8",
     (inRange || inHover) && "bg-accent text-accent-foreground",
-    isStart && (props.endDate || hoverExtendsForward) && "rounded-l-md",
+    isStart && (props.endDate ?? hoverExtendsForward) && "rounded-l-md",
     isEnd && "rounded-r-md",
     hoverExtendsForward && isSameDay(props.date, props.hoveredDate) && "rounded-r-md",
   );
@@ -66,9 +66,17 @@ export const DayCell: Component<DayCellProps> = (props) => {
     <td class={getCellClass(state(), props)}>
       <button
         type="button"
-        onClick={() => props.onSelect(props.date)}
-        onMouseEnter={() => !state().isDisabled && props.onHover(props.date)}
-        onMouseLeave={() => props.onHover(null)}
+        onClick={() => {
+          props.onSelect(props.date);
+        }}
+        onMouseEnter={() => {
+          if (!state().isDisabled) {
+            props.onHover(props.date);
+          }
+        }}
+        onMouseLeave={() => {
+          props.onHover();
+        }}
         disabled={state().isDisabled}
         class={getButtonClass(state(), props.date)}
       >

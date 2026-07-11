@@ -18,19 +18,25 @@ export function ColorModeSwitcher() {
         <DropdownMenu.Portal>
           <DropdownMenu.Content class="z-50 min-w-[8rem] overflow-hidden rounded-md border bg-popover p-1 text-popover-foreground shadow-md">
             <DropdownMenu.Item
-              onSelect={() => changeTheme("light")}
+              onSelect={() => {
+                changeTheme("light");
+              }}
               class="relative flex cursor-pointer select-none items-center rounded-sm px-2 py-1.5 text-sm outline-none transition-colors hover:bg-accent hover:text-accent-foreground data-[disabled]:pointer-events-none data-[disabled]:opacity-50"
             >
               Light
             </DropdownMenu.Item>
             <DropdownMenu.Item
-              onSelect={() => changeTheme("dark")}
+              onSelect={() => {
+                changeTheme("dark");
+              }}
               class="relative flex cursor-pointer select-none items-center rounded-sm px-2 py-1.5 text-sm outline-none transition-colors hover:bg-accent hover:text-accent-foreground data-[disabled]:pointer-events-none data-[disabled]:opacity-50"
             >
               Dark
             </DropdownMenu.Item>
             <DropdownMenu.Item
-              onSelect={() => changeTheme("system")}
+              onSelect={() => {
+                changeTheme("system");
+              }}
               class="relative flex cursor-pointer select-none items-center rounded-sm px-2 py-1.5 text-sm outline-none transition-colors hover:bg-accent hover:text-accent-foreground data-[disabled]:pointer-events-none data-[disabled]:opacity-50"
             >
               System

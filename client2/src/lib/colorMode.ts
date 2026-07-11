@@ -12,7 +12,7 @@ export function changeTheme(newTheme: Theme) {
 }
 
 export function initTheme() {
-  const mediaQuery = window.matchMedia("(prefers-color-scheme: dark)");
+  const mediaQuery = globalThis.matchMedia("(prefers-color-scheme: dark)");
 
   const updateClassList = () => {
     const activeTheme = theme();

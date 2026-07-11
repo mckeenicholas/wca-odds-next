@@ -12,7 +12,7 @@ export function FlagIcon(props: FlagIconProps) {
 
   const countryName = () => {
     try {
-      return regionNames.of(props.code.toUpperCase()) || props.code;
+      return regionNames.of(props.code.toUpperCase()) ?? props.code;
     } catch {
       return props.code;
     }
@@ -21,7 +21,7 @@ export function FlagIcon(props: FlagIconProps) {
   return (
     <span
       class={cn(`fi shadow-md fi-${props.code.toLowerCase()}`, props.muted && "opacity-50")}
-      title={props.showTooltip !== false ? countryName() : undefined}
+      title={props.showTooltip === false ? undefined : countryName()}
       aria-label={`${countryName()} flag`}
     />
   );

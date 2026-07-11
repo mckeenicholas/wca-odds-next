@@ -1,4 +1,4 @@
-import { splitProps, JSX } from "solid-js";
+import { splitProps, type JSX } from "solid-js";
 import { type VariantProps, cva } from "class-variance-authority";
 import { cn } from "../../lib/utils";
 
@@ -36,7 +36,7 @@ export function Button(props: ButtonProps) {
   const [local, others] = splitProps(props, ["class", "variant", "size"]);
   return (
     <button
-      class={cn(buttonVariants({ variant: local.variant, size: local.size }), local.class)}
+      class={cn(buttonVariants({ size: local.size, variant: local.variant }), local.class)}
       {...others}
     />
   );

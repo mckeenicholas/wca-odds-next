@@ -15,11 +15,13 @@ export function LoadingMessage(props: LoadingMessageProps) {
   };
 
   onMount(() => {
-    intervalId = window.setInterval(updateDots, 333);
+    intervalId = globalThis.setInterval(updateDots, 333);
   });
 
   onCleanup(() => {
-    if (intervalId) clearInterval(intervalId);
+    if (intervalId) {
+      clearInterval(intervalId);
+    }
   });
 
   return (

@@ -3,7 +3,9 @@ export function clearTime(d: Date): Date {
 }
 
 export function isSameDay(d1: Date | undefined | null, d2: Date | undefined | null): boolean {
-  if (!d1 || !d2) return false;
+  if (!d1 || !d2) {
+    return false;
+  }
   return (
     d1.getFullYear() === d2.getFullYear() &&
     d1.getMonth() === d2.getMonth() &&
@@ -20,7 +22,9 @@ export function isFuture(d: Date): boolean {
 }
 
 export function isInRange(d: Date, start: Date | undefined, end: Date | undefined): boolean {
-  if (!start || !end) return false;
+  if (!start || !end) {
+    return false;
+  }
   const t = clearTime(d);
   return t >= clearTime(start) && t <= clearTime(end);
 }
@@ -29,13 +33,17 @@ export function isInHoverRange(
   d: Date,
   start: Date | undefined,
   end: Date | undefined,
-  hover: Date | null,
+  hover: Date | undefined,
 ): boolean {
-  if (!start || end || !hover) return false;
+  if (!start || end || !hover) {
+    return false;
+  }
   const t = clearTime(d);
   const startTime = clearTime(start);
   const hoverTime = clearTime(hover);
-  if (hoverTime < startTime) return false;
+  if (hoverTime < startTime) {
+    return false;
+  }
   return t >= startTime && t <= hoverTime;
 }
 
@@ -58,13 +66,14 @@ export function getCalendarWeeks(year: number, month: number): Date[][] {
   const end = new Date(lastDay);
   end.setDate(lastDay.getDate() + (6 - lastDay.getDay()));
 
-  const current = new Date(start);
+  let current = new Date(start);
   while (current <= end) {
     const week: Date[] = [];
     for (let i = 0; i < 7; i++) {
       week.push(new Date(current));
       current.setDate(current.getDate() + 1);
     }
+    current = new Date(current);
     weeks.push(week);
   }
   return weeks;
@@ -75,9 +84,13 @@ export function formatMonthYear(d: Date): string {
 }
 
 export function formatDateRange(start: Date | undefined, end: Date | undefined): string {
-  if (!start) return "Pick a date";
+  if (!start) {
+    return "Pick a date";
+  }
   const formattedStart = new Intl.DateTimeFormat("en-US", { dateStyle: "medium" }).format(start);
-  if (!end) return formattedStart;
+  if (!end) {
+    return formattedStart;
+  }
   const formattedEnd = new Intl.DateTimeFormat("en-US", { dateStyle: "medium" }).format(end);
   return `${formattedStart} - ${formattedEnd}`;
 }
@@ -96,15 +109,15 @@ export function getDayState(
   month: Date,
   startDate: Date | undefined,
   endDate: Date | undefined,
-  hoveredDate: Date | null,
+  hoveredDate: Date | undefined,
   allowFuture: boolean | undefined,
 ): DayState {
   return {
-    isStart: isSameDay(date, startDate),
-    isEnd: isSameDay(date, endDate),
-    inRange: isInRange(date, startDate, endDate),
     inHover: isInHoverRange(date, startDate, endDate, hoveredDate),
-    isOutside: date.getMonth() !== month.getMonth(),
+    inRange: isInRange(date, startDate, endDate),
     isDisabled: !allowFuture && isFuture(date),
+    isEnd: isSameDay(date, endDate),
+    isOutside: date.getMonth() !== month.getMonth(),
+    isStart: isSameDay(date, startDate),
   };
 }

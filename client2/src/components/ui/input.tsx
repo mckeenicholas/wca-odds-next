@@ -6,7 +6,7 @@ export function Input(props: any) {
 
   return (
     <input
-      type={local.type || "text"}
+      type={local.type ?? "text"}
       value={local.value ?? ""}
       onInput={(e) => {
         local.onInput?.(e.currentTarget.value);

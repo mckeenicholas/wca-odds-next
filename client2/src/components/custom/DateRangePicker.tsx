@@ -8,24 +8,24 @@ import { addMonths, addYears, formatDateRange, isFuture } from "../../lib/dateUt
 
 interface DateRangePickerProps {
   startDate: Date | undefined;
-  onStartDateChange: (date: Date | undefined) => void;
+  onStartDateChange: (date?: Date) => void;
   endDate: Date | undefined;
-  onEndDateChange: (date: Date | undefined) => void;
+  onEndDateChange: (date?: Date) => void;
   allowFuture?: boolean;
 }
 
 export function DateRangePicker(props: DateRangePickerProps) {
   const [isOpen, setIsOpen] = createSignal(false);
-  const [hoveredDate, setHoveredDate] = createSignal<Date | null>(null);
+  const [hoveredDate, setHoveredDate] = createSignal<Date | undefined>();
 
   const initialLeft = () => {
-    const d = props.startDate || new Date();
+    const d = props.startDate ?? new Date();
     return new Date(d.getFullYear(), d.getMonth(), 1);
   };
 
   const initialRight = () => {
     if (props.endDate) {
-      const start = props.startDate || new Date();
+      const start = props.startDate ?? new Date();
       const end = props.endDate;
       if (start.getFullYear() === end.getFullYear() && start.getMonth() === end.getMonth()) {
         return addMonths(start, 1);
@@ -41,7 +41,9 @@ export function DateRangePicker(props: DateRangePickerProps) {
   // Sync views when dates change from outside (only if selected dates are not currently visible)
   createEffect(() => {
     const start = props.startDate;
-    if (!start) return;
+    if (!start) {
+      return;
+    }
 
     const isVisible = (d: Date) =>
       d.getFullYear() === start.getFullYear() && d.getMonth() === start.getMonth();
@@ -53,28 +55,34 @@ export function DateRangePicker(props: DateRangePickerProps) {
   });
 
   // Move a pane to `next`, nudging the other pane out of the way if the move
-  // would make them overlap. Used for both month and year navigation on
-  // both panes, replacing what were four near-identical functions.
+  // Would make them overlap. Used for both month and year navigation on
+  // Both panes, replacing what were four near-identical functions.
   const navigateLeft = (next: Date) => {
     setLeftDate(next);
-    if (rightDate() <= next) setRightDate(addMonths(next, 1));
+    if (rightDate() <= next) {
+      setRightDate(addMonths(next, 1));
+    }
   };
 
   const navigateRight = (next: Date) => {
     setRightDate(next);
-    if (leftDate() >= next) setLeftDate(addMonths(next, -1));
+    if (leftDate() >= next) {
+      setLeftDate(addMonths(next, -1));
+    }
   };
 
   const handleDateClick = (date: Date) => {
-    if (!props.allowFuture && isFuture(date)) return;
+    if (!props.allowFuture && isFuture(date)) {
+      return;
+    }
 
     const startingNewRange = !props.startDate || (props.startDate && props.endDate);
     if (startingNewRange) {
       props.onStartDateChange(date);
-      props.onEndDateChange(undefined);
+      props.onEndDateChange();
 
       // If the new start date was clicked on the right pane, slide it over
-      // to the left pane so the picker keeps showing two consecutive months.
+      // To the left pane so the picker keeps showing two consecutive months.
       const isOnRightPane =
         rightDate().getFullYear() === date.getFullYear() &&
         rightDate().getMonth() === date.getMonth();
@@ -107,10 +115,18 @@ export function DateRangePicker(props: DateRangePickerProps) {
         <div class="flex flex-col gap-y-4 sm:flex-row sm:gap-x-4 sm:gap-y-0">
           <CalendarPanel
             month={leftDate()}
-            onPrevYear={() => navigateLeft(addYears(leftDate(), -1))}
-            onPrevMonth={() => navigateLeft(addMonths(leftDate(), -1))}
-            onNextMonth={() => navigateLeft(addMonths(leftDate(), 1))}
-            onNextYear={() => navigateLeft(addYears(leftDate(), 1))}
+            onPrevYear={() => {
+              navigateLeft(addYears(leftDate(), -1));
+            }}
+            onPrevMonth={() => {
+              navigateLeft(addMonths(leftDate(), -1));
+            }}
+            onNextMonth={() => {
+              navigateLeft(addMonths(leftDate(), 1));
+            }}
+            onNextYear={() => {
+              navigateLeft(addYears(leftDate(), 1));
+            }}
             startDate={props.startDate}
             endDate={props.endDate}
             hoveredDate={hoveredDate()}
@@ -121,10 +137,18 @@ export function DateRangePicker(props: DateRangePickerProps) {
 
           <CalendarPanel
             month={rightDate()}
-            onPrevYear={() => navigateRight(addYears(rightDate(), -1))}
-            onPrevMonth={() => navigateRight(addMonths(rightDate(), -1))}
-            onNextMonth={() => navigateRight(addMonths(rightDate(), 1))}
-            onNextYear={() => navigateRight(addYears(rightDate(), 1))}
+            onPrevYear={() => {
+              navigateRight(addYears(rightDate(), -1));
+            }}
+            onPrevMonth={() => {
+              navigateRight(addMonths(rightDate(), -1));
+            }}
+            onNextMonth={() => {
+              navigateRight(addMonths(rightDate(), 1));
+            }}
+            onNextYear={() => {
+              navigateRight(addYears(rightDate(), 1));
+            }}
             startDate={props.startDate}
             endDate={props.endDate}
             hoveredDate={hoveredDate()}

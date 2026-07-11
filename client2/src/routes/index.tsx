@@ -18,15 +18,15 @@ const searchSchema = z.object({
 });
 
 export const Route = createFileRoute("/")({
-  validateSearch: (search) => searchSchema.parse(search),
   component: Home,
+  validateSearch: (search) => searchSchema.parse(search),
 });
 
 function Home() {
   const search = Route.useSearch();
   const navigate = useNavigate({ from: Route.fullPath });
 
-  const queryText = () => search().q || "";
+  const queryText = () => search().q ?? "";
   const [rawInput, setRawInput] = createSignal(queryText());
 
   // Debounce typed input to update the URL query parameter (which triggers the query)
@@ -34,14 +34,16 @@ function Home() {
     const inputVal = rawInput();
     const timer = setTimeout(() => {
       if (inputVal !== queryText()) {
-        navigate({
-          search: (old) => ({ ...old, q: inputVal || undefined }),
+        void navigate({
           replace: true,
+          search: (old) => ({ ...old, q: inputVal || undefined }),
         });
       }
     }, 250);
 
-    onCleanup(() => clearTimeout(timer));
+    onCleanup(() => {
+      clearTimeout(timer);
+    });
   });
 
   // Automatically keep rawInput in sync if the URL changes (e.g. Back/Forward browser navigation)
@@ -50,15 +52,17 @@ function Home() {
   });
 
   const query = createQuery(() => ({
-    queryKey: ["competitionSearch", queryText()],
+    enabled: queryText().trim().length > 0,
     queryFn: async () => {
       const text = queryText().trim();
-      if (!text) return [] as Competition[];
+      if (!text) {
+        return [] as Competition[];
+      }
       return fetchWCAInfo<Competition[]>(
         `https://api.worldcubeassociation.org/competitions?q=${encodeURIComponent(text)}`,
       );
     },
-    enabled: queryText().trim().length > 0,
+    queryKey: ["competitionSearch", queryText()],
   }));
 
   const [results, setResults] = createSignal<Competition[]>([]);
@@ -66,7 +70,7 @@ function Home() {
   const dropdownOpen = () => isOpen() && rawInput().trim().length > 0;
 
   createEffect(() => {
-    const data = query.data;
+    const { data } = query;
     if (data) {
       setResults(data);
     } else if (!queryText().trim()) {
@@ -97,7 +101,7 @@ function Home() {
             }}
             onChange={(item) => {
               if (item) {
-                navigate({ to: `/competition/${item.id}` });
+                void navigate({ to: `/competition/${item.id}` });
               }
             }}
             itemComponent={(props) => (
@@ -124,9 +128,9 @@ function Home() {
                 onKeyDown={(e) => {
                   if (e.key === "Enter") {
                     const text = rawInput().trim();
-                    navigate({
-                      search: (old) => ({ ...old, q: text || undefined }),
+                    void navigate({
                       replace: true,
+                      search: (old) => ({ ...old, q: text || undefined }),
                     });
                   }
                 }}
@@ -140,8 +144,8 @@ function Home() {
               <Search.Content
                 class="absolute z-50 mt-1 max-h-64 overflow-y-auto rounded-md border bg-popover p-1 text-popover-foreground shadow-md no-scrollbar"
                 style={{
-                  width: "var(--kb-popper-anchor-width)",
                   display: rawInput().trim().length === 0 ? "none" : undefined,
+                  width: "var(--kb-popper-anchor-width)",
                 }}
               >
                 <Search.Listbox class="outline-none" />
@@ -165,7 +169,7 @@ function Home() {
                 </Show>
                 <Show when={query.isError}>
                   <div class="py-4 text-center text-sm text-muted-foreground">
-                    Error fetching data: {query.error?.message || "Unknown error occurred"}
+                    Error fetching data: {query.error?.message ?? "Unknown error occurred"}
                   </div>
                 </Show>
               </Search.Content>

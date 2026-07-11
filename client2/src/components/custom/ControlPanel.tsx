@@ -1,4 +1,4 @@
-import { createSignal, onCleanup, onMount } from "solid-js";
+import { createSignal, onCleanup, onMount, Show } from "solid-js";
 import { Button } from "../ui/button";
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "../ui/select";
 import { eventNames, type SupportedWCAEvent } from "../../lib/types";
@@ -24,17 +24,19 @@ interface ControlPanelProps {
 
 export function ControlPanel(props: ControlPanelProps) {
   const [windowWidth, setWindowWidth] = createSignal(
-    typeof window !== "undefined" ? window.innerWidth : 1200,
+    globalThis.window === undefined ? 1200 : globalThis.innerWidth,
   );
 
   onMount(() => {
-    const handleResize = () => setWindowWidth(window.innerWidth);
-    window.addEventListener("resize", handleResize);
-    onCleanup(() => window.removeEventListener("resize", handleResize));
+    const handleResize = () => setWindowWidth(globalThis.innerWidth);
+    globalThis.addEventListener("resize", handleResize);
+    onCleanup(() => {
+      globalThis.removeEventListener("resize", handleResize);
+    });
   });
 
   const BREAKPOINT = 768;
-  const hasCompleteDateRange = () => !!props.startDate && !!props.endDate;
+  const hasCompleteDateRange = () => Boolean(props.startDate) && Boolean(props.endDate);
 
   return (
     <>
@@ -64,7 +66,36 @@ export function ControlPanel(props: ControlPanelProps) {
         <SelectContent />
       </Select>
 
-      {windowWidth() >= BREAKPOINT ? (
+      <Show
+        when={windowWidth() >= BREAKPOINT}
+        fallback={
+          <>
+            <ExpandableBox title="Options" class="my-2">
+              <hr class="mx-2" />
+              <div class="flex flex-col items-stretch space-y-4 p-4">
+                <SimulationOptions
+                  includeDnf={props.includeDnf}
+                  onIncludeDnfChange={props.onIncludeDnfChange}
+                  decayRate={props.decayRate}
+                  onDecayRateChange={props.onDecayRateChange}
+                  startDate={props.startDate}
+                  onStartDateChange={props.onStartDateChange}
+                  endDate={props.endDate}
+                  onEndDateChange={props.onEndDateChange}
+                />
+              </div>
+            </ExpandableBox>
+            <div class="mb-2 flex flex-col">
+              <Button
+                onClick={props.onRunSimulation}
+                disabled={props.disableRun ?? !hasCompleteDateRange()}
+              >
+                Run Simulation
+              </Button>
+            </div>
+          </>
+        }
+      >
         <div class="my-2 flex items-center space-x-4 rounded-md border p-2">
           <SimulationOptions
             includeDnf={props.includeDnf}
@@ -79,39 +110,13 @@ export function ControlPanel(props: ControlPanelProps) {
           <div class="flex grow justify-end">
             <Button
               onClick={props.onRunSimulation}
-              disabled={props.disableRun || !hasCompleteDateRange()}
+              disabled={props.disableRun ?? !hasCompleteDateRange()}
             >
               Run Simulation
             </Button>
           </div>
         </div>
-      ) : (
-        <>
-          <ExpandableBox title="Options" class="my-2">
-            <hr class="mx-2" />
-            <div class="flex flex-col items-stretch space-y-4 p-4">
-              <SimulationOptions
-                includeDnf={props.includeDnf}
-                onIncludeDnfChange={props.onIncludeDnfChange}
-                decayRate={props.decayRate}
-                onDecayRateChange={props.onDecayRateChange}
-                startDate={props.startDate}
-                onStartDateChange={props.onStartDateChange}
-                endDate={props.endDate}
-                onEndDateChange={props.onEndDateChange}
-              />
-            </div>
-          </ExpandableBox>
-          <div class="mb-2 flex flex-col">
-            <Button
-              onClick={props.onRunSimulation}
-              disabled={props.disableRun || !hasCompleteDateRange()}
-            >
-              Run Simulation
-            </Button>
-          </div>
-        </>
-      )}
+      </Show>
     </>
   );
 }

@@ -26,19 +26,10 @@ const [endDate, setEndDate] = createSignal<Date | undefined>(defaultValues.endDa
 
 export const compSettingsStore = {
   compId,
-  setCompId,
   competitorsByEvent,
-  setCompetitorsByEvent,
-  selectedEventId,
-  setSelectedEventId,
-  includeDnf,
-  setIncludeDnf,
   decayHalfLife,
-  setDecayHalfLife,
-  startDate,
-  setStartDate,
   endDate,
-  setEndDate,
+  includeDnf,
   reset() {
     setCompetitorsByEvent(defaultValues.competitorsByEvent());
     setSelectedEventId(defaultValues.selectedEventId());
@@ -47,4 +38,13 @@ export const compSettingsStore = {
     setStartDate(defaultValues.startDate());
     setEndDate(defaultValues.endDate());
   },
+  selectedEventId,
+  setCompId,
+  setCompetitorsByEvent,
+  setDecayHalfLife,
+  setEndDate,
+  setIncludeDnf,
+  setSelectedEventId,
+  setStartDate,
+  startDate,
 };

@@ -13,7 +13,7 @@ export function CubingIcon(props: CubingIconProps) {
   return (
     <span
       class={cn("icon cubing-icon", `event-${props.event}`, props.class)}
-      title={props.showTooltip !== false ? eventName() : undefined}
+      title={props.showTooltip === false ? undefined : eventName()}
       aria-label={`${eventName()} icon`}
     />
   );

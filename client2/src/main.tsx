@@ -6,9 +6,9 @@ import "./styles.css";
 
 // Set up a Router instance
 const router = createRouter({
-  routeTree,
   defaultPreload: "intent",
   defaultStaleTime: 5000,
+  routeTree,
   scrollRestoration: true,
 });
 
@@ -19,7 +19,7 @@ declare module "@tanstack/solid-router" {
   }
 }
 
-const rootElement = document.getElementById("app")!;
+const rootElement = document.querySelector("#app")!;
 
 if (!rootElement.innerHTML) {
   render(() => <RouterProvider router={router} />, rootElement);

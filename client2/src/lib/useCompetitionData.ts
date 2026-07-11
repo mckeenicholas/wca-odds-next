@@ -8,7 +8,9 @@ const DEFAULT_SELECTED = 16 as const;
 const processCompetitor = (person: Person, event: SupportedWCAEvent): Competitor | undefined => {
   const worldRank = person.personalBests?.find((pb) => pb.eventId === event)?.worldRanking;
 
-  if (!worldRank) return undefined;
+  if (!worldRank) {
+    return undefined;
+  }
 
   return {
     country: person.countryIso2,
@@ -25,7 +27,9 @@ export function getCompetitorData(
   selectedEventId: SupportedWCAEvent,
   setSelectedEventId: (val: SupportedWCAEvent) => void,
 ): EventRegistration {
-  if (isError || !data) return {};
+  if (isError || !data) {
+    return {};
+  }
 
   const competitorAcc: EventRegistration = {};
 
@@ -38,14 +42,14 @@ export function getCompetitorData(
     )
     .forEach((person) => {
       person.registration.eventIds.forEach((event: SupportedWCAEvent) => {
-        if ((event as string) === "333mbf") return;
-        if (!competitorAcc[event]) {
-          competitorAcc[event] = [];
+        if ((event as string) === "333mbf") {
+          return;
         }
+        competitorAcc[event] ??= [];
 
         const competitor = processCompetitor(person, event);
         if (competitor) {
-          competitorAcc[event]!.push(competitor);
+          competitorAcc[event].push(competitor);
         }
       });
     });

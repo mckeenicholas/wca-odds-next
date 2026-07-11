@@ -6,7 +6,9 @@
   "categories": {
     "correctness": "error",
     "suspicious": "warn",
-    "pedantic": "warn"
+    "pedantic": "warn",
+    "perf": "warn",
+    "style": "warn"
   },
   "jsPlugins": [
     {
@@ -40,7 +42,7 @@
     "solid-js/no-unknown-namespaces": "off",
     "solid-js/prefer-classlist": "off",
     "solid-js/prefer-for": "error",
-    "solid-js/prefer-show": "off",
+    "solid-js/prefer-show": "warn",
     "solid-js/reactivity": "warn",
     "solid-js/self-closing-comp": "warn",
     "solid-js/style-prop": "warn",
@@ -54,6 +56,18 @@
     "typescript/no-unsafe-member-access": "off",
     "typescript/no-unsafe-argument": "off",
     "typescript/no-unsafe-return": "off",
-    "only-throw-error": "off"
+    "only-throw-error": "off",
+    "sort-imports": "off",
+    "filename-case": "off",
+    "func-style": "off",
+    "id-length": "off",
+    "no-magic-numbers": "off",
+    "no-ternary": "off",
+    "init-declarations": "off",
+    "max-params": "off",
+    "max-statements": "off",
+    "no-null": "off",
+    "oxc/no-map-spread": "off",
+    "sort-keys": "off"
   }
 }

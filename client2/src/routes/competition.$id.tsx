@@ -10,6 +10,28 @@ import { LoadingMessage } from "../components/custom/LoadingMessage";
 import { WCALogo } from "../components/custom/WCALogo";
 import { Checkbox } from "../components/ui/checkbox";
 
+const currentSelectedCompetitors = () => {
+  const list = compSettingsStore.competitorsByEvent()[compSettingsStore.selectedEventId()];
+  return list?.filter((competitor) => competitor.selected) ?? [];
+};
+
+const toggleCompetitor = (competitorId: string) => {
+  const currentEvent = compSettingsStore.selectedEventId();
+  const currentList = compSettingsStore.competitorsByEvent()[currentEvent];
+  if (!currentList) {
+    return;
+  }
+
+  const newList = currentList.map((c) =>
+    c.id === competitorId ? { ...c, selected: !c.selected } : c,
+  );
+
+  compSettingsStore.setCompetitorsByEvent({
+    ...compSettingsStore.competitorsByEvent(),
+    [currentEvent]: newList,
+  });
+};
+
 export const Route = createFileRoute("/competition/$id")({
   component: CompetitionPage,
 });
@@ -19,14 +41,14 @@ function CompetitionPage() {
   const navigate = useNavigate();
 
   const query = createQuery(() => ({
-    queryKey: ["competition", params().id],
     queryFn: () => fetchWCIF(params().id),
+    queryKey: ["competition", params().id],
     staleTime: Infinity,
   }));
 
   // Sync route params with store
   createEffect(() => {
-    const id = params().id;
+    const { id } = params();
     if (id && id !== compSettingsStore.compId()) {
       compSettingsStore.reset();
       compSettingsStore.setCompId(id);
@@ -50,45 +72,31 @@ function CompetitionPage() {
     }
   });
 
-  const currentSelectedCompetitors = () => {
-    const list = compSettingsStore.competitorsByEvent()[compSettingsStore.selectedEventId()];
-    return list?.filter((competitor) => competitor.selected) ?? [];
-  };
-
-  const toggleCompetitor = (competitorId: string) => {
-    const currentEvent = compSettingsStore.selectedEventId();
-    const currentList = compSettingsStore.competitorsByEvent()[currentEvent];
-    if (!currentList) return;
-
-    const newList = currentList.map((c) =>
-      c.id === competitorId ? { ...c, selected: !c.selected } : c,
-    );
-
-    compSettingsStore.setCompetitorsByEvent({
-      ...compSettingsStore.competitorsByEvent(),
-      [currentEvent]: newList,
-    });
-  };
-
   const [windowWidth, setWindowWidth] = createSignal(
-    typeof window !== "undefined" ? window.innerWidth : 1200,
+    globalThis.window === undefined ? 1200 : globalThis.innerWidth,
   );
 
   onMount(() => {
-    const handleResize = () => setWindowWidth(window.innerWidth);
-    window.addEventListener("resize", handleResize);
-    onCleanup(() => window.removeEventListener("resize", handleResize));
+    const handleResize = () => setWindowWidth(globalThis.innerWidth);
+    globalThis.addEventListener("resize", handleResize);
+    onCleanup(() => {
+      globalThis.removeEventListener("resize", handleResize);
+    });
   });
 
   const runSimulation = () => {
     const d = query.data;
-    if (!d) return;
+    if (!d) {
+      return;
+    }
 
     const selectedIds = currentSelectedCompetitors().map((item) => item.id);
     const startD = compSettingsStore.startDate();
     const endD = compSettingsStore.endDate();
 
-    if (!startD || !endD) return;
+    if (!startD || !endD) {
+      return;
+    }
 
     const queryParams = buildSimulationQuery({
       competitionId: d.id,
@@ -102,9 +110,9 @@ function CompetitionPage() {
       startDate: startD,
     });
 
-    navigate({
-      to: `/competition/${d.id}/results`,
+    void navigate({
       search: queryParams,
+      to: `/competition/${d.id}/results`,
     });
   };
 
@@ -118,7 +126,7 @@ function CompetitionPage() {
           when={!query.isError && query.data?.name}
           fallback={
             <div class="text-red-500">
-              Error fetching data: {query.error?.message || "Unknown error occurred"}
+              Error fetching data: {query.error?.message ?? "Unknown error occurred"}
             </div>
           }
         >
@@ -171,7 +179,9 @@ function CompetitionPage() {
                   {(person) => (
                     <li class="rounded-md transition-colors hover:bg-secondary">
                       <div
-                        onClick={() => toggleCompetitor(person.id)}
+                        onClick={() => {
+                          toggleCompetitor(person.id);
+                        }}
                         class={cn(
                           "flex cursor-pointer items-center justify-between p-2",
                           !person.selected && "text-muted-foreground",

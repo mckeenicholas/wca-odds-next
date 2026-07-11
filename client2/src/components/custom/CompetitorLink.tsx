@@ -1,3 +1,4 @@
+import { Show } from "solid-js";
 import { Link } from "@tanstack/solid-router";
 import { FlagIcon } from "./FlagIcon";
 import { WCALogo } from "./WCALogo";
@@ -13,7 +14,9 @@ interface CompetitorLinkProps {
 
 export function CompetitorLink(props: CompetitorLinkProps) {
   const wcaLink = () => {
-    if (!props.id) return "#";
+    if (!props.id) {
+      return "#";
+    }
     const url = new URL(`https://www.worldcubeassociation.org/persons/${props.id}`);
     if (props.event) {
       url.searchParams.append("event", props.event);
@@ -23,22 +26,26 @@ export function CompetitorLink(props: CompetitorLinkProps) {
 
   const personalLink = () => {
     const base = `/rankings/personal/${props.id}`;
-    if (!props.event) return base;
+    if (!props.event) {
+      return base;
+    }
     const params = new URLSearchParams({ event: props.event });
     return `${base}?${params}`;
   };
 
   return (
     <div class={cn(props.class, "min-w-0 flex items-center")}>
-      {props.iso2 && <FlagIcon code={props.iso2} />}
+      <Show when={props.iso2}>{(iso2) => <FlagIcon code={iso2()} />}</Show>
       <Link
         to={personalLink()}
-        onClick={(e) => e.stopPropagation()}
+        onClick={(e) => {
+          e.stopPropagation();
+        }}
         class="ms-2 min-w-0 truncate hover:underline"
       >
         {props.name}
       </Link>
-      {props.id && (
+      <Show when={props.id}>
         <a
           href={wcaLink()}
           target="_blank"
@@ -47,7 +54,7 @@ export function CompetitorLink(props: CompetitorLinkProps) {
         >
           <WCALogo class="ml-2 h-4 w-4" />
         </a>
-      )}
+      </Show>
     </div>
   );
 }

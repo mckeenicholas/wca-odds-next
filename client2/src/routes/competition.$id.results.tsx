@@ -2,20 +2,20 @@ import { createFileRoute } from "@tanstack/solid-router";
 import { z } from "zod";
 
 const simulationSearchSchema = z.object({
-  name: z.string().optional(),
   competitionId: z.string().optional(),
-  date: z.string().optional(),
-  eventId: z.string().optional(),
-  startDate: z.string().optional(),
-  endDate: z.string().optional(),
-  includeDnf: z.string().optional(),
-  decayRate: z.string().optional(),
   competitors: z.string().optional(),
+  date: z.string().optional(),
+  decayRate: z.string().optional(),
+  endDate: z.string().optional(),
+  eventId: z.string().optional(),
+  includeDnf: z.string().optional(),
+  name: z.string().optional(),
+  startDate: z.string().optional(),
 });
 
 export const Route = createFileRoute("/competition/$id/results")({
-  validateSearch: (search) => simulationSearchSchema.parse(search),
   component: CompetitionResultsPage,
+  validateSearch: (search) => simulationSearchSchema.parse(search),
 });
 
 function CompetitionResultsPage() {

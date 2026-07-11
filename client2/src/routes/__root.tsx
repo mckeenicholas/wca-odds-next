@@ -1,3 +1,4 @@
+import { Show } from "solid-js";
 import { Outlet, createRootRoute, useLocation } from "@tanstack/solid-router";
 import { TanStackRouterDevtools } from "@tanstack/solid-router-devtools";
 import { QueryClient, QueryClientProvider } from "@tanstack/solid-query";
@@ -16,19 +17,15 @@ const queryClient = new QueryClient({
 
 export const Route = createRootRoute({
   component: RootComponent,
-  notFoundComponent: () => {
-    return (
-      <div class="flex flex-col items-center justify-center p-8 text-center">
-        <p class="text-lg font-semibold text-destructive">404 - Page Not Found</p>
-        <p class="mt-2 text-sm text-muted-foreground">
-          The page you are looking for does not exist.
-        </p>
-        <a href="/" class="mt-4 underline hover:text-primary">
-          Start Over
-        </a>
-      </div>
-    );
-  },
+  notFoundComponent: () => (
+    <div class="flex flex-col items-center justify-center p-8 text-center">
+      <p class="text-lg font-semibold text-destructive">404 - Page Not Found</p>
+      <p class="mt-2 text-sm text-muted-foreground">The page you are looking for does not exist.</p>
+      <a href="/" class="mt-4 underline hover:text-primary">
+        Start Over
+      </a>
+    </div>
+  ),
 });
 
 function RootComponent() {
@@ -40,7 +37,9 @@ function RootComponent() {
 
   return (
     <QueryClientProvider client={queryClient}>
-      {location().pathname !== "/" && <BackButton />}
+      <Show when={location().pathname !== "/"}>
+        <BackButton />
+      </Show>
       <div class="flex min-h-screen flex-col">
         <main class="grow">
           <ColorModeSwitcher />
