@@ -143,9 +143,7 @@ export interface WCALiveCompetitionError {
   };
 }
 
-export type WCALiveCompetitionData =
-  | WCALiveCompetitionSuccess
-  | WCALiveCompetitionError;
+export type WCALiveCompetitionData = WCALiveCompetitionSuccess | WCALiveCompetitionError;
 
 export interface WCALiveEventRound {
   id: string;
@@ -157,6 +155,11 @@ export interface WCALiveCompetitionEvent {
     id: string;
   };
   rounds: WCALiveEventRound[];
+}
+
+export interface FetchRoundResultsGraphQLResponse {
+  data?: WCALiveRoundDataWrapper;
+  errors?: { message: string; [key: string]: string }[];
 }
 
 export interface WCALiveAttempt {
@@ -183,11 +186,6 @@ export interface WCALiveRoundDetails {
 
 export interface WCALiveRoundDataWrapper {
   round: WCALiveRoundDetails;
-}
-
-export interface FetchRoundResultsGraphQLResponse {
-  data?: WCALiveRoundDataWrapper;
-  errors?: { message: string; [key: string]: string }[];
 }
 
 export interface Competitor {

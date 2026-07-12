@@ -1,50 +1,52 @@
-import { defineStore } from "pinia";
-import { ref } from "vue";
-import type { Competitor, SupportedWCAEvent } from "@/lib/types";
+import type { Competitor, SupportedWCAEvent } from "../types";
+import { createSignal, batch } from "solid-js";
 
-export const useCompSettingsStore = defineStore("compSettings", () => {
-  const compId = ref<string>();
+// Default values
+const defaultValues = {
+  competitorsByEvent: () => ({}) as Record<string, Competitor[]>,
+  decayHalfLife: () => 180,
+  endDate: () => new Date(),
+  includeDnf: () => true,
+  selectedEventId: () => "333" as SupportedWCAEvent,
+  startDate: () => new Date(new Date().setFullYear(new Date().getFullYear() - 1)),
+};
 
-  // Default values
-  const defaultValues = {
-    competitorsByEvent: () => ({}) as Record<string, Competitor[]>,
-    decayHalfLife: () => 180,
-    endDate: () => new Date(),
-    includeDnf: () => true,
-    selectedEventId: () => "333" as SupportedWCAEvent,
-    startDate: () =>
-      new Date(new Date().setFullYear(new Date().getFullYear() - 1)),
-  };
+// Global Store State using SolidJS Signals
+const [compId, setCompId] = createSignal<string | undefined>();
+const [competitorsByEvent, setCompetitorsByEvent] = createSignal<Record<string, Competitor[]>>(
+  defaultValues.competitorsByEvent(),
+);
+const [selectedEventId, setSelectedEventId] = createSignal<SupportedWCAEvent>(
+  defaultValues.selectedEventId(),
+);
+const [includeDnf, setIncludeDnf] = createSignal<boolean>(defaultValues.includeDnf());
+const [decayHalfLife, setDecayHalfLife] = createSignal<number>(defaultValues.decayHalfLife());
+const [startDate, setStartDate] = createSignal<Date | undefined>(defaultValues.startDate());
+const [endDate, setEndDate] = createSignal<Date | undefined>(defaultValues.endDate());
 
-  // State
-  const competitorsByEvent = ref<
-    Partial<Record<SupportedWCAEvent, Competitor[]>>
-  >(defaultValues.competitorsByEvent());
-  const selectedEventId = ref<SupportedWCAEvent>(
-    defaultValues.selectedEventId(),
-  );
-  const includeDnf = ref<boolean>(defaultValues.includeDnf());
-  const decayHalfLife = ref<number>(defaultValues.decayHalfLife());
-  const startDate = ref<Date | undefined>(defaultValues.startDate());
-  const endDate = ref<Date | undefined>(defaultValues.endDate());
-
-  function reset() {
-    competitorsByEvent.value = defaultValues.competitorsByEvent();
-    selectedEventId.value = defaultValues.selectedEventId();
-    includeDnf.value = defaultValues.includeDnf();
-    decayHalfLife.value = defaultValues.decayHalfLife();
-    startDate.value = defaultValues.startDate();
-    endDate.value = defaultValues.endDate();
-  }
-
-  return {
-    compId,
-    competitorsByEvent,
-    decayHalfLife,
-    endDate,
-    includeDnf,
-    reset,
-    selectedEventId,
-    startDate,
-  };
-});
+export const compSettingsStore = {
+  compId,
+  competitorsByEvent,
+  decayHalfLife,
+  endDate,
+  includeDnf,
+  reset() {
+    batch(() => {
+      setCompetitorsByEvent(defaultValues.competitorsByEvent());
+      setSelectedEventId(defaultValues.selectedEventId());
+      setIncludeDnf(defaultValues.includeDnf());
+      setDecayHalfLife(defaultValues.decayHalfLife());
+      setStartDate(defaultValues.startDate());
+      setEndDate(defaultValues.endDate());
+    });
+  },
+  selectedEventId,
+  setCompId,
+  setCompetitorsByEvent,
+  setDecayHalfLife,
+  setEndDate,
+  setIncludeDnf,
+  setSelectedEventId,
+  setStartDate,
+  startDate,
+};
