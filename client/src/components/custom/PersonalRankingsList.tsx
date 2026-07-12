@@ -14,7 +14,7 @@ export function PersonalRankingsList(props: PersonalRankingsListProps) {
   return (
     <section class="mt-6 w-full">
       <Show
-        when={!props.isPending}
+        when={!props.isPending || Boolean(props.data && props.data.length > 0)}
         fallback={
           <div class="space-y-4 rounded-md border p-4">
             <Index each={Array.from({ length: 8 })}>{() => <Skeleton class="h-9 w-full" />}</Index>

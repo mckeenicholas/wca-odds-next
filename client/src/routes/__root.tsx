@@ -33,7 +33,7 @@ function RootComponent() {
   initTheme();
 
   const location = useLocation();
-  const versionNum = "1.2.0";
+  const versionNum = "1.3.0";
 
   return (
     <QueryClientProvider client={queryClient}>

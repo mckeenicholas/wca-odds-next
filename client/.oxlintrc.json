@@ -1,5 +1,5 @@
 {
-  "ignorePatterns": ["node_modules", ".nitro", ".output", "dist"],
+  "ignorePatterns": ["node_modules", ".nitro", ".output", "dist", "client-vue"],
   "options": {
     "typeAware": true
   },

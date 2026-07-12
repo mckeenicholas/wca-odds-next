@@ -1,5 +1,5 @@
 import { createSignal, createEffect, Show } from "solid-js";
-import { createQuery } from "@tanstack/solid-query";
+import { createQuery, keepPreviousData } from "@tanstack/solid-query";
 import { createFileRoute, Outlet, useNavigate, useLocation } from "@tanstack/solid-router";
 import { ErrorPanel } from "../components/custom/ErrorPanel";
 import { PersonalRankingsSearch } from "../components/custom/PersonalRankingsSearch";
@@ -177,6 +177,7 @@ function PersonalRankingsLayout() {
     },
     queryKey: ["personal-rankings", selectedPerson()?.person_id, committedDate().toDateString()],
     staleTime: 1000 * 60 * 5,
+    placeholderData: keepPreviousData,
   }));
 
   const applyDate = () => {

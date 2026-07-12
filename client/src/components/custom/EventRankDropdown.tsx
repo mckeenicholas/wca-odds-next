@@ -4,8 +4,8 @@ import { LoaderCircle } from "lucide-solid";
 import { eventNames, type PersonRankInfo, type SupportedWCAEvent } from "../../lib/types";
 import { useRankDetail } from "../../lib/useRankDetail";
 import { cn, isTimeEvent, renderTime } from "../../lib/utils";
+import { MultiLabelSwitch } from "../charts/MultiLabelSwitch";
 import { Button } from "../ui/button";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../ui/select";
 import { CubingIcon } from "./CubingIcon";
 import { DateRangePicker } from "./DateRangePicker";
 import { RankingsAreaChart } from "./RankingsAreaChart";
@@ -140,27 +140,13 @@ export function EventRankDropdown(props: EventRankDropdownProps) {
         </Switch>
 
         <div class="ms-4 flex items-center space-x-2 pb-2">
-          <Select
-            options={["value", "rank"]}
-            value={metric()}
-            onChange={(val) => {
-              if (val) {
-                setMetric(val as any);
-              }
-            }}
-            itemComponent={(itemProps) => (
-              <SelectItem item={itemProps.item}>
-                {itemProps.item.rawValue === "value" ? "Result" : "Rank"}
-              </SelectItem>
-            )}
-          >
-            <SelectTrigger class="h-9 w-32 text-xs">
-              <SelectValue>
-                {(state) => (state.selectedOption() === "value" ? "Result" : "Rank")}
-              </SelectValue>
-            </SelectTrigger>
-            <SelectContent />
-          </Select>
+          <MultiLabelSwitch
+            left="Result"
+            right="Rank"
+            checked={metric() === "rank"}
+            onChange={(val) => setMetric(val ? "rank" : "value")}
+            class="mr-2 text-xs"
+          />
           <DateRangePicker
             startDate={startDate()}
             onStartDateChange={setStartDate}

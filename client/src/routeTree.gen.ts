@@ -64,7 +64,7 @@ export interface FileRoutesByFullPath {
   '/custom': typeof CustomRoute
   '/competition/$id': typeof CompetitionIdRoute
   '/rankings/personal': typeof RankingsPersonalRouteWithChildren
-  '/rankings': typeof RankingsIndexRoute
+  '/rankings/': typeof RankingsIndexRoute
   '/competition/$id/results': typeof CompetitionIdResultsRoute
   '/rankings/personal/$id': typeof RankingsPersonalIdRoute
   '/rankings/personal/': typeof RankingsPersonalIndexRoute
@@ -96,7 +96,7 @@ export interface FileRouteTypes {
     | '/custom'
     | '/competition/$id'
     | '/rankings/personal'
-    | '/rankings'
+    | '/rankings/'
     | '/competition/$id/results'
     | '/rankings/personal/$id'
     | '/rankings/personal/'
@@ -149,7 +149,7 @@ declare module '@tanstack/solid-router' {
     '/rankings/': {
       id: '/rankings/'
       path: '/rankings'
-      fullPath: '/rankings'
+      fullPath: '/rankings/'
       preLoaderRoute: typeof RankingsIndexRouteImport
       parentRoute: typeof rootRouteImport
     }

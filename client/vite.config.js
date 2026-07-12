@@ -4,10 +4,9 @@ import devtools from "solid-devtools/vite";
 import { defineConfig } from "vite";
 import solid from "vite-plugin-solid";
 
-// https://vitejs.dev/config/sol
 export default defineConfig({
   build: {
-    minify: "terser",
+    minify: "oxc",
   },
   plugins: [
     devtools(),

@@ -22,6 +22,9 @@ interface PersonalRankingsSearchProps {
 }
 
 export function PersonalRankingsSearch(props: PersonalRankingsSearchProps) {
+  // eslint-disable-next-line no-unassigned-vars
+  let inputRef: HTMLInputElement | undefined;
+
   const [searchTerm, setSearchTerm] = createSignal("");
   const [isOpen, setIsOpen] = createSignal(false);
   const [debouncedTerm, setDebouncedTerm] = createSignal("");
@@ -47,6 +50,7 @@ export function PersonalRankingsSearch(props: PersonalRankingsSearchProps) {
     },
     queryKey: ["person-search", debouncedTerm()],
     staleTime: 1000 * 60 * 2,
+    placeholderData: (previousData) => previousData ?? [],
   }));
 
   const searchResults = createMemo<PersonSearchResult[]>(() => {
@@ -67,20 +71,35 @@ export function PersonalRankingsSearch(props: PersonalRankingsSearchProps) {
       <div class="relative w-full max-w-md">
         <Search
           open={dropdownOpen()}
-          onOpenChange={setIsOpen}
+          onOpenChange={(open) => {
+            setIsOpen(open);
+            if (!open) {
+              setSearchTerm("");
+            }
+          }}
           options={searchResults()}
           optionValue="person_id"
           optionTextValue="name"
+          optionLabel="name"
+          value={props.selectedPerson ?? null}
+          noResetInputOnBlur={false}
           sameWidth
           class="w-full"
           onInputChange={(val) => {
+            if (props.selectedPerson && val === props.selectedPerson.name) {
+              return;
+            }
             setSearchTerm(val);
             setIsOpen(true);
           }}
           onChange={(person) => {
             if (person) {
+              setSearchTerm("");
               props.onSelectPerson(person);
+            } else {
+              props.onClearPerson();
             }
+            inputRef?.blur();
           }}
           itemComponent={(itemProps) => (
             <Search.Item
@@ -99,36 +118,35 @@ export function PersonalRankingsSearch(props: PersonalRankingsSearchProps) {
         >
           <Search.Control class="flex items-center gap-2 rounded-md border border-input bg-background px-3 py-2 text-sm shadow-sm ring-offset-background focus-within:ring-2 focus-within:ring-ring">
             <SearchIcon class="h-4 w-4 shrink-0 text-muted-foreground" />
-            <Show
-              when={props.selectedPerson}
-              fallback={
-                <Search.Input
-                  id="person-filter-input"
-                  class="flex-1 border-none bg-transparent p-0 outline-none placeholder:text-muted-foreground focus:ring-0 focus:outline-none"
-                  placeholder="Search for a person..."
-                  value={searchTerm()}
-                />
-              }
+
+            <div classList={{ hidden: !props.selectedPerson?.country_iso2 }}>
+              <FlagIcon code={props.selectedPerson?.country_iso2 ?? ""} showTooltip={false} />
+            </div>
+
+            <Search.Input
+              ref={inputRef}
+              id="person-filter-input"
+              class="flex-1 border-none bg-transparent p-0 outline-none placeholder:text-muted-foreground focus:ring-0 focus:outline-none"
+              placeholder="Search for a person..."
+            />
+
+            <button
+              onClick={() => {
+                setSearchTerm("");
+                if (inputRef) {
+                  inputRef.value = "";
+                }
+                props.onClearPerson();
+                inputRef?.blur();
+              }}
+              class="text-muted-foreground transition-colors hover:text-foreground"
+              classList={{
+                hidden: !(Boolean(props.selectedPerson) || searchTerm().trim().length > 0),
+              }}
+              aria-label="Clear selection"
             >
-              {(person) => (
-                <>
-                  <div class="flex flex-1 items-center gap-2 truncate">
-                    <Show when={person().country_iso2}>
-                      <FlagIcon code={person().country_iso2!} />
-                    </Show>
-                    <span class="truncate font-medium">{person().name}</span>
-                    <span class="text-xs text-muted-foreground">({person().person_id})</span>
-                  </div>
-                  <button
-                    onClick={props.onClearPerson}
-                    class="text-muted-foreground transition-colors hover:text-foreground"
-                    aria-label="Clear selection"
-                  >
-                    <X class="h-4 w-4" />
-                  </button>
-                </>
-              )}
-            </Show>
+              <X class="h-4 w-4" />
+            </button>
           </Search.Control>
 
           <Search.Portal>

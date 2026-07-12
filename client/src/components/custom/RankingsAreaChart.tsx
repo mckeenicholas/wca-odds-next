@@ -1,300 +1,282 @@
 import type { RankingHistoryPoint } from "../../lib/types";
-import { createSignal, For, Show } from "solid-js";
+import { createMemo, For, Show } from "solid-js";
+import { render } from "solid-js/web";
+import { VisXYContainer, VisArea, VisLine, VisAxis, VisCrosshair, VisTooltip } from "@unovis/solid";
+import { CurveType, Line } from "@unovis/ts";
 import { renderTime } from "../../lib/utils";
 
 interface RankingsAreaChartProps {
   history: RankingHistoryPoint[];
+  stacked?: boolean;
+  filterOpacity?: number;
+  showGradient?: boolean;
   metric: "value" | "rank";
   isTime?: boolean;
   isFMC?: boolean;
 }
 
+const x = (d: Record<string, number>) => d.date;
+
+const dateFormatter = (timestamp: number | Date) => {
+  const timeVal = typeof timestamp === "number" ? timestamp : timestamp.getTime();
+  return new Date(timeVal).toLocaleDateString(undefined, {
+    month: "short",
+    year: "numeric",
+  });
+};
+
 export function RankingsAreaChart(props: RankingsAreaChartProps) {
-  const [hoveredPoint, setHoveredPoint] = createSignal<{
-    x: number;
-    y: number;
-    date: string;
-    value: number;
-    rank: number;
-  } | null>(null);
+  const stacked = () => props.stacked ?? false; // Default to false since detailed competitor history is typically line-only
+  const showGradient = () => props.showGradient ?? true;
 
-  const points = () =>
-    props.history
-      .map((item) => {
-        const [comp] = item.competitors;
-        if (!comp) {
-          return null;
+  const competitorMeta = createMemo(() => {
+    if (!props.history?.length) {
+      return [];
+    }
+
+    const lastEntry = props.history.at(-1)!;
+
+    const meta = lastEntry.competitors.map((c) => {
+      let finalVal = 0;
+      switch (props.metric) {
+        case "value":
+          finalVal = c.value;
+          break;
+        case "rank":
+          finalVal = -c.rank;
+          break;
+      }
+
+      return {
+        color: c.color ?? "#888888",
+        finalVal,
+        id: c.id,
+        name: c.name,
+      };
+    });
+
+    meta.sort((a, b) => a.finalVal - b.finalVal);
+    return meta;
+  });
+
+  const processedData = createMemo(() => {
+    if (!props.history?.length) {
+      return [];
+    }
+
+    return props.history.map((point) => {
+      const dataPoint: Record<string, number> = {
+        date: new Date(`${point.date}T12:00:00`).getTime(),
+      };
+
+      point.competitors.forEach((c) => {
+        let val = 0;
+        if (props.metric === "value") {
+          val = c.value;
+        } else if (props.metric === "rank") {
+          val = c.rank;
         }
-        return {
-          date: new Date(`${item.date}T12:00:00`),
-          dateStr: item.date,
-          rank: comp.rank,
-          value: comp.value,
-        };
-      })
-      .filter((p): p is { date: Date; dateStr: string; rank: number; value: number } => p !== null)
-      .toSorted((a, b) => a.date.getTime() - b.date.getTime());
-
-  const width = 600;
-  const height = 240;
-  const paddingLeft = 60;
-  const paddingRight = 20;
-  const paddingTop = 20;
-  const paddingBottom = 40;
-
-  const chartWidth = width - paddingLeft - paddingRight;
-  const chartHeight = height - paddingTop - paddingBottom;
-
-  const xCoords = () => {
-    const list = points();
-    if (list.length === 0) {
-      return [];
-    }
-    if (list.length === 1) {
-      return [paddingLeft + chartWidth / 2];
-    }
-
-    const minTime = list.at(0)!.date.getTime();
-    const maxTime = list.at(-1)!.date.getTime();
-    const range = maxTime - minTime || 1;
-
-    return list.map((p) => {
-      const pct = (p.date.getTime() - minTime) / range;
-      return paddingLeft + pct * chartWidth;
-    });
-  };
-
-  const yRange = () => {
-    const list = points();
-    if (list.length === 0) {
-      return { max: 10, min: 0 };
-    }
-    const values = list.map((p) => (props.metric === "value" ? p.value : p.rank));
-    const min = Math.min(...values);
-    const max = Math.max(...values);
-    return { max, min };
-  };
-
-  const yCoords = () => {
-    const list = points();
-    const range = yRange();
-    if (list.length === 0) {
-      return [];
-    }
-
-    const diff = range.max - range.min || 1;
-
-    return list.map((p) => {
-      const val = props.metric === "value" ? p.value : p.rank;
-      const pct = (val - range.min) / diff;
-      const yPct = props.metric === "rank" ? pct : 1 - pct;
-      return paddingTop + yPct * chartHeight;
-    });
-  };
-
-  const pathData = () => {
-    const xs = xCoords();
-    const ys = yCoords();
-    if (xs.length === 0) {
-      return "";
-    }
-    return xs.map((x, i) => `${i === 0 ? "M" : "L"} ${x} ${ys[i]}`).join(" ");
-  };
-
-  const yTicks = () => {
-    const range = yRange();
-    const ticksCount = 5;
-    const ticks = [];
-    const step = (range.max - range.min) / (ticksCount - 1) || 1;
-    for (let i = 0; i < ticksCount; i++) {
-      const val = range.min + i * step;
-      const pct = (val - range.min) / (range.max - range.min || 1);
-      const yPct = props.metric === "rank" ? pct : 1 - pct;
-      const y = paddingTop + yPct * chartHeight;
-      ticks.push({ val, y });
-    }
-    return ticks;
-  };
-
-  const xTicks = () => {
-    const list = points();
-    if (list.length < 2) {
-      return [];
-    }
-    const ticksCount = 3;
-    const step = Math.floor(list.length / (ticksCount - 1)) || 1;
-    const ticks = [];
-    const xs = xCoords();
-    for (let i = 0; i < ticksCount; i++) {
-      const idx = Math.min(i * step, list.length - 1);
-      const p = list[idx];
-      const x = xs[idx];
-      const label = p.date.toLocaleDateString(undefined, {
-        month: "short",
-        year: "numeric",
+        dataPoint[c.name] = val;
       });
-      ticks.push({ label, x });
-    }
-    return ticks;
-  };
 
-  const formatValue = (v: number) => {
+      return dataPoint;
+    });
+  });
+
+  const yRange = createMemo<[number, number]>(() => {
+    const allValues = processedData().flatMap((d) => competitorMeta().map((m) => d[m.name]));
+
+    if (allValues.length === 0) {
+      return [0, 10];
+    }
+
+    const maxVal = Math.max(...allValues);
+    const minVal = Math.min(...allValues);
+
     if (props.metric === "rank") {
-      return v.toFixed(0);
+      const bottom = Math.max(1, minVal - 1);
+      const top = Math.max(5, maxVal + 1);
+      return [bottom, top];
+    }
+
+    if (minVal === maxVal) {
+      const buffer = minVal === 0 ? 10 : Math.abs(minVal * 0.1);
+      return [Math.max(0, minVal - buffer), maxVal + buffer];
+    }
+
+    const buffer = (maxVal - minVal) * 0.1;
+    return [Math.max(0, minVal - buffer), maxVal + buffer];
+  });
+
+  const yTickFormat = (v: number | Date) => {
+    const num = typeof v === "number" ? v : v.getTime();
+    if (props.metric === "rank") {
+      if (num % 1 !== 0) {
+        return "";
+      }
+      return num.toFixed(0);
     }
     if (props.isTime) {
-      return renderTime(v, props.isFMC ?? false);
+      return renderTime(num, props.isFMC ?? false);
     }
-    return v.toFixed(1);
+    return num.toFixed(1);
   };
 
-  const handleMouseMove = (e: MouseEvent) => {
-    const rect = (e.currentTarget as SVGElement).getBoundingClientRect();
-    const mouseX = e.clientX - rect.left;
-    const xs = xCoords();
-    const list = points();
-    const ys = yCoords();
-    if (xs.length === 0) {
-      return;
-    }
-
-    let closestIdx = 0;
-    let minDiff = Math.abs(xs[0] - mouseX);
-    for (let i = 1; i < xs.length; i++) {
-      const diff = Math.abs(xs[i] - mouseX);
-      if (diff < minDiff) {
-        minDiff = diff;
-        closestIdx = i;
-      }
-    }
-
-    const p = list[closestIdx];
-    setHoveredPoint({
-      date: p.date.toLocaleDateString(undefined, { dateStyle: "medium" }),
-      rank: p.rank,
-      value: p.value,
-      x: xs[closestIdx],
-      y: ys[closestIdx],
+  const tooltipTemplate = (d: any) => {
+    const dateVal = new Date(d.date);
+    const dateDisplay = dateVal.toLocaleDateString(undefined, {
+      month: "long",
+      year: "numeric",
     });
+
+    const isRank = props.metric === "rank";
+
+    const sortedCompValues = competitorMeta()
+      .map((meta) => ({
+        name: meta.name,
+        color: meta.color,
+        value: d[meta.name] ?? 0,
+      }))
+      .toSorted((a, b) => {
+        if (isRank) {
+          return a.value - b.value; // Lower rank is better (1 is best), show on top
+        }
+        return b.value - a.value;
+      });
+
+    const container = document.createElement("div");
+    render(
+      () => (
+        <div class="relative z-50 rounded-md border bg-popover p-2 font-sans text-xs text-popover-foreground shadow-md">
+          <p class="mb-1 border-b border-border pb-1 font-semibold text-foreground">
+            {dateDisplay}
+          </p>
+          <For each={sortedCompValues}>
+            {(item) => (
+              <div class="flex justify-between gap-4 py-0.5">
+                <div class="flex items-center">
+                  <span
+                    class="mr-2 inline-block h-2 w-2 rounded-full"
+                    style={{ "background-color": item.color }}
+                  />
+                  <span>{item.name}</span>
+                </div>
+                <span class="font-semibold">{yTickFormat(item.value)}</span>
+              </div>
+            )}
+          </For>
+        </div>
+      ),
+      container,
+    );
+
+    return container.firstChild as HTMLElement;
   };
+
+  const crosshairY = createMemo(() =>
+    competitorMeta().map((meta) => (d: Record<string, number>) => d[meta.name] || 0),
+  );
+
+  const colorAccessor = (_d: any, i: number) => competitorMeta()[i]?.color ?? "#888888";
 
   return (
-    <div class="flex w-full flex-col items-center select-none">
+    <div
+      class="flex h-[240px] w-full flex-col items-end select-none"
+      style={{
+        "--vis-text-color": "#888888",
+        "--vis-axis-grid-color": "#e5e7eb",
+      }}
+    >
       <Show
-        when={points().length > 0}
+        when={processedData().length > 0}
         fallback={
-          <div class="flex h-[240px] items-center justify-center text-sm text-muted-foreground">
-            No history available
+          <div class="flex h-full w-full items-center justify-center text-sm text-muted-foreground">
+            No data available
           </div>
         }
       >
-        <div class="relative h-[240px] w-full max-w-[600px]">
-          <svg
-            class="h-full w-full text-muted-foreground"
-            viewBox={`0 0 ${width} ${height}`}
-            onMouseMove={handleMouseMove}
-            onMouseLeave={() => {
-              setHoveredPoint(null);
-            }}
-          >
-            {/* Grid lines */}
-            <For each={yTicks()}>
-              {(t) => (
-                <>
-                  <line
-                    x1={paddingLeft}
-                    y1={t.y}
-                    x2={width - paddingRight}
-                    y2={t.y}
-                    class="stroke-border"
-                    stroke-width="1"
-                    stroke-dasharray="2 2"
-                  />
-                  <text
-                    x={paddingLeft - 8}
-                    y={t.y + 4}
-                    class="fill-muted-foreground text-right text-[10px]"
-                    text-anchor="end"
-                  >
-                    {formatValue(t.val)}
-                  </text>
-                </>
-              )}
-            </For>
-
-            {/* X axis labels */}
-            <For each={xTicks()}>
-              {(t) => (
-                <text
-                  x={t.x}
-                  y={height - paddingBottom + 16}
-                  class="fill-muted-foreground text-center text-[10px]"
-                  text-anchor="middle"
-                >
-                  {t.label}
-                </text>
-              )}
-            </For>
-
-            {/* Line path */}
-            <path
-              d={pathData()}
-              fill="none"
-              class="stroke-primary"
-              stroke-width="2"
-              stroke-linecap="round"
-              stroke-linejoin="round"
-            />
-
-            {/* Hover vertical bar and tooltip info */}
-            <Show when={hoveredPoint()}>
-              {(hp) => (
-                <>
-                  <line
-                    x1={hp().x}
-                    y1={paddingTop}
-                    x2={hp().x}
-                    y2={height - paddingBottom}
-                    class="stroke-muted-foreground"
-                    stroke-width="1"
-                    stroke-dasharray="3 3"
-                  />
-                  <circle
-                    cx={hp().x}
-                    cy={hp().y}
-                    r="4"
-                    class="fill-primary stroke-background"
-                    stroke-width="2"
-                  />
-                </>
-              )}
-            </Show>
+        <VisXYContainer
+          data={processedData()}
+          height={240}
+          margin={{ left: 25, right: 20 }}
+          yDomain={yRange()}
+        >
+          <svg width="0" height="0">
+            <defs>
+              <For each={competitorMeta()}>
+                {(comp, i) => (
+                  <linearGradient id={`color-${i()}`} x1="0" y1="0" x2="0" y2="1">
+                    <stop
+                      offset="5%"
+                      stop-color={comp.color}
+                      stop-opacity={showGradient() ? 0.4 : 0}
+                    />
+                    <stop offset="95%" stop-color={comp.color} stop-opacity="0" />
+                  </linearGradient>
+                )}
+              </For>
+            </defs>
           </svg>
 
-          {/* Tooltip Overlay */}
-          <Show when={hoveredPoint()}>
-            {(hp) => (
-              <div
-                class="pointer-events-none absolute z-20 rounded-md border bg-popover p-2 text-xs text-popover-foreground shadow-md"
-                style={{
-                  left: `${hp().x + 10}px`,
-                  top: `${hp().y - 40}px`,
-                  transform: hp().x > width - 150 ? "translateX(-110%)" : "none",
-                }}
-              >
-                <div class="font-semibold">{hp().date}</div>
-                <div class="mt-1 flex flex-col gap-0.5">
-                  <div>
-                    Result: <span class="font-medium">{formatValue(hp().value)}</span>
-                  </div>
-                  <div>
-                    Rank: <span class="font-medium">{hp().rank}</span>
-                  </div>
-                </div>
-              </div>
-            )}
+          <Show
+            when={stacked()}
+            fallback={
+              <For each={competitorMeta()}>
+                {(comp, i) => (
+                  <>
+                    <VisArea
+                      x={x}
+                      y={(d: Record<string, number>) => d[comp.name] || 0}
+                      color={`url(#color-${i()})`}
+                      curveType={CurveType.MonotoneX}
+                      opacity={1}
+                    />
+                    <VisLine
+                      x={x}
+                      y={(d: Record<string, number>) => d[comp.name] || 0}
+                      color={comp.color}
+                      curveType={CurveType.MonotoneX}
+                      attributes={{
+                        [Line.selectors.line]: {
+                          strokeWidth: 2,
+                        },
+                      }}
+                    />
+                  </>
+                )}
+              </For>
+            }
+          >
+            <VisArea
+              x={x}
+              y={crosshairY()}
+              color={colorAccessor}
+              curveType={CurveType.MonotoneX}
+              opacity={0.8}
+            />
           </Show>
-        </div>
+
+          <VisAxis
+            type="x"
+            tickFormat={dateFormatter}
+            gridLine={false}
+            tickLine={false}
+            tickTextColor="var(--vis-text-color)"
+            numTicks={6}
+          />
+
+          <VisAxis
+            type="y"
+            tickLine={false}
+            domainLine={false}
+            gridLine={true}
+            tickTextColor="var(--vis-text-color)"
+            tickFormat={yTickFormat}
+          />
+
+          <VisCrosshair template={tooltipTemplate} x={x} y={crosshairY()} color={colorAccessor} />
+          <VisTooltip horizontalShift={15} />
+        </VisXYContainer>
       </Show>
     </div>
   );

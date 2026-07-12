@@ -4,8 +4,8 @@ import { Collapsible } from "@kobalte/core/collapsible";
 import { LoaderCircle } from "lucide-solid";
 import { useRankDetail } from "../../lib/useRankDetail";
 import { cn, isTimeEvent } from "../../lib/utils";
+import { MultiLabelSwitch } from "../charts/MultiLabelSwitch";
 import { Button } from "../ui/button";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../ui/select";
 import { CompetitorLink } from "./CompetitorLink";
 import { DateRangePicker } from "./DateRangePicker";
 import { RankChangeIndicator } from "./RankChangeIndicator";
@@ -116,27 +116,13 @@ export function CompetitorRankDropdown(props: CompetitorRankDropdownProps) {
         </Switch>
 
         <div class="ms-4 flex items-center gap-2 pb-2">
-          <Select
-            options={["value", "rank"]}
-            value={metric()}
-            onChange={(val) => {
-              if (val) {
-                setMetric(val as any);
-              }
-            }}
-            itemComponent={(itemProps) => (
-              <SelectItem item={itemProps.item}>
-                {itemProps.item.rawValue === "value" ? "Result" : "Rank"}
-              </SelectItem>
-            )}
-          >
-            <SelectTrigger class="h-9 w-32 text-xs">
-              <SelectValue>
-                {(state) => (state.selectedOption() === "value" ? "Result" : "Rank")}
-              </SelectValue>
-            </SelectTrigger>
-            <SelectContent />
-          </Select>
+          <MultiLabelSwitch
+            left="Result"
+            right="Rank"
+            checked={metric() === "rank"}
+            onChange={(val) => setMetric(val ? "rank" : "value")}
+            class="mr-2 text-xs"
+          />
 
           <DateRangePicker
             startDate={startDate()}

@@ -168,11 +168,6 @@ function RankingsPage() {
     });
   };
 
-  createEffect(() => {
-    selectedEvent();
-    updateUrl();
-  });
-
   const query = createInfiniteQuery(() => ({
     getNextPageParam: (lastPage: RankingSnapshot[], allPages: RankingSnapshot[][]) => {
       const totalLoaded = allPages.flat().length;
@@ -260,6 +255,7 @@ function RankingsPage() {
           onChange={(val) => {
             if (val) {
               setSelectedEvent(val);
+              updateUrl();
             }
           }}
           itemComponent={(itemProps) => (
