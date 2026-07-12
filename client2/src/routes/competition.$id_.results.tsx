@@ -34,8 +34,15 @@ interface SimulationSearch {
 }
 
 const SIMULATION_SEARCH_KEYS = [
-  "competitionId", "competitors", "date", "decayRate",
-  "endDate", "eventId", "includeDnf", "name", "startDate",
+  "competitionId",
+  "competitors",
+  "date",
+  "decayRate",
+  "endDate",
+  "eventId",
+  "includeDnf",
+  "name",
+  "startDate",
 ] as const satisfies readonly (keyof SimulationSearch)[];
 
 export const Route = createFileRoute("/competition/$id_/results")({

@@ -65,7 +65,7 @@ export function CompetitorDropdown(props: CompetitorDropdownProps) {
       </button>
 
       <Show when={isOpen()}>
-        <div class="mt-1 space-y-4 rounded-md bg-secondary/10 px-2 py-3 duration-200 animate-in fade-in-0">
+        <div class="mt-1 space-y-4 rounded-md px-2 py-3 duration-200 animate-in fade-in-0">
           <IndividualHistogram
             color={props.color}
             data={props.result.histogram}

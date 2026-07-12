@@ -3,7 +3,6 @@ import { Search } from "@kobalte/core/search";
 import { createQuery } from "@tanstack/solid-query";
 import { createFileRoute, useNavigate, Link } from "@tanstack/solid-router";
 import { Search as SearchIcon, LoaderCircle } from "lucide-solid";
-import { z } from "zod";
 import { buttonVariants } from "../components/ui/button";
 import { fetchWCAInfo, formatDate } from "../lib/utils";
 
@@ -13,13 +12,19 @@ interface Competition {
   name: string;
 }
 
-const searchSchema = z.object({
-  q: z.string().optional(),
-});
+interface HomeSearch {
+  q?: string;
+}
 
 export const Route = createFileRoute("/")({
   component: Home,
-  validateSearch: (search) => searchSchema.parse(search),
+  validateSearch: (search: Record<string, unknown>): HomeSearch => {
+    const result: HomeSearch = {};
+    if (typeof search.q === "string") {
+      result.q = search.q;
+    }
+    return result;
+  },
 });
 
 function Home() {

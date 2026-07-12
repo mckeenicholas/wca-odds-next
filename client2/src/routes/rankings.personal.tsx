@@ -1,7 +1,6 @@
 import { createSignal, createEffect, Show } from "solid-js";
 import { createQuery } from "@tanstack/solid-query";
 import { createFileRoute, Outlet, useNavigate, useLocation } from "@tanstack/solid-router";
-import { z } from "zod";
 import { ErrorPanel } from "../components/custom/ErrorPanel";
 import { PersonalRankingsSearch } from "../components/custom/PersonalRankingsSearch";
 import { PersonalRankingsProvider } from "../lib/PersonalRankingsContext";
@@ -13,13 +12,19 @@ import {
 } from "../lib/types";
 import { API_URL, isToday, toNaiveDate } from "../lib/utils";
 
-const personalSearchSchema = z.object({
-  date: z.string().optional(),
-});
+interface PersonalSearch {
+  date?: string;
+}
 
 export const Route = createFileRoute("/rankings/personal")({
   component: PersonalRankingsLayout,
-  validateSearch: (search) => personalSearchSchema.parse(search),
+  validateSearch: (search: Record<string, unknown>): PersonalSearch => {
+    const result: PersonalSearch = {};
+    if (typeof search.date === "string") {
+      result.date = search.date;
+    }
+    return result;
+  },
 });
 
 const getEventOrder = (event: string) => {

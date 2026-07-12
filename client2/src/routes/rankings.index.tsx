@@ -2,7 +2,6 @@ import { createSignal, createEffect, onCleanup, For, Show, Index, Switch, Match 
 import { createInfiniteQuery } from "@tanstack/solid-query";
 import { createFileRoute, useNavigate } from "@tanstack/solid-router";
 import { LoaderCircle, Globe, Trophy } from "lucide-solid";
-import { z } from "zod";
 import { CompetitorRankDropdown } from "../components/custom/CompetitorRankDropdown";
 import { CountryFilterButton } from "../components/custom/CountryFilterButton";
 import { CubingIcon } from "../components/custom/CubingIcon";
@@ -25,14 +24,23 @@ import {
 } from "../lib/types";
 import { API_URL, isToday, renderTime, toNaiveDate } from "../lib/utils";
 
-const rankingsSearchSchema = z.object({
-  date: z.string().optional(),
-  event: z.string().optional(),
-});
+interface RankingsSearch {
+  date?: string;
+  event?: string;
+}
 
 export const Route = createFileRoute("/rankings/")({
   component: RankingsPage,
-  validateSearch: (search) => rankingsSearchSchema.parse(search),
+  validateSearch: (search: Record<string, unknown>): RankingsSearch => {
+    const result: RankingsSearch = {};
+    if (typeof search.date === "string") {
+      result.date = search.date;
+    }
+    if (typeof search.event === "string") {
+      result.event = search.event;
+    }
+    return result;
+  },
 });
 
 const PAGE_SIZE = 32;

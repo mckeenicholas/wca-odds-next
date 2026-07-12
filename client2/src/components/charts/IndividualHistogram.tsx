@@ -93,8 +93,8 @@ export function IndividualHistogram(props: IndividualHistogramProps) {
   };
 
   return (
-    <div class="mt-2 mb-4 w-full">
-      <div class="h-[240px] w-full">
+    <div class="mx-4 mt-2 mb-4">
+      <div class="h-[240px]">
         <VisXYContainer data={histData()} height={240}>
           <svg width="0" height="0">
             <defs>
@@ -110,6 +110,12 @@ export function IndividualHistogram(props: IndividualHistogramProps) {
             color={`url(#${gradientId()})`}
             curveType={CurveType.MonotoneX}
           />
+          <VisArea
+            x={x}
+            y={(d: any) => d.average}
+            color={`${props.color}33`}
+            curveType={CurveType.MonotoneX}
+          />
           <VisLine
             x={x}
             y={(d: any) => d.single}
@@ -120,12 +126,6 @@ export function IndividualHistogram(props: IndividualHistogramProps) {
                 strokeWidth: 2,
               },
             }}
-          />
-          <VisArea
-            x={x}
-            y={(d: any) => d.average}
-            color={`${props.color}33`}
-            curveType={CurveType.MonotoneX}
           />
           <VisLine
             x={x}

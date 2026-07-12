@@ -1,16 +1,21 @@
 import { Show } from "solid-js";
 import { createFileRoute } from "@tanstack/solid-router";
-import { z } from "zod";
 import { PersonalRankingsList } from "../components/custom/PersonalRankingsList";
 import { usePersonalRankings } from "../lib/PersonalRankingsContext";
 
-const personalSearchSchema = z.object({
-  date: z.string().optional(),
-});
+interface PersonalSearch {
+  date?: string;
+}
 
 export const Route = createFileRoute("/rankings/personal/$id")({
   component: PersonalRankingsDetail,
-  validateSearch: (search) => personalSearchSchema.parse(search),
+  validateSearch: (search: Record<string, unknown>): PersonalSearch => {
+    const result: PersonalSearch = {};
+    if (typeof search.date === "string") {
+      result.date = search.date;
+    }
+    return result;
+  },
 });
 
 function PersonalRankingsDetail() {

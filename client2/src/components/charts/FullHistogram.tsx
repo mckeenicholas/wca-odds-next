@@ -133,8 +133,8 @@ export function FullHistogram(props: SimulationResultProps) {
   };
 
   return (
-    <div class="mt-2 mb-4 w-full">
-      <div class="h-[300px] w-full">
+    <div class="mx-4 mt-2 mb-4">
+      <div class="h-[300px]">
         <VisXYContainer data={chartData()} height={300}>
           <svg width="0" height="0">
             <defs>
@@ -161,25 +161,32 @@ export function FullHistogram(props: SimulationResultProps) {
               const cleanColor = color.replace("#", "");
               const yValue = (d: any) => (enabled()[nameIdx] ? d[label] : 0);
               return (
-                <>
-                  <VisArea
-                    x={x}
-                    y={yValue}
-                    color={`url(#grad-full-${cleanColor})`}
-                    curveType={CurveType.MonotoneX}
-                  />
-                  <VisLine
-                    x={x}
-                    y={yValue}
-                    color={color}
-                    curveType={CurveType.MonotoneX}
-                    attributes={{
-                      [Line.selectors.line]: {
-                        strokeWidth: 2,
-                      },
-                    }}
-                  />
-                </>
+                <VisArea
+                  x={x}
+                  y={yValue}
+                  color={`url(#grad-full-${cleanColor})`}
+                  curveType={CurveType.MonotoneX}
+                />
+              );
+            }}
+          </For>
+          <For each={names()}>
+            {(label) => {
+              const nameIdx = names().indexOf(label);
+              const color = props.colors[nameIdx];
+              const yValue = (d: any) => (enabled()[nameIdx] ? d[label] : 0);
+              return (
+                <VisLine
+                  x={x}
+                  y={yValue}
+                  color={color}
+                  curveType={CurveType.MonotoneX}
+                  attributes={{
+                    [Line.selectors.line]: {
+                      strokeWidth: 2,
+                    },
+                  }}
+                />
               );
             }}
           </For>

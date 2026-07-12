@@ -89,8 +89,8 @@ export function RankHistogram(props: RankHistogramProps) {
   };
 
   return (
-    <div class="mx-4 mt-2 mb-4 w-full">
-      <div class="h-[240px] w-full">
+    <div class="mx-4 mt-2 mb-4">
+      <div class="h-[240px]">
         <VisXYContainer data={chartData()} height={240}>
           <VisStackedBar x={x} y={y()} color={color} />
           <VisAxis type="x" tickFormat={xTicks} gridLine={false} domainLine={false} />
