@@ -102,6 +102,16 @@ export function IndividualHistogram(props: IndividualHistogramProps) {
                 <stop offset="0%" stop-color={props.color} stop-opacity="0.6" />
                 <stop offset="100%" stop-color={props.color} stop-opacity="0" />
               </linearGradient>
+              <linearGradient
+                id={`grad-avg-${props.color.replace("#", "")}`}
+                x1="0"
+                y1="0"
+                x2="0"
+                y2="1"
+              >
+                <stop offset="0%" stop-color={props.color} stop-opacity="0.3" />
+                <stop offset="100%" stop-color={props.color} stop-opacity="0" />
+              </linearGradient>
             </defs>
           </svg>
           <VisArea
@@ -113,7 +123,7 @@ export function IndividualHistogram(props: IndividualHistogramProps) {
           <VisArea
             x={x}
             y={(d: any) => d.average}
-            color={`${props.color}33`}
+            color={`url(#grad-avg-${props.color.replace("#", "")})`}
             curveType={CurveType.MonotoneX}
           />
           <VisLine

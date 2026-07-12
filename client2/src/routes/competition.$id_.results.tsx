@@ -60,6 +60,21 @@ export const Route = createFileRoute("/competition/$id_/results")({
 });
 
 function CompetitionResultsPage() {
+  const search = Route.useSearch();
+
+  const searchKey = () => {
+    const s = search();
+    return `${s.competitionId ?? ""}-${s.competitors ?? ""}-${s.eventId ?? ""}-${s.startDate ?? ""}-${s.endDate ?? ""}-${s.decayRate ?? ""}-${s.includeDnf ?? ""}`;
+  };
+
+  return (
+    <Show when={searchKey()} keyed>
+      {(_key) => <CompetitionResultsContent />}
+    </Show>
+  );
+}
+
+function CompetitionResultsContent() {
   const searchParams = Route.useSearch()();
   const navigate = useNavigate();
 
@@ -219,10 +234,7 @@ function CompetitionResultsPage() {
 
             <p class="m-2 mb-6 text-sm text-muted-foreground">
               Export as:{" "}
-              <button
-                class="me-1 cursor-pointer underline hover:text-foreground"
-                onClick={exportJson}
-              >
+              <button class="cursor-pointer underline hover:text-foreground" onClick={exportJson}>
                 json
               </button>
               {" / "}

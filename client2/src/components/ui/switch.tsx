@@ -1,20 +1,23 @@
+import { splitProps } from "solid-js";
 import { Switch as KSwitch } from "@kobalte/core/switch";
 import { cn } from "../../lib/utils";
 
 export function Switch(props: any) {
+  const [local, others] = splitProps(props, ["id", "checked", "onChange", "disabled", "class"]);
+
   return (
     <KSwitch
       class="inline-flex items-center"
-      checked={props.checked}
-      onChange={props.onChange}
-      disabled={props.disabled}
-      id={props.id}
+      checked={local.checked}
+      onChange={local.onChange}
+      disabled={local.disabled}
+      {...others}
     >
-      <KSwitch.Input />
+      <KSwitch.Input id={local.id} />
       <KSwitch.Control
         class={cn(
           "peer inline-flex h-5 w-9 shrink-0 cursor-pointer items-center rounded-full border-2 border-transparent bg-input shadow-sm transition-colors focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50 data-[checked]:bg-primary",
-          props.class,
+          local.class,
         )}
       >
         <KSwitch.Thumb

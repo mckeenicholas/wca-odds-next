@@ -19,14 +19,20 @@ export function PieChart(props: PieChartProps) {
   const color = (_d: any, i: number) => props.colors[i];
 
   const tooltipTriggers = {
-    [Donut.selectors.segment]: (d: any) =>
-      `<div class="relative z-50 p-2 text-sm bg-popover text-popover-foreground rounded"><strong>${d.data.name}</strong>: ${d.data.wins.toFixed(2)}%</div>`,
+    [Donut.selectors.segment]: (d: any) => {
+      const idx = props.data.competitor_results.findIndex((c) => c.name === d.data.name);
+      const segmentColor = props.colors[idx] ?? "#888888";
+      return `<div class="relative z-50 flex items-center gap-2 rounded bg-popover p-2 text-sm text-popover-foreground">
+        <span class="inline-block h-2.5 w-2.5 rounded-full" style="background-color: ${segmentColor}"></span>
+        <span>${d.data.name}: <strong class="ms-2">${d.data.wins.toFixed(2)}%</strong></span>
+      </div>`;
+    },
   };
 
   return (
     <div class="flex w-full max-w-96 items-center justify-center">
       <VisSingleContainer data={chartData()} height={180} width={180}>
-        <VisDonut value={value} color={color} arcWidth={40} />
+        <VisDonut value={value} color={color} arcWidth={0} />
         <VisTooltip triggers={tooltipTriggers} />
       </VisSingleContainer>
     </div>

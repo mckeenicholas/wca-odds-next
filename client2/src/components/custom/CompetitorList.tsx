@@ -22,6 +22,17 @@ interface CompetitorListProps {
 export function CompetitorList(props: CompetitorListProps) {
   const [sortBy, setSortBy] = createSignal<sortCol>("win");
   const [sortAsc, setSortAsc] = createSignal<boolean>(false);
+  const [expandedIds, setExpandedIds] = createSignal<Set<string>>(new Set());
+
+  const toggleExpanded = (id: string) => {
+    const next = new Set(expandedIds());
+    if (next.has(id)) {
+      next.delete(id);
+    } else {
+      next.add(id);
+    }
+    setExpandedIds(next);
+  };
 
   const headerOptions = [
     {
@@ -111,7 +122,7 @@ export function CompetitorList(props: CompetitorListProps) {
               onClick={() => {
                 handleSort(option.id);
               }}
-              class={`flex cursor-pointer items-center text-xs font-semibold text-muted-foreground transition-colors hover:text-foreground ${option.padding} ${option.flex} ${option.justify}`}
+              class={`flex cursor-pointer items-center ${option.padding} ${option.flex} ${option.justify}`}
             >
               <span>{option.label}</span>
               <Show when={sortBy() === option.id}>
@@ -138,6 +149,10 @@ export function CompetitorList(props: CompetitorListProps) {
                 result={person.results}
                 event={props.event}
                 color={person.color}
+                isOpen={expandedIds().has(person.results.id)}
+                onToggle={() => {
+                  toggleExpanded(person.results.id);
+                }}
               />
             </li>
           )}

@@ -1,4 +1,4 @@
-import { createSignal, Show, Index } from "solid-js";
+import { Show, Index } from "solid-js";
 import { CircleAlert } from "lucide-solid";
 import {
   type CompetitorSimulationResult,
@@ -19,10 +19,11 @@ interface CompetitorDropdownProps {
   event: SupportedWCAEvent;
   value: number[];
   onChange: (val: number[]) => void;
+  isOpen: boolean;
+  onToggle: () => void;
 }
 
 export function CompetitorDropdown(props: CompetitorDropdownProps) {
-  const [isOpen, setIsOpen] = createSignal(false);
   const lowDataWarningThreshold = 12;
 
   const winPercentage = () => formatPercentage(props.result.win_chance * 100);
@@ -30,12 +31,14 @@ export function CompetitorDropdown(props: CompetitorDropdownProps) {
   const expectedRank = () => props.result.expected_rank.toFixed(4);
 
   return (
-    <div class="border-b py-2 last:border-b-0">
+    <div>
       <button
         type="button"
-        onClick={() => setIsOpen(!isOpen())}
+        onClick={() => {
+          props.onToggle();
+        }}
         aria-label={`Details for ${props.result.id}`}
-        class="flex w-full items-center justify-between rounded-md p-2 ps-1 text-left transition-colors hover:bg-secondary focus:outline-none focus-visible:bg-secondary"
+        class="flex w-full items-center justify-between rounded-md p-2 ps-1 text-left hover:bg-secondary focus:outline-none focus-visible:bg-secondary"
       >
         <div class="flex min-w-0 flex-[2] items-center gap-3 lg:flex-[1.5]">
           <ColoredCircle color={props.color} class="ms-2 shrink-0" />
@@ -45,7 +48,6 @@ export function CompetitorDropdown(props: CompetitorDropdownProps) {
             id={props.result.id}
             iso2={props.result.country_iso2}
             event={props.event}
-            class="flex items-center truncate text-sm font-medium text-foreground hover:underline"
           />
 
           <Show when={props.result.sample_size < lowDataWarningThreshold}>
@@ -58,13 +60,13 @@ export function CompetitorDropdown(props: CompetitorDropdownProps) {
             </span>
           </Show>
         </div>
-        <div class="flex-1 text-center text-sm text-foreground">{winPercentage()}</div>
-        <div class="flex-1 text-center text-sm text-foreground">{podiumPercentage()}</div>
-        <div class="flex-1 text-center text-sm text-foreground">{expectedRank()}</div>
-        <RotatableChevron up={isOpen()} />
+        <div class="flex-1 text-center">{winPercentage()}</div>
+        <div class="flex-1 text-center">{podiumPercentage()}</div>
+        <div class="flex-1 text-center">{expectedRank()}</div>
+        <RotatableChevron up={props.isOpen} />
       </button>
 
-      <Show when={isOpen()}>
+      <Show when={props.isOpen}>
         <div class="mt-1 space-y-4 rounded-md px-2 py-3 duration-200 animate-in fade-in-0">
           <IndividualHistogram
             color={props.color}
@@ -74,16 +76,33 @@ export function CompetitorDropdown(props: CompetitorDropdownProps) {
 
           <div class="flex flex-wrap items-center gap-2 px-2 lg:ms-2 lg:gap-4">
             <Index each={Array.from({ length: eventAttempts[props.event] })}>
-              {(_, idx) => (
-                <div class="flex items-center gap-2">
-                  <span class="text-xs whitespace-nowrap text-muted-foreground">
-                    Attempt {idx + 1}:
-                  </span>
-                  <div class="max-w-24">
-                    <Show
-                      when={props.event !== "333fm"}
-                      fallback={
-                        <FMCEntryField
+              {(_, idx) => {
+                const attemptId = () => `attempt-${props.result.id}-${idx + 1}`;
+                return (
+                  <div class="flex items-center gap-2">
+                    <label
+                      for={attemptId()}
+                      class="cursor-pointer text-xs whitespace-nowrap text-muted-foreground select-none"
+                    >
+                      Attempt {idx + 1}:
+                    </label>
+                    <div class="max-w-24">
+                      <Show
+                        when={props.event !== "333fm"}
+                        fallback={
+                          <FMCEntryField
+                            id={attemptId()}
+                            value={props.value[idx] ?? 0}
+                            onChange={(val) => {
+                              const updated = [...props.value];
+                              updated[idx] = val;
+                              props.onChange(updated);
+                            }}
+                          />
+                        }
+                      >
+                        <TimeEntryField
+                          id={attemptId()}
                           value={props.value[idx] ?? 0}
                           onChange={(val) => {
                             const updated = [...props.value];
@@ -91,20 +110,11 @@ export function CompetitorDropdown(props: CompetitorDropdownProps) {
                             props.onChange(updated);
                           }}
                         />
-                      }
-                    >
-                      <TimeEntryField
-                        value={props.value[idx] ?? 0}
-                        onChange={(val) => {
-                          const updated = [...props.value];
-                          updated[idx] = val;
-                          props.onChange(updated);
-                        }}
-                      />
-                    </Show>
+                      </Show>
+                    </div>
                   </div>
-                </div>
-              )}
+                );
+              }}
             </Index>
           </div>
         </div>

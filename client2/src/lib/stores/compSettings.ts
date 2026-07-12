@@ -1,5 +1,5 @@
 import type { Competitor, SupportedWCAEvent } from "../types";
-import { createSignal } from "solid-js";
+import { createSignal, batch } from "solid-js";
 
 // Default values
 const defaultValues = {
@@ -31,12 +31,14 @@ export const compSettingsStore = {
   endDate,
   includeDnf,
   reset() {
-    setCompetitorsByEvent(defaultValues.competitorsByEvent());
-    setSelectedEventId(defaultValues.selectedEventId());
-    setIncludeDnf(defaultValues.includeDnf());
-    setDecayHalfLife(defaultValues.decayHalfLife());
-    setStartDate(defaultValues.startDate());
-    setEndDate(defaultValues.endDate());
+    batch(() => {
+      setCompetitorsByEvent(defaultValues.competitorsByEvent());
+      setSelectedEventId(defaultValues.selectedEventId());
+      setIncludeDnf(defaultValues.includeDnf());
+      setDecayHalfLife(defaultValues.decayHalfLife());
+      setStartDate(defaultValues.startDate());
+      setEndDate(defaultValues.endDate());
+    });
   },
   selectedEventId,
   setCompId,

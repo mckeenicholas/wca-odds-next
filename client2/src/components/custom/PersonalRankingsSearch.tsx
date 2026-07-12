@@ -1,5 +1,5 @@
 import type { PersonSearchResult } from "../../lib/types";
-import { createSignal, createEffect, onCleanup, Show } from "solid-js";
+import { createSignal, createEffect, createMemo, onCleanup, Show } from "solid-js";
 import { Search } from "@kobalte/core/search";
 import { createQuery } from "@tanstack/solid-query";
 import { Search as SearchIcon, LoaderCircle, X } from "lucide-solid";
@@ -49,14 +49,12 @@ export function PersonalRankingsSearch(props: PersonalRankingsSearchProps) {
     staleTime: 1000 * 60 * 2,
   }));
 
-  const [searchResults, setSearchResults] = createSignal<PersonSearchResult[]>([]);
-  createEffect(() => {
+  const searchResults = createMemo<PersonSearchResult[]>(() => {
     const { data } = searchQuery;
     if (data) {
-      setSearchResults(data);
-    } else if (!searchTerm().trim()) {
-      setSearchResults([]);
+      return data;
     }
+    return [];
   });
 
   const dropdownOpen = () => isOpen() && searchTerm().trim().length >= 2;

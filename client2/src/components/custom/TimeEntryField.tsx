@@ -5,6 +5,7 @@ import { Input } from "../ui/input";
 interface TimeEntryFieldProps {
   value: number;
   onChange: (val: number) => void;
+  id?: string;
 }
 
 const formatInput = (input: string): string => {
@@ -82,6 +83,7 @@ export function TimeEntryField(props: TimeEntryFieldProps) {
 
   return (
     <Input
+      id={props.id}
       class="h-9 min-w-[50vw] lg:min-w-0"
       value={inputValue()}
       onInput={handleInput}

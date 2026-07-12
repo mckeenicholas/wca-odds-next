@@ -79,7 +79,7 @@ button {
   --sidebar-primary-foreground: oklch(0.984 0.003 247.858);
   --sidebar-accent: oklch(0.968 0.007 247.896);
   --sidebar-accent-foreground: oklch(0.208 0.042 265.755);
-  --sidebar-border: oklch(0.929 0.013 255.508);
+  --sidebar-border: var(--border);
   --sidebar-ring: oklch(0.704 0.04 256.788);
 
   /* Unovis tooltip styling */
@@ -88,6 +88,10 @@ button {
   --vis-tooltip-text-color: var(--foreground) !important;
   --vis-tooltip-shadow-color: transparent !important;
   --vis-tooltip-padding: 0 !important;
+  /* Unovis axis & gridline styling */
+  --vis-axis-grid-line-color: #e5e7eb;
+  --vis-axis-grid-color: var(--vis-axis-grid-line-color) !important;
+  --vis-axis-tick-color: var(--vis-axis-grid-line-color) !important;
 }
 
 .dark {
@@ -120,7 +124,7 @@ button {
   --sidebar-primary-foreground: oklch(0.984 0.003 247.858);
   --sidebar-accent: oklch(0.279 0.041 260.031);
   --sidebar-accent-foreground: oklch(0.984 0.003 247.858);
-  --sidebar-border: oklch(1 0 0 / 10%);
+  --sidebar-border: var(--border);
   --sidebar-ring: oklch(0.551 0.027 264.364);
 
   /* Unovis dark mode tooltip styling */
@@ -128,6 +132,10 @@ button {
   --vis-dark-tooltip-text-color: var(--foreground) !important;
   --vis-dark-tooltip-border-color: var(--border) !important;
   --vis-dark-tooltip-shadow-color: transparent !important;
+  /* Unovis dark mode axis & gridline styling */
+  --vis-axis-grid-line-color: rgba(255, 255, 255, 0.1);
+  --vis-dark-axis-grid-color: var(--vis-axis-grid-line-color) !important;
+  --vis-dark-axis-tick-color: var(--vis-axis-grid-line-color) !important;
 }
 
 @layer base {
@@ -165,4 +173,16 @@ button {
 /* Fix Unovis tooltips from rendering underneath parent components/expandable titles */
 .unovis-tooltip {
   z-index: 9999 !important;
+}
+
+/* Override Unovis gridline styling to match Vue client */
+.vis-xy-container g[class*="axis"] line,
+.vis-xy-container g[class*="grid"] line,
+.vis-axis g.grid line,
+.vis-axis-grid line,
+.vis-axis-grid-line,
+line.vis-axis-grid-line {
+  stroke: var(--vis-axis-grid-line-color) !important;
+  stroke-opacity: 1 !important;
+  opacity: 1 !important;
 }

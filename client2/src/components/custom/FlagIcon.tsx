@@ -20,7 +20,7 @@ export function FlagIcon(props: FlagIconProps) {
 
   return (
     <span
-      class={cn(`fi fi- shadow-md${props.code.toLowerCase()}`, props.muted && "opacity-50")}
+      class={cn("fi shadow-md", `fi-${props.code.toLowerCase()}`, props.muted && "opacity-50")}
       title={props.showTooltip === false ? undefined : countryName()}
       aria-label={`${countryName()} flag`}
     />

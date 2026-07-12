@@ -30,7 +30,7 @@ export function ResultsSummary(props: ResultsSummaryProps) {
       <div class="grow rounded-md border p-4 text-card-foreground">
         <p class="mb-2 text-lg font-bold">{eventNames[props.event]} Statistics</p>
 
-        <div class="space-y-2 text-sm text-muted-foreground">
+        <div class="space-y-2 text-sm text-foreground/70">
           <p>
             <span class="font-semibold text-foreground">{topCompetitor().name}</span> has the
             highest odds of winning with:

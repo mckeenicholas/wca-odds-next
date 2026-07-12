@@ -1,5 +1,5 @@
 import type { ChartData, SimulationResultProps } from "../../lib/types";
-import { createSignal, createMemo, createEffect, For, Index } from "solid-js";
+import { createSignal, createMemo, onCleanup, For, Index, Show } from "solid-js";
 import { render } from "solid-js/web";
 import { VisXYContainer, VisArea, VisLine, VisAxis, VisCrosshair, VisTooltip } from "@unovis/solid";
 import { CurveType, Line } from "@unovis/ts";
@@ -8,15 +8,15 @@ import { computeCDF, renderTime, toInt } from "../../lib/utils";
 import { ColoredCircle } from "../custom/ColoredCircle";
 import { Button } from "../ui/button";
 import { Checkbox } from "../ui/checkbox";
-import { Label } from "../ui/label";
 import { Popover, PopoverTrigger, PopoverContent } from "../ui/popover";
 import { MultiLabelSwitch } from "./MultiLabelSwitch";
 
-const trimChartItems = (chart: ChartData, selected: boolean[]): ChartData => {
-  const labels = chart.labels.filter((_, idx) => selected[idx]);
+const trimChartItems = (chart: ChartData, disabledNames: Set<string>): ChartData => {
+  const selectedIndices = chart.labels.map((name) => !disabledNames.has(name));
+  const labels = chart.labels.filter((_, idx) => selectedIndices[idx]);
   const trimmedChartData = chart.data.map((v) => ({
     ...v,
-    values: v.values.filter((_, idx) => selected[idx]),
+    values: v.values.filter((_, idx) => selectedIndices[idx]),
   }));
 
   return {
@@ -27,10 +27,20 @@ const trimChartItems = (chart: ChartData, selected: boolean[]): ChartData => {
 
 const x = (_d: any, i: number) => i;
 
+interface TooltipItem {
+  label: string;
+  val: number;
+  color: string;
+}
+interface TooltipData {
+  time: string;
+  items: TooltipItem[];
+}
+
 export function FullHistogram(props: SimulationResultProps) {
   const [isAverage, setIsAverage] = createSignal(false);
   const [isCDF, setIsCDF] = createSignal(false);
-  const [enabled, setEnabled] = createSignal<boolean[]>([]);
+  const [disabledNames, setDisabledNames] = createSignal<Set<string>>(new Set());
 
   const histValues = createMemo(() =>
     isAverage() ? props.data.full_histogram.average : props.data.full_histogram.single,
@@ -38,24 +48,17 @@ export function FullHistogram(props: SimulationResultProps) {
 
   const names = createMemo(() => histValues().labels);
 
-  createEffect(() => {
-    const len = names().length;
-    if (enabled().length !== len) {
-      setEnabled(Array.from({ length: len }, () => true));
-    }
-  });
-
-  // TrimChartItems moved to outer scope
+  const activeLabels = createMemo(() => names().filter((name) => !disabledNames().has(name)));
 
   const chartData = createMemo(() => {
-    const includedPersons = trimChartItems(histValues(), enabled());
-    const activeLabels = names().filter((_, idx) => enabled()[idx]);
+    const includedPersons = trimChartItems(histValues(), disabledNames());
+    const currentActiveLabels = activeLabels();
 
     const histData = isCDF() ? computeCDF(includedPersons.data) : includedPersons.data;
 
     return histData.map((point) => {
       const result: Record<string, any> = { name: point.name };
-      activeLabels.forEach((label, index) => {
+      currentActiveLabels.forEach((label, index) => {
         result[label] = point.values[index];
       });
       return result;
@@ -71,13 +74,51 @@ export function FullHistogram(props: SimulationResultProps) {
     return renderTime(timeVal, props.event === "333fm");
   };
 
-  const activeLabels = createMemo(() => names().filter((_, idx) => enabled()[idx]));
+  /* Unovis calls `tooltipTemplate` on every crosshair/mousemove tick. Calling
+     `render()` from solid-js/web on every tick mounts a brand new reactive
+     root each time; if the returned dispose fn isn't kept & called, that root
+     leaks forever. Instead we mount the JSX tree exactly once here, drive its
+     contents with a signal, and just hand Unovis back the same container node
+     every time. Solid patches the existing DOM in place instead of remounting. */
+  const [tooltipData, setTooltipData] = createSignal<TooltipData | null>(null);
+  const tooltipRoot = document.createElement("div");
+  const disposeTooltip = render(
+    () => (
+      <div class="relative z-50 rounded-md bg-popover p-2 text-sm text-popover-foreground">
+        <Show when={tooltipData()}>
+          {(data) => (
+            <>
+              <p class="font-bold text-foreground">{data().time}</p>
+              <For each={data().items}>
+                {(item) => (
+                  <div class="flex justify-between">
+                    <div class="flex items-center">
+                      <span
+                        class="mr-2 inline-block h-2.5 w-2.5 rounded-full"
+                        style={{ "background-color": item.color }}
+                      />
+                      <span>{item.label}</span>
+                    </div>
+                    <span class="ml-4 font-semibold">
+                      {item.val >= 0.01 ? `${item.val.toFixed(2)}%` : "<0.01%"}
+                    </span>
+                  </div>
+                )}
+              </For>
+            </>
+          )}
+        </Show>
+      </div>
+    ),
+    tooltipRoot,
+  );
+  onCleanup(disposeTooltip);
 
   const tooltipTemplate = (d: any) => {
     const timeRawValue = toInt(d.name, 0);
     const timeDisplayValue = renderTime(timeRawValue, props.event === "333fm");
 
-    const items = activeLabels()
+    const items: TooltipItem[] = activeLabels()
       .map((label) => {
         const val = d[label];
         if (val === undefined) {
@@ -87,38 +128,12 @@ export function FullHistogram(props: SimulationResultProps) {
           return null;
         }
         const nameIdx = names().indexOf(label);
-        const color = props.colors[nameIdx];
-        return { label, val, color };
+        return { label, val, color: props.colors[nameIdx] };
       })
-      .filter((item): item is NonNullable<typeof item> => item !== null);
+      .filter((item): item is TooltipItem => item !== null);
 
-    const container = document.createElement("div");
-    render(
-      () => (
-        <div class="relative z-50 rounded-md bg-popover p-2 text-sm text-popover-foreground">
-          <p class="font-bold text-foreground">{timeDisplayValue}</p>
-          <For each={items}>
-            {(item) => (
-              <div class="flex justify-between">
-                <div class="flex items-center">
-                  <span
-                    class="mr-2 inline-block h-2.5 w-2.5 rounded-full"
-                    style={{ "background-color": item.color }}
-                  />
-                  <span>{item.label}</span>
-                </div>
-                <span class="ml-4 font-semibold">
-                  {item.val >= 0.01 ? `${item.val.toFixed(2)}%` : "<0.01%"}
-                </span>
-              </div>
-            )}
-          </For>
-        </div>
-      ),
-      container,
-    );
-
-    return container.firstChild as HTMLElement;
+    setTooltipData({ time: timeDisplayValue, items });
+    return tooltipRoot.cloneNode(true) as HTMLElement;
   };
 
   const crosshairY = createMemo(() => activeLabels().map((label) => (d: any) => d[label]));
@@ -159,7 +174,7 @@ export function FullHistogram(props: SimulationResultProps) {
               const nameIdx = names().indexOf(label);
               const color = props.colors[nameIdx];
               const cleanColor = color.replace("#", "");
-              const yValue = (d: any) => (enabled()[nameIdx] ? d[label] : 0);
+              const yValue = (d: any) => (disabledNames().has(label) ? 0 : d[label]);
               return (
                 <VisArea
                   x={x}
@@ -174,7 +189,7 @@ export function FullHistogram(props: SimulationResultProps) {
             {(label) => {
               const nameIdx = names().indexOf(label);
               const color = props.colors[nameIdx];
-              const yValue = (d: any) => (enabled()[nameIdx] ? d[label] : 0);
+              const yValue = (d: any) => (disabledNames().has(label) ? 0 : d[label]);
               return (
                 <VisLine
                   x={x}
@@ -215,37 +230,40 @@ export function FullHistogram(props: SimulationResultProps) {
           checked={isCDF()}
           onChange={setIsCDF}
         />
-        <div class="flex grow justify-end">
+        <div class="flex grow">
           <Popover>
             <PopoverTrigger
               as={Button}
               variant="outline"
-              class="flex min-w-44 items-center justify-between"
+              class="flex w-full min-w-44 items-center justify-between font-normal"
             >
               <span>Competitors</span>
               <ChevronDown class="ml-2 h-4 w-4 shrink-0 opacity-50" />
             </PopoverTrigger>
-            <PopoverContent class="max-h-[300px] w-64 overflow-y-auto">
+            <PopoverContent class="max-h-[300px] w-[var(--kb-popper-anchor-width)] overflow-y-auto">
               <ul class="space-y-2">
                 <Index each={names()}>
                   {(name, idx) => (
                     <li class="flex items-center">
                       <Checkbox
                         id={`checkbox-${idx}`}
-                        checked={enabled()[idx]}
+                        checked={!disabledNames().has(name())}
                         onChange={(val: boolean) => {
-                          const next = [...enabled()];
-                          next[idx] = val;
-                          setEnabled(next);
+                          const next = new Set(disabledNames());
+                          if (val) {
+                            next.delete(name());
+                          } else {
+                            next.add(name());
+                          }
+                          setDisabledNames(next);
                         }}
-                      />
-                      <Label
-                        for={`checkbox-${idx}`}
-                        class="ml-2 flex grow cursor-pointer items-center text-sm font-normal select-none"
+                        class="cursor-pointer"
                       >
-                        <ColoredCircle class="mx-2 shrink-0" color={props.colors[idx]} />
-                        <span class="truncate">{name()}</span>
-                      </Label>
+                        <span class="ml-2 flex grow items-center text-sm font-normal select-none">
+                          <ColoredCircle class="mx-2 shrink-0" color={props.colors[idx]} />
+                          <span class="truncate">{name()}</span>
+                        </span>
+                      </Checkbox>
                     </li>
                   )}
                 </Index>
