@@ -8,7 +8,7 @@ import { ControlPanel } from "../components/custom/ControlPanel";
 import { FlagIcon } from "../components/custom/FlagIcon";
 import { compSettingsStore } from "../lib/stores/compSettings";
 import { supportedWCAEvents } from "../lib/types";
-import { API_URL, buildSimulationQuery } from "../lib/utils";
+import { buildUrl, buildSimulationQuery } from "../lib/utils";
 
 interface Person {
   name: string;
@@ -61,7 +61,7 @@ function CustomPage() {
       if (!term) {
         return [] as Person[];
       }
-      const response = await fetch(`${API_URL}/api/search?q=${encodeURIComponent(term)}`);
+      const response = await fetch(buildUrl("/api/search", { q: term }));
       if (!response.ok) {
         throw new Error("Search failed");
       }

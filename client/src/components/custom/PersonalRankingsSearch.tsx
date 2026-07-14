@@ -3,7 +3,7 @@ import { createSignal, createEffect, createMemo, onCleanup, Show } from "solid-j
 import { Search } from "@kobalte/core/search";
 import { createQuery } from "@tanstack/solid-query";
 import { Search as SearchIcon, LoaderCircle, X } from "lucide-solid";
-import { API_URL, isToday } from "../../lib/utils";
+import { buildUrl, isToday } from "../../lib/utils";
 import { Button } from "../ui/button";
 import { DatePicker } from "./DatePicker";
 import { FlagIcon } from "./FlagIcon";
@@ -42,7 +42,7 @@ export function PersonalRankingsSearch(props: PersonalRankingsSearchProps) {
   const searchQuery = createQuery(() => ({
     enabled: isOpen() && debouncedTerm().trim().length >= 2,
     queryFn: async () => {
-      const res = await fetch(`${API_URL}/api/search?q=${encodeURIComponent(debouncedTerm())}`);
+      const res = await fetch(buildUrl("/api/search", { q: debouncedTerm() }));
       if (!res.ok) {
         throw new Error("Search failed");
       }

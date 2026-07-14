@@ -4,7 +4,8 @@ import type {
   WCALiveCompetitionData,
 } from "./types";
 
-const WCA_LIVE_ENDPOINT = "https://live.worldcubeassociation.org/api";
+const WCA_LIVE_ENDPOINT = "https://live.worldcubeassociation.org";
+const WCA_LIVE_API_ENDPOINT = `${WCA_LIVE_ENDPOINT}/api`;
 
 const fetchWCALiveResults = async (
   competitionId: string,
@@ -32,8 +33,6 @@ const fetchWCALiveResults = async (
   const roundResultsResponse = (await fetchRoundResults(
     finalRound.id,
   )) as FetchRoundResultsGraphQLResponse;
-  const processedOutput: number[][] = [];
-
   if (roundResultsResponse.errors && roundResultsResponse.errors.length > 0) {
     const errorMessages = roundResultsResponse.errors.map((e) => e.message).join("; ");
     throw new Error(`GraphQL query for round '${finalRound.id}' failed: ${errorMessages}`);
@@ -49,28 +48,21 @@ const fetchWCALiveResults = async (
   const { numberOfAttempts } = roundDetails.format;
   const actualRoundResultsList = roundDetails.results || [];
 
-  const personAttemptsMap = new Map<string, number[]>();
-  for (const resultItem of actualRoundResultsList) {
-    if (resultItem.person?.wcaId && resultItem.attempts) {
-      const attemptValues = resultItem.attempts.map((att) => att.result);
-      personAttemptsMap.set(resultItem.person.wcaId, attemptValues);
-    }
-  }
+  const personAttemptsMap = new Map<string, number[]>(
+    actualRoundResultsList
+      .filter((resultItem) => resultItem.person?.wcaId && resultItem.attempts)
+      .map((resultItem) => [
+        resultItem.person.wcaId!,
+        resultItem.attempts.map((att) => att.result),
+      ]),
+  );
 
-  for (const wcaId of ids) {
-    const individualPersonAttempts: number[] = [];
+  return ids.map((wcaId) => {
     const recordedAttempts = personAttemptsMap.get(wcaId);
-
-    for (let i = 0; i < numberOfAttempts; i++) {
-      if (recordedAttempts && i < recordedAttempts.length) {
-        individualPersonAttempts.push(recordedAttempts[i]);
-      } else {
-        individualPersonAttempts.push(0);
-      }
-    }
-    processedOutput.push(individualPersonAttempts);
-  }
-  return processedOutput;
+    return Array.from({ length: numberOfAttempts }, (_, i) =>
+      recordedAttempts && i < recordedAttempts.length ? recordedAttempts[i] : 0,
+    );
+  });
 };
 
 const fetchRoundResults = async (roundId: string) => {
@@ -142,7 +134,7 @@ const fetchCompetitionRounds = async (id: string) => {
 };
 
 const getWCALiveID = async (competitionId: string) => {
-  const linkUrl = `https://live.worldcubeassociation.org/link/competitions/${competitionId}`;
+  const linkUrl = `${WCA_LIVE_ENDPOINT}/link/competitions/${competitionId}`;
   const response = await fetch(linkUrl, {
     method: "GET",
     redirect: "follow",
@@ -180,7 +172,7 @@ const fetchGraphQL = async (operationName: string, query: string, variables: obj
     method: "POST",
   };
 
-  const response = await fetch(WCA_LIVE_ENDPOINT, requestOptions);
+  const response = await fetch(WCA_LIVE_API_ENDPOINT, requestOptions);
   if (!response.ok) {
     const errorBody = await response.text();
     throw new Error(

@@ -2,7 +2,7 @@ import type { CountryResult } from "../../lib/types";
 import { createSignal, createEffect, onCleanup, For, Show } from "solid-js";
 import { createQuery } from "@tanstack/solid-query";
 import { Check, ChevronDown, Globe, Search, X } from "lucide-solid";
-import { API_URL, cn } from "../../lib/utils";
+import { buildUrl, cn } from "../../lib/utils";
 import { Popover, PopoverContent, PopoverTrigger } from "../ui/popover";
 import { FlagIcon } from "./FlagIcon";
 
@@ -21,7 +21,7 @@ export function CountryFilterButton(props: CountryFilterButtonProps) {
   const query = createQuery(() => ({
     queryFn: async () => {
       const res = await fetch(
-        `${API_URL}/api/countries?include_regions=${props.includeRegions ?? false}`,
+        buildUrl("/api/countries", { include_regions: props.includeRegions ?? false }),
       );
       return res.json() as Promise<CountryResult[]>;
     },

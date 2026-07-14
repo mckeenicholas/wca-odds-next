@@ -47,16 +47,14 @@ const SIMULATION_SEARCH_KEYS = [
 
 export const Route = createFileRoute("/competition/$id_/results")({
   component: CompetitionResultsPage,
-  validateSearch: (search: Record<string, unknown>): SimulationSearch => {
-    const result: SimulationSearch = {};
-    for (const key of SIMULATION_SEARCH_KEYS) {
+  validateSearch: (search: Record<string, unknown>): SimulationSearch =>
+    SIMULATION_SEARCH_KEYS.reduce<SimulationSearch>((acc, key) => {
       const value = search[key];
       if (typeof value === "string") {
-        result[key] = value;
+        acc[key] = value;
       }
-    }
-    return result;
-  },
+      return acc;
+    }, {}),
 });
 
 function CompetitionResultsPage() {

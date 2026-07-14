@@ -14,6 +14,23 @@ export const WCA_API_BASE = "https://api.worldcubeassociation.org";
 
 export const BREAKPOINT = 1255 as const;
 
+export function buildUrl(
+  path: string,
+  params: Record<string, string | number | boolean | undefined | null> = {},
+): string {
+  const url = new URL(path, API_URL);
+
+  const cleanParams = Object.fromEntries(
+    Object.entries(params)
+      .filter(([_, val]) => val !== undefined && val !== null)
+      .map(([key, val]) => [key, String(val)]),
+  );
+
+  url.search = new URLSearchParams(cleanParams).toString();
+
+  return url.href;
+}
+
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
 }
@@ -150,22 +167,10 @@ export const arrEq2D = (arr1: number[][], arr2: number[][]): boolean => {
     return false;
   }
 
-  for (let i = 0; i < arr1.length; i++) {
-    const row1 = arr1[i];
+  return arr1.every((row1, i) => {
     const row2 = arr2[i];
-
-    if (row1.length !== row2.length) {
-      return false;
-    }
-
-    for (let j = 0; j < row1.length; j++) {
-      if (row1[j] !== row2[j]) {
-        return false;
-      }
-    }
-  }
-
-  return true;
+    return row1.length === row2.length && row1.every((val, j) => val === row2[j]);
+  });
 };
 
 export const clone2DArr = (arr: number[][]): number[][] => arr.map((row) => [...row]);
@@ -309,26 +314,12 @@ const hslToHex = (h: number, s: number, l: number) => {
 };
 
 export const generateColors = (num: number) => {
-  const hexCodes = [];
   const step = 360 / num;
-  for (let i = 0; i < num; i++) {
-    const hue = i * step;
-    hexCodes.push(hslToHex(hue, 100, 50));
-  }
-  return hexCodes;
+  return Array.from({ length: num }, (_, i) => hslToHex(i * step, 100, 50));
 };
 
-export const getNumericValue = (val: string | number): number => {
-  if (typeof val === "string") {
-    return Number(val);
-  }
-  return val;
-};
-
-export const formatPercentage = (val: string | number, normalize = false): string => {
-  const numVal = getNumericValue(val);
-  const pctVal = normalize ? numVal * 100 : numVal;
-
+export const formatPercentage = (val: number, normalize = false): string => {
+  const pctVal = normalize ? val * 100 : val;
   return `${pctVal.toFixed(2)}%`;
 };
 

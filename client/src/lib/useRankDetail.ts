@@ -1,7 +1,7 @@
 import type { RankingHistoryPoint } from "./types";
 import { createSignal, createEffect, untrack } from "solid-js";
 import { createQuery } from "@tanstack/solid-query";
-import { API_URL } from "./utils";
+import { buildUrl } from "./utils";
 
 const subYears = (d: Date, amount: number): Date => {
   const newDate = new Date(d);
@@ -61,7 +61,7 @@ export function useRankDetail(params: {
       const start = format(appliedStartDate());
       const competitor_id = params.competitorId();
       const event_id = params.eventId();
-      const res = await fetch(`${API_URL}/api/rankings/competitor`, {
+      const res = await fetch(buildUrl("/api/rankings/competitor"), {
         body: JSON.stringify({
           competitor_id,
           end_date: end,

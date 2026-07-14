@@ -1,7 +1,7 @@
 import type { SimulationAPIResults, SupportedWCAEvent } from "./types";
 import { createSignal } from "solid-js";
 import {
-  API_URL,
+  buildUrl,
   arrEq2D,
   clone2DArr,
   formatInputtedTimes,
@@ -58,7 +58,7 @@ export function useSimulation({
       start_date: formatDate(startDate),
     };
 
-    const response = await fetch(`${API_URL}/api/simulation`, {
+    const response = await fetch(buildUrl("/api/simulation"), {
       body: JSON.stringify(payload),
       headers: { "Content-Type": "application/json" },
       method: "POST",

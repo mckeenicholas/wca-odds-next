@@ -22,7 +22,7 @@ import {
   type RankingSnapshot,
   type SupportedWCAEvent,
 } from "../lib/types";
-import { API_URL, isToday, renderTime, toNaiveDate } from "../lib/utils";
+import { buildUrl, isToday, renderTime, toNaiveDate } from "../lib/utils";
 
 interface RankingsSearch {
   date?: string;
@@ -183,7 +183,7 @@ function RankingsPage() {
       const dateParam = isToday(dateVal) ? undefined : toNaiveDate(dateVal);
       const countryId = selectedCountry()?.id ?? undefined;
       const eventId = selectedEvent();
-      const res = await fetch(`${API_URL}/api/rankings`, {
+      const res = await fetch(buildUrl("/api/rankings"), {
         body: JSON.stringify({
           country_id: countryId,
           date: dateParam,

@@ -8,7 +8,7 @@ const METRIC_LABELS: Record<HistoryChartMetric, string> = {
   rank: "Expected Rank",
 };
 import { LoaderCircle } from "lucide-solid";
-import { API_URL } from "../../lib/utils";
+import { buildUrl } from "../../lib/utils";
 import { Button } from "../ui/button";
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "../ui/select";
 import { MultiLabelSwitch } from "./MultiLabelSwitch";
@@ -35,7 +35,7 @@ export function HistoryHistogram(props: HistoryHistogramProps) {
   }));
 
   const fetchHistory = async (): Promise<HistoryPoint[]> => {
-    const response = await fetch(`${API_URL}/api/history`, {
+    const response = await fetch(buildUrl("/api/history"), {
       body: JSON.stringify(queryPayload()),
       headers: { "Content-Type": "application/json" },
       method: "POST",
@@ -45,16 +45,15 @@ export function HistoryHistogram(props: HistoryHistogramProps) {
       throw new Error(`Error: ${response.statusText}`);
     }
 
-    const result: HistoryPoint[] = await response.json();
+    const rawResult: HistoryPoint[] = await response.json();
 
-    for (const point of result) {
-      for (const competitor of point.competitors) {
-        const found = props.competitors.find((c) => c.id === competitor.id);
-        competitor.color = found ? found.color : "#888888";
-      }
-    }
-
-    return result;
+    return rawResult.map((point) => ({
+      ...point,
+      competitors: point.competitors.map((competitor) => ({
+        ...competitor,
+        color: props.competitors.find((c) => c.id === competitor.id)?.color ?? "#888888",
+      })),
+    }));
   };
 
   const query = createQuery(() => ({

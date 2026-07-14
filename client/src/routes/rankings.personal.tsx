@@ -10,7 +10,7 @@ import {
   type PersonSearchResult,
   type SupportedWCAEvent,
 } from "../lib/types";
-import { API_URL, isToday, toNaiveDate } from "../lib/utils";
+import { buildUrl, isToday, toNaiveDate } from "../lib/utils";
 
 interface PersonalSearch {
   date?: string;
@@ -102,7 +102,7 @@ function PersonalRankingsLayout() {
   const personQuery = createQuery(() => ({
     enabled: Boolean(personId()),
     queryFn: async () => {
-      const res = await fetch(`${API_URL}/api/search?q=${encodeURIComponent(personId()!)}`);
+      const res = await fetch(buildUrl("/api/search", { q: personId()! }));
       if (!res.ok) {
         throw new Error("Search failed");
       }
@@ -159,7 +159,7 @@ function PersonalRankingsLayout() {
         return [];
       }
       const dateParam = isToday(dateVal) ? undefined : toNaiveDate(dateVal);
-      const res = await fetch(`${API_URL}/api/persons`, {
+      const res = await fetch(buildUrl("/api/persons"), {
         body: JSON.stringify({
           date: dateParam,
           person_id: person.person_id,
