@@ -85,18 +85,6 @@ export const getParentPath = (path: string) => {
   return "/";
 };
 
-export const formatDate = (date: string | Date | number) => {
-  const d =
-    typeof date === "string" && /^\d{4}-\d{2}-\d{2}$/u.test(date)
-      ? new Date(`${date}T12:00:00`)
-      : new Date(date);
-  return d.toLocaleDateString("en-US", {
-    day: "numeric",
-    month: "short",
-    year: "numeric",
-  });
-};
-
 export const toClockFormat = (centiseconds: number): string => {
   if (centiseconds === -1) {
     return "DNF";
@@ -135,10 +123,26 @@ export const toFMC = (result: number): string => {
 export const renderTime = (time: number, isFMC: boolean) =>
   isFMC ? toFMC(time) : toClockFormat(time);
 
-export const toNaiveDate = (date: Date): string =>
-  `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
-
-export const isToday = (date: Date): boolean => date.toDateString() === new Date().toDateString();
+export async function apiFetch<T>(
+  path: string,
+  params: Record<string, string | number | boolean | undefined | null> = {},
+  options: RequestInit = {},
+): Promise<T> {
+  const url = buildUrl(path, params);
+  const headers = new Headers(options.headers);
+  if (!headers.has("Content-Type")) {
+    headers.set("Content-Type", "application/json");
+  }
+  const response = await fetch(url, {
+    ...options,
+    headers,
+  });
+  if (!response.ok) {
+    const errorBody = await response.json().catch(() => ({}));
+    throw new Error(errorBody.error ?? `Request failed: ${response.statusText}`);
+  }
+  return response.json() as Promise<T>;
+}
 
 export const isTimeEvent = (event: string) => {
   switch (event) {

@@ -1,6 +1,7 @@
+import type { JSX } from "solid-js";
 import { cn } from "../../lib/utils";
 
-export function Label(props: any) {
+export function Label(props: JSX.LabelHTMLAttributes<HTMLLabelElement>) {
   return (
     <label
       class={cn(

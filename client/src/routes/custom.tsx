@@ -8,7 +8,7 @@ import { ControlPanel } from "../components/custom/ControlPanel";
 import { FlagIcon } from "../components/custom/FlagIcon";
 import { compSettingsStore } from "../lib/stores/compSettings";
 import { supportedWCAEvents } from "../lib/types";
-import { buildUrl, buildSimulationQuery } from "../lib/utils";
+import { buildSimulationQuery, apiFetch } from "../lib/utils";
 
 interface Person {
   name: string;
@@ -61,17 +61,15 @@ function CustomPage() {
       if (!term) {
         return [] as Person[];
       }
-      const response = await fetch(buildUrl("/api/search", { q: term }));
-      if (!response.ok) {
-        throw new Error("Search failed");
-      }
-
-      const results = await response.json();
+      const results = await apiFetch<{ name: string; person_id: string; country_iso2: string }[]>(
+        "/api/search",
+        { q: term },
+      );
       return results.map((r: { name: string; person_id: string; country_iso2: string }) => ({
         country: { iso2: r.country_iso2 },
         name: r.name,
         wca_id: r.person_id,
-      })) as Person[];
+      }));
     },
     queryKey: ["userSearch", debouncedInput()],
   }));
@@ -121,7 +119,7 @@ function CustomPage() {
     void navigate({
       to: "/competition/$id/results",
       params: { id: "custom" },
-      search: queryParams as any,
+      search: queryParams,
     });
   };
 

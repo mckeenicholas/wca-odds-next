@@ -121,3 +121,18 @@ export function getDayState(
     isStart: isSameDay(date, startDate),
   };
 }
+
+export const toNaiveDate = (date: Date): string =>
+  `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
+
+export const formatDate = (date: string | Date | number): string => {
+  const d =
+    typeof date === "string" && /^\d{4}-\d{2}-\d{2}$/u.test(date)
+      ? new Date(`${date}T12:00:00`)
+      : new Date(date);
+  return d.toLocaleDateString("en-US", {
+    day: "numeric",
+    month: "short",
+    year: "numeric",
+  });
+};

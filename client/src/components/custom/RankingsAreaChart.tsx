@@ -122,7 +122,7 @@ export function RankingsAreaChart(props: RankingsAreaChartProps) {
     return num.toFixed(1);
   };
 
-  const tooltipTemplate = (d: any) => {
+  const tooltipTemplate = (d: Record<string, number>) => {
     const dateVal = new Date(d.date);
     const dateDisplay = dateVal.toLocaleDateString(undefined, {
       month: "long",
@@ -177,11 +177,11 @@ export function RankingsAreaChart(props: RankingsAreaChartProps) {
     competitorMeta().map((meta) => (d: Record<string, number>) => d[meta.name] || 0),
   );
 
-  const colorAccessor = (_d: any, i: number) => competitorMeta()[i]?.color ?? "#888888";
+  const colorAccessor = (_d: unknown, i: number) => competitorMeta()[i]?.color ?? "#888888";
 
   return (
     <div
-      class="flex h-[240px] w-full flex-col items-end select-none"
+      class="flex h-60 w-full flex-col items-end select-none"
       style={{
         "--vis-text-color": "#888888",
         "--vis-axis-grid-color": "#e5e7eb",

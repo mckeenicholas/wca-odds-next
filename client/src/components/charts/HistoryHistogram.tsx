@@ -8,7 +8,7 @@ const METRIC_LABELS: Record<HistoryChartMetric, string> = {
   rank: "Expected Rank",
 };
 import { LoaderCircle } from "lucide-solid";
-import { buildUrl } from "../../lib/utils";
+import { apiFetch } from "../../lib/utils";
 import { Button } from "../ui/button";
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "../ui/select";
 import { MultiLabelSwitch } from "./MultiLabelSwitch";
@@ -35,17 +35,14 @@ export function HistoryHistogram(props: HistoryHistogramProps) {
   }));
 
   const fetchHistory = async (): Promise<HistoryPoint[]> => {
-    const response = await fetch(buildUrl("/api/history"), {
-      body: JSON.stringify(queryPayload()),
-      headers: { "Content-Type": "application/json" },
-      method: "POST",
-    });
-
-    if (!response.ok) {
-      throw new Error(`Error: ${response.statusText}`);
-    }
-
-    const rawResult: HistoryPoint[] = await response.json();
+    const rawResult = await apiFetch<HistoryPoint[]>(
+      "/api/history",
+      {},
+      {
+        body: JSON.stringify(queryPayload()),
+        method: "POST",
+      },
+    );
 
     return rawResult.map((point) => ({
       ...point,

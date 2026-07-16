@@ -1,4 +1,10 @@
-import type { Competitor, Person, SupportedWCAEvent, Wcif } from "./types";
+import {
+  type Competitor,
+  type Person,
+  type SupportedWCAEvent,
+  type Wcif,
+  supportedWCAEvents,
+} from "./types";
 
 type EventRegistration = Partial<Record<SupportedWCAEvent, Competitor[]>>;
 
@@ -14,7 +20,7 @@ const processCompetitor = (person: Person, event: SupportedWCAEvent): Competitor
 
   return {
     country: person.countryIso2,
-    id: person.wcaId,
+    id: person.wcaId!,
     name: person.name,
     rank: worldRank,
     selected: false,
@@ -41,15 +47,19 @@ export function getCompetitorData(
         person.wcaId,
     )
     .forEach((person) => {
-      person.registration.eventIds.forEach((event: SupportedWCAEvent) => {
-        if ((event as string) === "333mbf") {
+      person.registration?.eventIds.forEach((event) => {
+        if (event === "333mbf") {
           return;
         }
-        competitorAcc[event] ??= [];
+        if (!supportedWCAEvents.includes(event as SupportedWCAEvent)) {
+          return;
+        }
+        const supportedEvent = event as SupportedWCAEvent;
+        competitorAcc[supportedEvent] ??= [];
 
-        const competitor = processCompetitor(person, event);
+        const competitor = processCompetitor(person, supportedEvent);
         if (competitor) {
-          competitorAcc[event].push(competitor);
+          competitorAcc[supportedEvent].push(competitor);
         }
       });
     });

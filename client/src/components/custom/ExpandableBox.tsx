@@ -1,4 +1,4 @@
-import { createSignal } from "solid-js";
+import { createSignal, type JSX } from "solid-js";
 import { Collapsible } from "@kobalte/core/collapsible";
 import { cn } from "../../lib/utils";
 import { RotatableChevron } from "./RotatableChevron";
@@ -7,7 +7,7 @@ interface ExpandableBoxProps {
   title?: string;
   id?: string;
   class?: string;
-  children?: any;
+  children?: JSX.Element;
 }
 
 export function ExpandableBox(props: ExpandableBoxProps) {

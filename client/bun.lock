@@ -24,6 +24,7 @@
         "tailwindcss-animate": "^1.0.7",
       },
       "devDependencies": {
+        "@wca/helpers": "^1.1.7",
         "eslint": "^10.7.0",
         "eslint-plugin-solid": "^0.14.5",
         "oxfmt": "^0.58.0",
@@ -658,6 +659,8 @@
     "@unovis/solid": ["@unovis/solid@1.6.7", "", { "peerDependencies": { "@unovis/ts": "1.6.7", "solid-js": "^1.9.0" } }, "sha512-QuCf5XNauepoBlKSWZP4PLdytDIkkLjVq+/6wFCOw9kplzqJstOhOdV7Bi8vxO8JqBCvfH8bJfwW+bZ4YEJ52Q=="],
 
     "@unovis/ts": ["@unovis/ts@1.6.7", "", { "dependencies": { "@emotion/css": "^11.7.1", "@juggle/resize-observer": "^3.3.1", "@types/d3": "^7.4.0", "@types/d3-array": "~3.2.2", "@types/d3-axis": "~3.0.6", "@types/d3-brush": "~3.0.6", "@types/d3-chord": "~3.0.6", "@types/d3-collection": "^1.0.10", "@types/d3-color": "~3.1.3", "@types/d3-drag": "~3.0.7", "@types/d3-ease": "~3.0.2", "@types/d3-force": "~3.0.10", "@types/d3-geo": "~3.1.0", "@types/d3-hierarchy": "~3.1.7", "@types/d3-interpolate": "~3.0.4", "@types/d3-path": "~3.1.1", "@types/d3-sankey": "^0.12.4", "@types/d3-scale": "~4.0.9", "@types/d3-selection": "~3.0.0", "@types/d3-shape": "~3.1.7", "@types/d3-timer": "~3.0.2", "@types/d3-transition": "~3.0.9", "@types/d3-zoom": "~3.0.8", "@types/dagre": "^0.7.50", "@types/geojson": "^7946.0.8", "@types/leaflet": "1.7.6", "@types/supercluster": "^5.0.2", "@types/three": "^0.135.0", "@types/throttle-debounce": "^5.0.0", "@types/topojson": "^3.2.3", "@types/topojson-client": "^3.0.0", "@types/topojson-specification": "^1.0.2", "@unovis/dagre-layout": "0.8.8-2", "@unovis/graphlibrary": "2.2.0-2", "d3": "^7.2.1", "d3-array": "~3", "d3-axis": "~3", "d3-brush": "~3", "d3-chord": "~3", "d3-collection": "^1.0.7", "d3-color": "~3", "d3-drag": "~3", "d3-ease": "~3", "d3-force": "~3", "d3-geo": "~3", "d3-geo-projection": "^4.0.0", "d3-hierarchy": "~3", "d3-interpolate": "~3", "d3-interpolate-path": "^2.2.3", "d3-path": "~3", "d3-sankey": "^0.12.3", "d3-scale": "~4", "d3-selection": "~3", "d3-shape": "~3", "d3-timer": "~3", "d3-transition": "~3", "d3-zoom": "~3", "elkjs": "^0.10.0", "geojson": "^0.5.0", "leaflet": "1.7.1", "maplibre-gl": "^2.1.9", "striptags": "^3.2.0", "supercluster": "^7.1.5", "three": "^0.135.0", "throttle-debounce": "^5.0.0", "topojson-client": "^3.1.0", "tslib": "^2.3.1" } }, "sha512-CXmr+EQQyba9vqcyhvc963y06agBvaX0ut+lylTSUo4A/t1YYdrFQFKUULasdVY6Pe+OK5xveZOlJrYDiPOX3A=="],
+
+    "@wca/helpers": ["@wca/helpers@1.1.7", "", {}, "sha512-W7cCiEnqFoc1we7TCuYv+fFmnJS+/ot+TT/XZdXr4U+JnVQKgJ9kefG9XjVbBEJ/UNrjrhGrYJ7hDhxvbEYPBg=="],
 
     "acorn": ["acorn@8.17.0", "", { "bin": { "acorn": "bin/acorn" } }, "sha512-xRQbDb9BnwDafYNn6Vwl839DYVjqXYb1XVGtWAZ1kcDc6iwAL4hg3B1dZlRiuENFeO2H53gFG3in621AdERVAg=="],
 

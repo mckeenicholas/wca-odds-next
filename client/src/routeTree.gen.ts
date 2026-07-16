@@ -8,202 +8,201 @@
 // You should NOT make any changes in this file as it will be overwritten.
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
-import { Route as rootRouteImport } from "./routes/__root";
-import { Route as CompetitionIdRouteImport } from "./routes/competition.$id";
-import { Route as CompetitionIdResultsRouteImport } from "./routes/competition.$id_.results";
-import { Route as CustomRouteImport } from "./routes/custom";
-import { Route as IndexRouteImport } from "./routes/index";
-import { Route as RankingsIndexRouteImport } from "./routes/rankings.index";
-import { Route as RankingsPersonalRouteImport } from "./routes/rankings.personal";
-import { Route as RankingsPersonalIdRouteImport } from "./routes/rankings.personal.$id";
-import { Route as RankingsPersonalIndexRouteImport } from "./routes/rankings.personal.index";
+import { Route as rootRouteImport } from './routes/__root'
+import { Route as CustomRouteImport } from './routes/custom'
+import { Route as IndexRouteImport } from './routes/index'
+import { Route as RankingsIndexRouteImport } from './routes/rankings.index'
+import { Route as RankingsPersonalRouteImport } from './routes/rankings.personal'
+import { Route as CompetitionIdRouteImport } from './routes/competition.$id'
+import { Route as RankingsPersonalIndexRouteImport } from './routes/rankings.personal.index'
+import { Route as RankingsPersonalIdRouteImport } from './routes/rankings.personal.$id'
+import { Route as CompetitionIdResultsRouteImport } from './routes/competition.$id_.results'
 
 const CustomRoute = CustomRouteImport.update({
-  id: "/custom",
-  path: "/custom",
+  id: '/custom',
+  path: '/custom',
   getParentRoute: () => rootRouteImport,
-} as any);
+} as any)
 const IndexRoute = IndexRouteImport.update({
-  id: "/",
-  path: "/",
+  id: '/',
+  path: '/',
   getParentRoute: () => rootRouteImport,
-} as any);
+} as any)
 const RankingsIndexRoute = RankingsIndexRouteImport.update({
-  id: "/rankings/",
-  path: "/rankings/",
+  id: '/rankings/',
+  path: '/rankings/',
   getParentRoute: () => rootRouteImport,
-} as any);
+} as any)
 const RankingsPersonalRoute = RankingsPersonalRouteImport.update({
-  id: "/rankings/personal",
-  path: "/rankings/personal",
+  id: '/rankings/personal',
+  path: '/rankings/personal',
   getParentRoute: () => rootRouteImport,
-} as any);
+} as any)
 const CompetitionIdRoute = CompetitionIdRouteImport.update({
-  id: "/competition/$id",
-  path: "/competition/$id",
+  id: '/competition/$id',
+  path: '/competition/$id',
   getParentRoute: () => rootRouteImport,
-} as any);
+} as any)
 const RankingsPersonalIndexRoute = RankingsPersonalIndexRouteImport.update({
-  id: "/",
-  path: "/",
+  id: '/',
+  path: '/',
   getParentRoute: () => RankingsPersonalRoute,
-} as any);
+} as any)
 const RankingsPersonalIdRoute = RankingsPersonalIdRouteImport.update({
-  id: "/$id",
-  path: "/$id",
+  id: '/$id',
+  path: '/$id',
   getParentRoute: () => RankingsPersonalRoute,
-} as any);
+} as any)
 const CompetitionIdResultsRoute = CompetitionIdResultsRouteImport.update({
-  id: "/competition/$id_/results",
-  path: "/competition/$id/results",
+  id: '/competition/$id_/results',
+  path: '/competition/$id/results',
   getParentRoute: () => rootRouteImport,
-} as any);
+} as any)
 
 export interface FileRoutesByFullPath {
-  "/": typeof IndexRoute;
-  "/custom": typeof CustomRoute;
-  "/competition/$id": typeof CompetitionIdRoute;
-  "/rankings/personal": typeof RankingsPersonalRouteWithChildren;
-  "/rankings/": typeof RankingsIndexRoute;
-  "/competition/$id/results": typeof CompetitionIdResultsRoute;
-  "/rankings/personal/$id": typeof RankingsPersonalIdRoute;
-  "/rankings/personal/": typeof RankingsPersonalIndexRoute;
+  '/': typeof IndexRoute
+  '/custom': typeof CustomRoute
+  '/competition/$id': typeof CompetitionIdRoute
+  '/rankings/personal': typeof RankingsPersonalRouteWithChildren
+  '/rankings/': typeof RankingsIndexRoute
+  '/competition/$id/results': typeof CompetitionIdResultsRoute
+  '/rankings/personal/$id': typeof RankingsPersonalIdRoute
+  '/rankings/personal/': typeof RankingsPersonalIndexRoute
 }
 export interface FileRoutesByTo {
-  "/": typeof IndexRoute;
-  "/custom": typeof CustomRoute;
-  "/competition/$id": typeof CompetitionIdRoute;
-  "/rankings": typeof RankingsIndexRoute;
-  "/competition/$id/results": typeof CompetitionIdResultsRoute;
-  "/rankings/personal/$id": typeof RankingsPersonalIdRoute;
-  "/rankings/personal": typeof RankingsPersonalIndexRoute;
+  '/': typeof IndexRoute
+  '/custom': typeof CustomRoute
+  '/competition/$id': typeof CompetitionIdRoute
+  '/rankings': typeof RankingsIndexRoute
+  '/competition/$id/results': typeof CompetitionIdResultsRoute
+  '/rankings/personal/$id': typeof RankingsPersonalIdRoute
+  '/rankings/personal': typeof RankingsPersonalIndexRoute
 }
 export interface FileRoutesById {
-  __root__: typeof rootRouteImport;
-  "/": typeof IndexRoute;
-  "/custom": typeof CustomRoute;
-  "/competition/$id": typeof CompetitionIdRoute;
-  "/rankings/personal": typeof RankingsPersonalRouteWithChildren;
-  "/rankings/": typeof RankingsIndexRoute;
-  "/competition/$id_/results": typeof CompetitionIdResultsRoute;
-  "/rankings/personal/$id": typeof RankingsPersonalIdRoute;
-  "/rankings/personal/": typeof RankingsPersonalIndexRoute;
+  __root__: typeof rootRouteImport
+  '/': typeof IndexRoute
+  '/custom': typeof CustomRoute
+  '/competition/$id': typeof CompetitionIdRoute
+  '/rankings/personal': typeof RankingsPersonalRouteWithChildren
+  '/rankings/': typeof RankingsIndexRoute
+  '/competition/$id_/results': typeof CompetitionIdResultsRoute
+  '/rankings/personal/$id': typeof RankingsPersonalIdRoute
+  '/rankings/personal/': typeof RankingsPersonalIndexRoute
 }
 export interface FileRouteTypes {
-  fileRoutesByFullPath: FileRoutesByFullPath;
+  fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
-    | "/"
-    | "/custom"
-    | "/competition/$id"
-    | "/rankings/personal"
-    | "/rankings/"
-    | "/competition/$id/results"
-    | "/rankings/personal/$id"
-    | "/rankings/personal/";
-  fileRoutesByTo: FileRoutesByTo;
+    | '/'
+    | '/custom'
+    | '/competition/$id'
+    | '/rankings/personal'
+    | '/rankings/'
+    | '/competition/$id/results'
+    | '/rankings/personal/$id'
+    | '/rankings/personal/'
+  fileRoutesByTo: FileRoutesByTo
   to:
-    | "/"
-    | "/custom"
-    | "/competition/$id"
-    | "/rankings"
-    | "/competition/$id/results"
-    | "/rankings/personal/$id"
-    | "/rankings/personal";
+    | '/'
+    | '/custom'
+    | '/competition/$id'
+    | '/rankings'
+    | '/competition/$id/results'
+    | '/rankings/personal/$id'
+    | '/rankings/personal'
   id:
-    | "__root__"
-    | "/"
-    | "/custom"
-    | "/competition/$id"
-    | "/rankings/personal"
-    | "/rankings/"
-    | "/competition/$id_/results"
-    | "/rankings/personal/$id"
-    | "/rankings/personal/";
-  fileRoutesById: FileRoutesById;
+    | '__root__'
+    | '/'
+    | '/custom'
+    | '/competition/$id'
+    | '/rankings/personal'
+    | '/rankings/'
+    | '/competition/$id_/results'
+    | '/rankings/personal/$id'
+    | '/rankings/personal/'
+  fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
-  IndexRoute: typeof IndexRoute;
-  CustomRoute: typeof CustomRoute;
-  CompetitionIdRoute: typeof CompetitionIdRoute;
-  RankingsPersonalRoute: typeof RankingsPersonalRouteWithChildren;
-  RankingsIndexRoute: typeof RankingsIndexRoute;
-  CompetitionIdResultsRoute: typeof CompetitionIdResultsRoute;
+  IndexRoute: typeof IndexRoute
+  CustomRoute: typeof CustomRoute
+  CompetitionIdRoute: typeof CompetitionIdRoute
+  RankingsPersonalRoute: typeof RankingsPersonalRouteWithChildren
+  RankingsIndexRoute: typeof RankingsIndexRoute
+  CompetitionIdResultsRoute: typeof CompetitionIdResultsRoute
 }
 
-declare module "@tanstack/solid-router" {
+declare module '@tanstack/solid-router' {
   interface FileRoutesByPath {
-    "/custom": {
-      id: "/custom";
-      path: "/custom";
-      fullPath: "/custom";
-      preLoaderRoute: typeof CustomRouteImport;
-      parentRoute: typeof rootRouteImport;
-    };
-    "/": {
-      id: "/";
-      path: "/";
-      fullPath: "/";
-      preLoaderRoute: typeof IndexRouteImport;
-      parentRoute: typeof rootRouteImport;
-    };
-    "/rankings/": {
-      id: "/rankings/";
-      path: "/rankings";
-      fullPath: "/rankings/";
-      preLoaderRoute: typeof RankingsIndexRouteImport;
-      parentRoute: typeof rootRouteImport;
-    };
-    "/rankings/personal": {
-      id: "/rankings/personal";
-      path: "/rankings/personal";
-      fullPath: "/rankings/personal";
-      preLoaderRoute: typeof RankingsPersonalRouteImport;
-      parentRoute: typeof rootRouteImport;
-    };
-    "/competition/$id": {
-      id: "/competition/$id";
-      path: "/competition/$id";
-      fullPath: "/competition/$id";
-      preLoaderRoute: typeof CompetitionIdRouteImport;
-      parentRoute: typeof rootRouteImport;
-    };
-    "/rankings/personal/": {
-      id: "/rankings/personal/";
-      path: "/";
-      fullPath: "/rankings/personal/";
-      preLoaderRoute: typeof RankingsPersonalIndexRouteImport;
-      parentRoute: typeof RankingsPersonalRoute;
-    };
-    "/rankings/personal/$id": {
-      id: "/rankings/personal/$id";
-      path: "/$id";
-      fullPath: "/rankings/personal/$id";
-      preLoaderRoute: typeof RankingsPersonalIdRouteImport;
-      parentRoute: typeof RankingsPersonalRoute;
-    };
-    "/competition/$id_/results": {
-      id: "/competition/$id_/results";
-      path: "/competition/$id/results";
-      fullPath: "/competition/$id/results";
-      preLoaderRoute: typeof CompetitionIdResultsRouteImport;
-      parentRoute: typeof rootRouteImport;
-    };
+    '/custom': {
+      id: '/custom'
+      path: '/custom'
+      fullPath: '/custom'
+      preLoaderRoute: typeof CustomRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/': {
+      id: '/'
+      path: '/'
+      fullPath: '/'
+      preLoaderRoute: typeof IndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/rankings/': {
+      id: '/rankings/'
+      path: '/rankings'
+      fullPath: '/rankings/'
+      preLoaderRoute: typeof RankingsIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/rankings/personal': {
+      id: '/rankings/personal'
+      path: '/rankings/personal'
+      fullPath: '/rankings/personal'
+      preLoaderRoute: typeof RankingsPersonalRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/competition/$id': {
+      id: '/competition/$id'
+      path: '/competition/$id'
+      fullPath: '/competition/$id'
+      preLoaderRoute: typeof CompetitionIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/rankings/personal/': {
+      id: '/rankings/personal/'
+      path: '/'
+      fullPath: '/rankings/personal/'
+      preLoaderRoute: typeof RankingsPersonalIndexRouteImport
+      parentRoute: typeof RankingsPersonalRoute
+    }
+    '/rankings/personal/$id': {
+      id: '/rankings/personal/$id'
+      path: '/$id'
+      fullPath: '/rankings/personal/$id'
+      preLoaderRoute: typeof RankingsPersonalIdRouteImport
+      parentRoute: typeof RankingsPersonalRoute
+    }
+    '/competition/$id_/results': {
+      id: '/competition/$id_/results'
+      path: '/competition/$id/results'
+      fullPath: '/competition/$id/results'
+      preLoaderRoute: typeof CompetitionIdResultsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
 interface RankingsPersonalRouteChildren {
-  RankingsPersonalIdRoute: typeof RankingsPersonalIdRoute;
-  RankingsPersonalIndexRoute: typeof RankingsPersonalIndexRoute;
+  RankingsPersonalIdRoute: typeof RankingsPersonalIdRoute
+  RankingsPersonalIndexRoute: typeof RankingsPersonalIndexRoute
 }
 
 const RankingsPersonalRouteChildren: RankingsPersonalRouteChildren = {
   RankingsPersonalIdRoute: RankingsPersonalIdRoute,
   RankingsPersonalIndexRoute: RankingsPersonalIndexRoute,
-};
+}
 
-const RankingsPersonalRouteWithChildren = RankingsPersonalRoute._addFileChildren(
-  RankingsPersonalRouteChildren,
-);
+const RankingsPersonalRouteWithChildren =
+  RankingsPersonalRoute._addFileChildren(RankingsPersonalRouteChildren)
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
@@ -212,7 +211,7 @@ const rootRouteChildren: RootRouteChildren = {
   RankingsPersonalRoute: RankingsPersonalRouteWithChildren,
   RankingsIndexRoute: RankingsIndexRoute,
   CompetitionIdResultsRoute: CompetitionIdResultsRoute,
-};
+}
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
-  ._addFileTypes<FileRouteTypes>();
+  ._addFileTypes<FileRouteTypes>()

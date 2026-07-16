@@ -7,6 +7,7 @@ import { LoadingMessage } from "../components/custom/LoadingMessage";
 import { WCALogo } from "../components/custom/WCALogo";
 import { Checkbox } from "../components/ui/checkbox";
 import { compSettingsStore } from "../lib/stores/compSettings";
+import { supportedWCAEvents, type SupportedWCAEvent } from "../lib/types";
 import { getCompetitorData } from "../lib/useCompetitionData";
 import { fetchWCIF, buildSimulationQuery, cn } from "../lib/utils";
 
@@ -56,7 +57,12 @@ function CompetitionPage() {
   });
 
   const eventIds = () =>
-    query.data?.events.map((event) => event.id).filter((id) => id !== ("333mbf" as any)) ?? [];
+    query.data?.events
+      .map((event) => event.id)
+      .filter(
+        (id): id is SupportedWCAEvent =>
+          id !== "333mbf" && supportedWCAEvents.includes(id as SupportedWCAEvent),
+      ) ?? [];
 
   // Populate competitors data once API loads
   createEffect(() => {

@@ -1,6 +1,5 @@
 import type { ChartData, SimulationResultProps } from "../../lib/types";
-import { createSignal, createMemo, onCleanup, For, Index, Show } from "solid-js";
-import { render } from "solid-js/web";
+import { createSignal, createMemo, For, Index } from "solid-js";
 import { VisXYContainer, VisArea, VisLine, VisAxis, VisCrosshair, VisTooltip } from "@unovis/solid";
 import { CurveType, Line } from "@unovis/ts";
 import { ChevronDown } from "lucide-solid";
@@ -25,16 +24,17 @@ const trimChartItems = (chart: ChartData, disabledNames: Set<string>): ChartData
   };
 };
 
-const x = (_d: any, i: number) => i;
+const x = (_d: unknown, i: number) => i;
 
 interface TooltipItem {
   label: string;
   val: number;
   color: string;
 }
-interface TooltipData {
-  time: string;
-  items: TooltipItem[];
+
+interface FullHistogramDataPoint {
+  name: string;
+  [label: string]: string | number;
 }
 
 export function FullHistogram(props: SimulationResultProps) {
@@ -57,7 +57,7 @@ export function FullHistogram(props: SimulationResultProps) {
     const histData = isCDF() ? computeCDF(includedPersons.data) : includedPersons.data;
 
     return histData.map((point) => {
-      const result: Record<string, any> = { name: point.name };
+      const result: FullHistogramDataPoint = { name: point.name };
       currentActiveLabels.forEach((label, index) => {
         result[label] = point.values[index];
       });
@@ -74,53 +74,13 @@ export function FullHistogram(props: SimulationResultProps) {
     return renderTime(timeVal, props.event === "333fm");
   };
 
-  /* Unovis calls `tooltipTemplate` on every crosshair/mousemove tick. Calling
-     `render()` from solid-js/web on every tick mounts a brand new reactive
-     root each time; if the returned dispose fn isn't kept & called, that root
-     leaks forever. Instead we mount the JSX tree exactly once here, drive its
-     contents with a signal, and just hand Unovis back the same container node
-     every time. Solid patches the existing DOM in place instead of remounting. */
-  const [tooltipData, setTooltipData] = createSignal<TooltipData | null>(null);
-  const tooltipRoot = document.createElement("div");
-  const disposeTooltip = render(
-    () => (
-      <div class="relative z-50 rounded-md bg-popover p-2 text-sm text-popover-foreground">
-        <Show when={tooltipData()}>
-          {(data) => (
-            <>
-              <p class="font-bold text-foreground">{data().time}</p>
-              <For each={data().items}>
-                {(item) => (
-                  <div class="flex justify-between">
-                    <div class="flex items-center">
-                      <span
-                        class="mr-2 inline-block h-2.5 w-2.5 rounded-full"
-                        style={{ "background-color": item.color }}
-                      />
-                      <span>{item.label}</span>
-                    </div>
-                    <span class="ml-4 font-semibold">
-                      {item.val >= 0.01 ? `${item.val.toFixed(2)}%` : "<0.01%"}
-                    </span>
-                  </div>
-                )}
-              </For>
-            </>
-          )}
-        </Show>
-      </div>
-    ),
-    tooltipRoot,
-  );
-  onCleanup(disposeTooltip);
-
-  const tooltipTemplate = (d: any) => {
+  const tooltipTemplate = (d: FullHistogramDataPoint) => {
     const timeRawValue = toInt(d.name, 0);
     const timeDisplayValue = renderTime(timeRawValue, props.event === "333fm");
 
     const items: TooltipItem[] = activeLabels()
       .map((label) => {
-        const val = d[label];
+        const val = d[label] as number;
         if (val === undefined) {
           return null;
         }
@@ -132,13 +92,34 @@ export function FullHistogram(props: SimulationResultProps) {
       })
       .filter((item): item is TooltipItem => item !== null);
 
-    setTooltipData({ time: timeDisplayValue, items });
-    return tooltipRoot.cloneNode(true) as HTMLElement;
+    return (
+      <div class="relative z-50 rounded-md bg-popover p-2 text-sm text-popover-foreground">
+        <p class="font-bold text-foreground">{timeDisplayValue}</p>
+        <For each={items}>
+          {(item) => (
+            <div class="flex justify-between">
+              <div class="flex items-center">
+                <span
+                  class="mr-2 inline-block h-2.5 w-2.5 rounded-full"
+                  style={{ "background-color": item.color }}
+                />
+                <span>{item.label}</span>
+              </div>
+              <span class="ml-4 font-semibold">
+                {item.val >= 0.01 ? `${item.val.toFixed(2)}%` : "<0.01%"}
+              </span>
+            </div>
+          )}
+        </For>
+      </div>
+    ) as HTMLElement;
   };
 
-  const crosshairY = createMemo(() => activeLabels().map((label) => (d: any) => d[label]));
+  const crosshairY = createMemo(() =>
+    activeLabels().map((label) => (d: FullHistogramDataPoint) => d[label] as number),
+  );
 
-  const crosshairColor = (_d: any, i: number) => {
+  const crosshairColor = (_d: unknown, i: number) => {
     const label = activeLabels()[i];
     if (!label) {
       return "#888888";
@@ -149,7 +130,7 @@ export function FullHistogram(props: SimulationResultProps) {
 
   return (
     <div class="mx-4 mt-2 mb-4">
-      <div class="h-[300px]">
+      <div class="h-75">
         <VisXYContainer data={chartData()} height={300}>
           <svg width="0" height="0">
             <defs>
@@ -174,7 +155,8 @@ export function FullHistogram(props: SimulationResultProps) {
               const nameIdx = names().indexOf(label);
               const color = props.colors[nameIdx];
               const cleanColor = color.replace("#", "");
-              const yValue = (d: any) => (disabledNames().has(label) ? 0 : d[label]);
+              const yValue = (d: FullHistogramDataPoint) =>
+                disabledNames().has(label) ? 0 : (d[label] as number);
               return (
                 <VisArea
                   x={x}
@@ -189,7 +171,8 @@ export function FullHistogram(props: SimulationResultProps) {
             {(label) => {
               const nameIdx = names().indexOf(label);
               const color = props.colors[nameIdx];
-              const yValue = (d: any) => (disabledNames().has(label) ? 0 : d[label]);
+              const yValue = (d: FullHistogramDataPoint) =>
+                disabledNames().has(label) ? 0 : (d[label] as number);
               return (
                 <VisLine
                   x={x}

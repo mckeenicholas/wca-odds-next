@@ -3,6 +3,7 @@ import { createQuery, keepPreviousData } from "@tanstack/solid-query";
 import { createFileRoute, Outlet, useNavigate, useLocation } from "@tanstack/solid-router";
 import { ErrorPanel } from "../components/custom/ErrorPanel";
 import { PersonalRankingsSearch } from "../components/custom/PersonalRankingsSearch";
+import { isToday, toNaiveDate } from "../lib/dateUtils";
 import { PersonalRankingsProvider } from "../lib/PersonalRankingsContext";
 import {
   eventOrder,
@@ -10,7 +11,7 @@ import {
   type PersonSearchResult,
   type SupportedWCAEvent,
 } from "../lib/types";
-import { buildUrl, isToday, toNaiveDate } from "../lib/utils";
+import { apiFetch } from "../lib/utils";
 
 interface PersonalSearch {
   date?: string;
@@ -102,11 +103,7 @@ function PersonalRankingsLayout() {
   const personQuery = createQuery(() => ({
     enabled: Boolean(personId()),
     queryFn: async () => {
-      const res = await fetch(buildUrl("/api/search", { q: personId()! }));
-      if (!res.ok) {
-        throw new Error("Search failed");
-      }
-      const list = (await res.json()) as PersonSearchResult[];
+      const list = await apiFetch<PersonSearchResult[]>("/api/search", { q: personId()! });
       return list.length > 0 ? list[0] : null;
     },
     queryKey: ["person-info", personId()],
@@ -124,14 +121,14 @@ function PersonalRankingsLayout() {
   const selectPerson = (person: PersonSearchResult) => {
     setSelectedPerson(person);
 
-    const params: Record<string, string> = {};
+    const params: PersonalSearch = {};
     if (!isToday(committedDate())) {
       params.date = toNaiveDate(committedDate());
     }
 
     void navigate({
       params: { id: person.person_id },
-      search: params as any,
+      search: params,
       to: "/rankings/personal/$id",
     });
   };
@@ -139,13 +136,13 @@ function PersonalRankingsLayout() {
   const clearPerson = () => {
     setSelectedPerson(undefined);
 
-    const params: Record<string, string> = {};
+    const params: PersonalSearch = {};
     if (!isToday(committedDate())) {
       params.date = toNaiveDate(committedDate());
     }
 
     void navigate({
-      search: params as any,
+      search: params,
       to: "/rankings/personal",
     });
   };
@@ -159,19 +156,17 @@ function PersonalRankingsLayout() {
         return [];
       }
       const dateParam = isToday(dateVal) ? undefined : toNaiveDate(dateVal);
-      const res = await fetch(buildUrl("/api/persons"), {
-        body: JSON.stringify({
-          date: dateParam,
-          person_id: person.person_id,
-        }),
-        headers: { "Content-Type": "application/json" },
-        method: "POST",
-      });
-      if (!res.ok) {
-        const body = await res.json().catch(() => ({}));
-        throw new Error(body.error ?? "Failed to fetch rankings");
-      }
-      const res_data = (await res.json()) as PersonRankInfo[];
+      const res_data = await apiFetch<PersonRankInfo[]>(
+        "/api/persons",
+        {},
+        {
+          body: JSON.stringify({
+            date: dateParam,
+            person_id: person.person_id,
+          }),
+          method: "POST",
+        },
+      );
       res_data.sort((a, b) => getEventOrder(a.event_id) - getEventOrder(b.event_id));
       return res_data;
     },
@@ -182,13 +177,13 @@ function PersonalRankingsLayout() {
 
   const applyDate = () => {
     setCommittedDate(new Date(rankDate()));
-    const params: Record<string, string> = {};
+    const params: PersonalSearch = {};
     if (!isToday(committedDate())) {
       params.date = toNaiveDate(committedDate());
     }
     void navigate({
       params: selectedPerson() ? { id: selectedPerson()!.person_id } : undefined,
-      search: params as any,
+      search: params,
       to: selectedPerson() ? "/rankings/personal/$id" : "/rankings/personal",
     });
   };

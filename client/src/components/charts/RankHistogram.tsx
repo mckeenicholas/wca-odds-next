@@ -1,6 +1,5 @@
 import type { ChartData } from "../../lib/types";
 import { createMemo, For } from "solid-js";
-import { render } from "solid-js/web";
 import { VisXYContainer, VisStackedBar, VisAxis, VisCrosshair, VisTooltip } from "@unovis/solid";
 import { formatPercentage } from "../../lib/utils";
 
@@ -21,12 +20,17 @@ interface RankHistogramProps {
   colors: string[];
 }
 
-const x = (_d: any, i: number) => i;
+interface RankChartDataPoint {
+  name: string;
+  [label: string]: string | number;
+}
+
+const x = (_d: unknown, i: number) => i;
 
 export function RankHistogram(props: RankHistogramProps) {
   const chartData = createMemo(() =>
     props.data.data.map((point) => {
-      const result: Record<string, any> = { name: point.name };
+      const result: RankChartDataPoint = { name: point.name };
       props.data.labels.forEach((label, index) => {
         result[label] = point.values[index];
       });
@@ -47,13 +51,13 @@ export function RankHistogram(props: RankHistogramProps) {
   };
 
   const categories = () => props.data.labels;
-  const y = () => categories().map((label) => (d: any) => d[label]);
-  const color = (_d: any, i: number) => props.colors[i];
+  const y = () => categories().map((label) => (d: RankChartDataPoint) => d[label] as number);
+  const color = (_d: unknown, i: number) => props.colors[i];
 
-  const tooltipTemplate = (d: any) => {
+  const tooltipTemplate = (d: RankChartDataPoint) => {
     const items = categories()
       .map((category, idx) => {
-        const val = d[category];
+        const val = d[category] as number;
         if (val === undefined || val === 0) {
           return null;
         }
@@ -61,31 +65,25 @@ export function RankHistogram(props: RankHistogramProps) {
       })
       .filter((item): item is NonNullable<typeof item> => item !== null);
 
-    const container = document.createElement("div");
-    render(
-      () => (
-        <div class="relative z-50 rounded-md bg-popover p-2 text-sm text-popover-foreground">
-          <p class="font-bold text-foreground">{toPlaceString(Math.trunc(Number(d.name)))}</p>
-          <For each={items}>
-            {(item) => (
-              <div class="flex justify-between">
-                <div class="flex items-center">
-                  <span
-                    class="mr-2 inline-block h-2.5 w-2.5 rounded-full"
-                    style={{ "background-color": item.color }}
-                  />
-                  <span>{item.category}</span>
-                </div>
-                <span class="ml-4 font-semibold">{formatPercentage(item.val)}</span>
+    return (
+      <div class="relative z-50 rounded-md bg-popover p-2 text-sm text-popover-foreground">
+        <p class="font-bold text-foreground">{toPlaceString(Math.trunc(Number(d.name)))}</p>
+        <For each={items}>
+          {(item) => (
+            <div class="flex justify-between">
+              <div class="flex items-center">
+                <span
+                  class="mr-2 inline-block h-2.5 w-2.5 rounded-full"
+                  style={{ "background-color": item.color }}
+                />
+                <span>{item.category}</span>
               </div>
-            )}
-          </For>
-        </div>
-      ),
-      container,
-    );
-
-    return container.firstChild as HTMLElement;
+              <span class="ml-4 font-semibold">{formatPercentage(item.val)}</span>
+            </div>
+          )}
+        </For>
+      </div>
+    ) as HTMLElement;
   };
 
   return (

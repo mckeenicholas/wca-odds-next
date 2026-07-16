@@ -1,19 +1,13 @@
 import type { RankingHistoryPoint } from "./types";
 import { createSignal, createEffect, untrack } from "solid-js";
 import { createQuery } from "@tanstack/solid-query";
-import { buildUrl } from "./utils";
+import { toNaiveDate } from "./dateUtils";
+import { apiFetch } from "./utils";
 
 const subYears = (d: Date, amount: number): Date => {
   const newDate = new Date(d);
   newDate.setFullYear(newDate.getFullYear() - amount);
   return newDate;
-};
-
-const format = (d: Date): string => {
-  const year = d.getFullYear();
-  const month = String(d.getMonth() + 1).padStart(2, "0");
-  const day = String(d.getDate()).padStart(2, "0");
-  return `${year}-${month}-${day}`;
 };
 
 export function useRankDetail(params: {
@@ -57,25 +51,23 @@ export function useRankDetail(params: {
   const query = createQuery(() => ({
     enabled: params.isOpen(),
     queryFn: async () => {
-      const end = format(appliedEndDate());
-      const start = format(appliedStartDate());
+      const end = toNaiveDate(appliedEndDate());
+      const start = toNaiveDate(appliedStartDate());
       const competitor_id = params.competitorId();
       const event_id = params.eventId();
-      const res = await fetch(buildUrl("/api/rankings/competitor"), {
-        body: JSON.stringify({
-          competitor_id,
-          end_date: end,
-          event_id,
-          start_date: start,
-        }),
-        headers: { "Content-Type": "application/json" },
-        method: "POST",
-      });
-      if (!res.ok) {
-        const body = await res.json().catch(() => ({}));
-        throw new Error(body.error ?? "Failed to fetch details");
-      }
-      return res.json();
+      return apiFetch(
+        "/api/rankings/competitor",
+        {},
+        {
+          body: JSON.stringify({
+            competitor_id,
+            end_date: end,
+            event_id,
+            start_date: start,
+          }),
+          method: "POST",
+        },
+      );
     },
     queryKey: [
       "rank-detail",

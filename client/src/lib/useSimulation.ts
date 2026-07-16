@@ -1,15 +1,14 @@
 import type { SimulationAPIResults, SupportedWCAEvent } from "./types";
 import { createSignal } from "solid-js";
+import { toNaiveDate } from "./dateUtils";
 import {
-  buildUrl,
   arrEq2D,
   clone2DArr,
   formatInputtedTimes,
   generateDefaultTimesArray,
+  apiFetch,
 } from "./utils";
 import fetchWCALiveResults from "./wcaLive";
-
-const formatDate = (d: Date) => d.toISOString().split("T")[0];
 
 export function useSimulation({
   event,
@@ -50,27 +49,22 @@ export function useSimulation({
   const fetchSimulationResults = async () => {
     const payload = {
       competitor_ids: competitorsList,
-      end_date: formatDate(endDate),
+      end_date: toNaiveDate(endDate),
       entered_times: formatInputtedTimes(inputtedTimes(), event),
       event_id: event,
       half_life: decayHalfLife,
       include_dnf: includeDNF,
-      start_date: formatDate(startDate),
+      start_date: toNaiveDate(startDate),
     };
 
-    const response = await fetch(buildUrl("/api/simulation"), {
-      body: JSON.stringify(payload),
-      headers: { "Content-Type": "application/json" },
-      method: "POST",
-    });
-
-    if (!response.ok) {
-      const errorText = await response.text();
-      throw new Error(`Simulation failed: ${response.statusText} - ${errorText}`);
-    }
-
-    const rawData = await response.json();
-    return rawData as SimulationAPIResults;
+    return apiFetch<SimulationAPIResults>(
+      "/api/simulation",
+      {},
+      {
+        body: JSON.stringify(payload),
+        method: "POST",
+      },
+    );
   };
 
   const runSimulation = async (setLoadingState: (val: boolean) => void) => {

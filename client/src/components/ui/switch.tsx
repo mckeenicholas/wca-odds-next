@@ -1,8 +1,12 @@
 import { splitProps } from "solid-js";
-import { Switch as KSwitch } from "@kobalte/core/switch";
+import { Switch as KSwitch, type SwitchRootProps as KSwitchRootProps } from "@kobalte/core/switch";
 import { cn } from "../../lib/utils";
 
-export function Switch(props: any) {
+export interface SwitchProps extends KSwitchRootProps {
+  class?: string;
+}
+
+export function Switch(props: SwitchProps) {
   const [local, others] = splitProps(props, ["id", "checked", "onChange", "disabled", "class"]);
 
   return (

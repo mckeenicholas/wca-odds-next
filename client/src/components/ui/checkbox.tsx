@@ -1,9 +1,18 @@
-import { splitProps, Show } from "solid-js";
-import { Checkbox as KCheckbox } from "@kobalte/core/checkbox";
+import { splitProps, Show, type JSX } from "solid-js";
+import {
+  Checkbox as KCheckbox,
+  type CheckboxRootProps as KCheckboxRootProps,
+} from "@kobalte/core/checkbox";
 import { Check } from "lucide-solid";
 import { cn } from "../../lib/utils";
 
-export function Checkbox(props: any) {
+export interface CheckboxProps extends KCheckboxRootProps {
+  class?: string;
+  children?: JSX.Element;
+  "aria-label"?: string;
+}
+
+export function Checkbox(props: CheckboxProps) {
   const [local, others] = splitProps(props, [
     "id",
     "checked",

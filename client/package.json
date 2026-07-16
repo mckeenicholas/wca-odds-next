@@ -30,6 +30,7 @@
     "tailwindcss-animate": "^1.0.7"
   },
   "devDependencies": {
+    "@wca/helpers": "^1.1.7",
     "eslint": "^10.7.0",
     "eslint-plugin-solid": "^0.14.5",
     "oxfmt": "^0.58.0",

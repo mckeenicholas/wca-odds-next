@@ -76,40 +76,19 @@ export const eventOrder: Record<SupportedWCAEvent, number> = {
 
 export type SupportedWCAEvent = (typeof supportedWCAEvents)[number];
 
-interface Registration {
-  wcaRegistrationId: number;
-  eventIds: SupportedWCAEvent[];
-  status: string;
-  isCompeting: boolean;
-}
+import type {
+  Person as WCAPerson,
+  PersonalBest as WCAPersonalBest,
+  Registration as WCARegistration,
+  Competition as WCACompetition,
+  Event as WCAEvent,
+} from "@wca/helpers";
 
-export interface Person {
-  name: string;
-  wcaId: string;
-  countryIso2: string;
-  personalBests: PersonalBest[];
-  registration: Registration;
-}
-
-interface PersonalBest {
-  eventId: string;
-  best: number;
-  worldRanking: number;
-}
-
-export interface WcifEvent {
-  id: SupportedWCAEvent;
-}
-
-export interface Wcif {
-  name: string;
-  id: string;
-  events: WcifEvent[];
-  persons: Person[];
-  schedule: {
-    startDate: string;
-  };
-}
+export type Person = WCAPerson;
+export type PersonalBest = WCAPersonalBest;
+export type Registration = WCARegistration;
+export type Wcif = WCACompetition;
+export type WcifEvent = WCAEvent;
 
 export interface SimulationRouteQuery {
   competitors?: string;

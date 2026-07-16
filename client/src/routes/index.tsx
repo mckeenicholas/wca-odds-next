@@ -4,7 +4,8 @@ import { createQuery } from "@tanstack/solid-query";
 import { createFileRoute, useNavigate, Link } from "@tanstack/solid-router";
 import { Search as SearchIcon, LoaderCircle } from "lucide-solid";
 import { buttonVariants } from "../components/ui/button";
-import { fetchWCAInfo, formatDate } from "../lib/utils";
+import { formatDate } from "../lib/dateUtils";
+import { fetchWCAInfo } from "../lib/utils";
 
 interface Competition {
   start_date: string;

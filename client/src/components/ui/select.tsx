@@ -1,5 +1,10 @@
 import { splitProps, type JSX } from "solid-js";
-import { Select as KSelect, type SelectItemProps as KSelectItemProps } from "@kobalte/core/select";
+import {
+  Select as KSelect,
+  type SelectItemProps as KSelectItemProps,
+  type SelectTriggerProps as KSelectTriggerProps,
+  type SelectContentProps as KSelectContentProps,
+} from "@kobalte/core/select";
 import { ChevronDown, Check } from "lucide-solid";
 import { cn } from "../../lib/utils";
 
@@ -8,9 +13,18 @@ export interface SelectItemProps extends KSelectItemProps {
   children?: JSX.Element;
 }
 
+export interface SelectTriggerProps extends KSelectTriggerProps {
+  class?: string;
+  children?: JSX.Element;
+}
+
+export interface SelectContentProps extends KSelectContentProps {
+  class?: string;
+}
+
 export { Select, Value as SelectValue } from "@kobalte/core/select";
 
-export function SelectTrigger(props: any) {
+export function SelectTrigger(props: SelectTriggerProps) {
   const [local, others] = splitProps(props, ["class", "children"]);
   return (
     <KSelect.Trigger
@@ -28,7 +42,7 @@ export function SelectTrigger(props: any) {
   );
 }
 
-export function SelectContent(props: any) {
+export function SelectContent(props: SelectContentProps) {
   const [local, others] = splitProps(props, ["class"]);
   return (
     <KSelect.Portal>

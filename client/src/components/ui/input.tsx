@@ -1,7 +1,18 @@
-import { splitProps } from "solid-js";
+import { splitProps, type JSX } from "solid-js";
 import { cn } from "../../lib/utils";
 
-export function Input(props: any) {
+export interface InputProps extends Omit<
+  JSX.InputHTMLAttributes<HTMLInputElement>,
+  "onInput" | "onChange" | "value"
+> {
+  class?: string;
+  type?: string;
+  value?: string | number | undefined;
+  onInput?: (value: string) => void;
+  onChange?: (value: string) => void;
+}
+
+export function Input(props: InputProps) {
   const [local, others] = splitProps(props, ["class", "type", "value", "onInput", "onChange"]);
 
   return (

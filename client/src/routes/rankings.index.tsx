@@ -16,13 +16,14 @@ import {
   SelectValue,
 } from "../components/ui/select";
 import { Skeleton } from "../components/ui/skeleton";
+import { isToday, toNaiveDate } from "../lib/dateUtils";
 import {
   eventNames,
   type CountryResult,
   type RankingSnapshot,
   type SupportedWCAEvent,
 } from "../lib/types";
-import { buildUrl, isToday, renderTime, toNaiveDate } from "../lib/utils";
+import { apiFetch, renderTime } from "../lib/utils";
 
 interface RankingsSearch {
   date?: string;
@@ -155,7 +156,7 @@ function RankingsPage() {
   const isDirty = () => rankDate().toDateString() !== committedDate().toDateString();
 
   const updateUrl = () => {
-    const params: { date?: string; event?: string } = {};
+    const params: RankingsSearch = {};
     if (!isToday(committedDate())) {
       params.date = toNaiveDate(committedDate());
     }
@@ -164,7 +165,8 @@ function RankingsPage() {
     }
     void navigate({
       replace: true,
-      search: params as any,
+      search: params,
+      to: "/rankings",
     });
   };
 
@@ -183,20 +185,19 @@ function RankingsPage() {
       const dateParam = isToday(dateVal) ? undefined : toNaiveDate(dateVal);
       const countryId = selectedCountry()?.id ?? undefined;
       const eventId = selectedEvent();
-      const res = await fetch(buildUrl("/api/rankings"), {
-        body: JSON.stringify({
-          country_id: countryId,
-          date: dateParam,
-          event_id: eventId,
-          offset: pageParam,
-        }),
-        headers: { "Content-Type": "application/json" },
-        method: "POST",
-      });
-      if (!res.ok) {
-        throw new Error("Failed to fetch rankings");
-      }
-      const page: RankingSnapshot[] = await res.json();
+      const page = await apiFetch<RankingSnapshot[]>(
+        "/api/rankings",
+        {},
+        {
+          body: JSON.stringify({
+            country_id: countryId,
+            date: dateParam,
+            event_id: eventId,
+            offset: pageParam,
+          }),
+          method: "POST",
+        },
+      );
       return page;
     },
     queryKey: [

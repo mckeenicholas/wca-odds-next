@@ -3,7 +3,8 @@ import { createSignal, createEffect, createMemo, onCleanup, Show } from "solid-j
 import { Search } from "@kobalte/core/search";
 import { createQuery } from "@tanstack/solid-query";
 import { Search as SearchIcon, LoaderCircle, X } from "lucide-solid";
-import { buildUrl, isToday } from "../../lib/utils";
+import { isToday } from "../../lib/dateUtils";
+import { apiFetch } from "../../lib/utils";
 import { Button } from "../ui/button";
 import { DatePicker } from "./DatePicker";
 import { FlagIcon } from "./FlagIcon";
@@ -41,13 +42,7 @@ export function PersonalRankingsSearch(props: PersonalRankingsSearchProps) {
 
   const searchQuery = createQuery(() => ({
     enabled: isOpen() && debouncedTerm().trim().length >= 2,
-    queryFn: async () => {
-      const res = await fetch(buildUrl("/api/search", { q: debouncedTerm() }));
-      if (!res.ok) {
-        throw new Error("Search failed");
-      }
-      return res.json() as Promise<PersonSearchResult[]>;
-    },
+    queryFn: () => apiFetch<PersonSearchResult[]>("/api/search", { q: debouncedTerm() }),
     queryKey: ["person-search", debouncedTerm()],
     staleTime: 1000 * 60 * 2,
     placeholderData: (previousData) => previousData ?? [],

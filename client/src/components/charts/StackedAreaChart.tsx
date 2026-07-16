@@ -1,6 +1,5 @@
 import type { HistoryChartMetric, HistoryPoint } from "../../lib/types";
 import { createMemo, Show, For } from "solid-js";
-import { render } from "solid-js/web";
 import { VisXYContainer, VisArea, VisLine, VisAxis, VisCrosshair, VisTooltip } from "@unovis/solid";
 import { CurveType, Line } from "@unovis/ts";
 import { formatPercentage } from "../../lib/utils";
@@ -97,9 +96,23 @@ export function StackedAreaChart(props: StackedAreaChartProps) {
     competitorMeta().map((meta) => (d: Record<string, number>) => d[meta.name] || 0),
   );
 
-  const stackedColorAccessor = (_d: any, i: number) => competitorMeta()[i]?.color ?? "#888888";
+  const yStackedCumulative = createMemo(() => {
+    const meta = competitorMeta();
+    return meta.map((_, i) => {
+      const namesSlice = meta.slice(0, i + 1).map((m) => m.name);
+      return (d: Record<string, number>) => {
+        let sum = 0;
+        for (const name of namesSlice) {
+          sum += d[name] || 0;
+        }
+        return sum;
+      };
+    });
+  });
 
-  const tooltipTemplate = (d: any) => {
+  const stackedColorAccessor = (_d: unknown, i: number) => competitorMeta()[i]?.color ?? "#888888";
+
+  const tooltipTemplate = (d: Record<string, number>) => {
     const dateVal = new Date(d.date);
     const dateDisplay = dateVal.toLocaleDateString(undefined, {
       month: "long",
@@ -114,38 +127,32 @@ export function StackedAreaChart(props: StackedAreaChartProps) {
       }))
       .toSorted((a, b) => b.value - a.value);
 
-    const container = document.createElement("div");
-    render(
-      () => (
-        <div class="relative z-50 rounded-md bg-popover p-2 text-sm text-popover-foreground">
-          <p class="mb-1 border-b border-border pb-1 font-bold text-foreground">{dateDisplay}</p>
-          <For each={sortedCompValues}>
-            {(item) => (
-              <div class="flex justify-between">
-                <div class="flex items-center">
-                  <span
-                    class="mr-2 inline-block h-2.5 w-2.5 rounded-full"
-                    style={{ "background-color": item.color }}
-                  />
-                  <span>{item.name}</span>
-                </div>
-                <span class="ml-4 font-semibold">
-                  {props.metric === "rank" ? item.value.toFixed(2) : formatPercentage(item.value)}
-                </span>
+    return (
+      <div class="relative z-50 rounded-md bg-popover p-2 text-sm text-popover-foreground">
+        <p class="mb-1 border-b border-border pb-1 font-bold text-foreground">{dateDisplay}</p>
+        <For each={sortedCompValues}>
+          {(item) => (
+            <div class="flex justify-between">
+              <div class="flex items-center">
+                <span
+                  class="mr-2 inline-block h-2.5 w-2.5 rounded-full"
+                  style={{ "background-color": item.color }}
+                />
+                <span>{item.name}</span>
               </div>
-            )}
-          </For>
-        </div>
-      ),
-      container,
-    );
-
-    return container.firstChild as HTMLElement;
+              <span class="ml-4 font-semibold">
+                {props.metric === "rank" ? item.value.toFixed(2) : formatPercentage(item.value)}
+              </span>
+            </div>
+          )}
+        </For>
+      </div>
+    ) as HTMLElement;
   };
 
   const crosshairY = createMemo(() => {
     if (isStacked()) {
-      return yStacked();
+      return yStackedCumulative();
     }
     return competitorMeta().map((comp) => (d: Record<string, number>) => d[comp.name] || 0);
   });

@@ -1,6 +1,5 @@
 import type { ChartData, SupportedWCAEvent } from "../../lib/types";
 import { createSignal, createMemo, For } from "solid-js";
-import { render } from "solid-js/web";
 import { VisXYContainer, VisArea, VisLine, VisAxis, VisCrosshair, VisTooltip } from "@unovis/solid";
 import { CurveType, Line } from "@unovis/ts";
 import { computeCDF, renderTime, toInt } from "../../lib/utils";
@@ -12,7 +11,14 @@ interface IndividualHistogramProps {
   event: SupportedWCAEvent;
 }
 
-const x = (_d: any, i: number) => i;
+interface IndividualHistogramDataPoint {
+  name: string;
+  single?: number;
+  average?: number;
+  [key: string]: string | number | undefined;
+}
+
+const x = (_d: unknown, i: number) => i;
 
 export function IndividualHistogram(props: IndividualHistogramProps) {
   const [isCDF, setIsCDF] = createSignal(false);
@@ -20,7 +26,7 @@ export function IndividualHistogram(props: IndividualHistogramProps) {
   const histData = createMemo(() => {
     const chartValues = isCDF() ? computeCDF(props.data.data) : props.data.data;
     return chartValues.map((point) => {
-      const result: Record<string, any> = { name: point.name };
+      const result: IndividualHistogramDataPoint = { name: point.name };
       props.data.labels.forEach((label, index) => {
         result[label] = point.values[index];
       });
@@ -42,17 +48,20 @@ export function IndividualHistogram(props: IndividualHistogramProps) {
 
   const gradientId = () => `grad-${props.color.replace("#", "")}`;
 
-  const crosshairY = [(d: any) => d.single, (d: any) => d.average];
+  const crosshairY = [
+    (d: IndividualHistogramDataPoint) => d.single ?? 0,
+    (d: IndividualHistogramDataPoint) => d.average ?? 0,
+  ];
 
-  const crosshairColor = (_d: any, i: number) => (i === 0 ? props.color : `${props.color}88`);
+  const crosshairColor = (_d: unknown, i: number) => (i === 0 ? props.color : `${props.color}88`);
 
-  const tooltipTemplate = (d: any) => {
+  const tooltipTemplate = (d: IndividualHistogramDataPoint) => {
     const timeRawValue = toInt(d.name, 0);
     const timeDisplayValue = renderTime(timeRawValue, props.event === "333fm");
 
     const items = categories
       .map((category, idx) => {
-        const val = d[category];
+        const val = d[category] as number;
         if (val === undefined) {
           return null;
         }
@@ -63,33 +72,27 @@ export function IndividualHistogram(props: IndividualHistogramProps) {
       })
       .filter((item): item is NonNullable<typeof item> => item !== null);
 
-    const container = document.createElement("div");
-    render(
-      () => (
-        <div class="relative z-50 rounded-md bg-popover p-2 text-sm text-popover-foreground">
-          <p class="font-bold text-foreground">{timeDisplayValue}</p>
-          <For each={items}>
-            {(item) => (
-              <div class="flex justify-between">
-                <div class="flex items-center">
-                  <span
-                    class="mr-2 inline-block h-2.5 w-2.5 rounded-full"
-                    style={{ "background-color": item.color }}
-                  />
-                  <span>{item.category}</span>
-                </div>
-                <span class="ml-4 font-semibold">
-                  {item.val >= 0.01 ? `${item.val.toFixed(2)}%` : "<0.01%"}
-                </span>
+    return (
+      <div class="relative z-50 rounded-md bg-popover p-2 text-sm text-popover-foreground">
+        <p class="font-bold text-foreground">{timeDisplayValue}</p>
+        <For each={items}>
+          {(item) => (
+            <div class="flex justify-between">
+              <div class="flex items-center">
+                <span
+                  class="mr-2 inline-block h-2.5 w-2.5 rounded-full"
+                  style={{ "background-color": item.color }}
+                />
+                <span>{item.category}</span>
               </div>
-            )}
-          </For>
-        </div>
-      ),
-      container,
-    );
-
-    return container.firstChild as HTMLElement;
+              <span class="ml-4 font-semibold">
+                {item.val >= 0.01 ? `${item.val.toFixed(2)}%` : "<0.01%"}
+              </span>
+            </div>
+          )}
+        </For>
+      </div>
+    ) as HTMLElement;
   };
 
   return (
@@ -116,19 +119,19 @@ export function IndividualHistogram(props: IndividualHistogramProps) {
           </svg>
           <VisArea
             x={x}
-            y={(d: any) => d.single}
+            y={(d: IndividualHistogramDataPoint) => d.single ?? 0}
             color={`url(#${gradientId()})`}
             curveType={CurveType.MonotoneX}
           />
           <VisArea
             x={x}
-            y={(d: any) => d.average}
+            y={(d: IndividualHistogramDataPoint) => d.average ?? 0}
             color={`url(#grad-avg-${props.color.replace("#", "")})`}
             curveType={CurveType.MonotoneX}
           />
           <VisLine
             x={x}
-            y={(d: any) => d.single}
+            y={(d: IndividualHistogramDataPoint) => d.single ?? 0}
             color={props.color}
             curveType={CurveType.MonotoneX}
             attributes={{
@@ -139,7 +142,7 @@ export function IndividualHistogram(props: IndividualHistogramProps) {
           />
           <VisLine
             x={x}
-            y={(d: any) => d.average}
+            y={(d: IndividualHistogramDataPoint) => d.average ?? 0}
             color={`${props.color}88`}
             curveType={CurveType.MonotoneX}
             attributes={{
