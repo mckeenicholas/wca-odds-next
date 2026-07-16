@@ -1,5 +1,4 @@
 import type {
-  Wcif,
   SimulationRouteQuery,
   SimulationAPIResults,
   SupportedWCAEvent,
@@ -9,10 +8,7 @@ import { type ClassValue, clsx } from "clsx";
 import { twMerge } from "tailwind-merge";
 
 // Export const API_URL = import.meta.env.VITE_API_URL ?? "http://localhost:3000";
-export const API_URL = import.meta.env.VITE_API_URL ?? "https://odds.nmckee.org";
-export const WCA_API_BASE = "https://api.worldcubeassociation.org";
-
-export const BREAKPOINT = 1255 as const;
+const API_URL = import.meta.env.VITE_API_URL ?? "https://odds.nmckee.org";
 
 export function buildUrl(
   path: string,
@@ -42,11 +38,6 @@ export const fetchWCAInfo = async <T>(url: string | URL): Promise<T> => {
   }
   const data: T = await response.json();
   return data;
-};
-
-export const fetchWCIF = async (id: string): Promise<Wcif> => {
-  const wcaURL = `https://api.worldcubeassociation.org/competitions/${id}/wcif/public`;
-  return fetchWCAInfo<Wcif>(wcaURL);
 };
 
 export const buildSimulationQuery = (params: {
@@ -101,7 +92,7 @@ export const toClockFormat = (centiseconds: number): string => {
     .replaceAll(/^[0:]*(?!\.)/gu, "");
 };
 
-export const toFMC = (result: number): string => {
+const toFMC = (result: number): string => {
   if (result === -1) {
     return "DNF";
   }

@@ -1,7 +1,7 @@
 import type { PersonRankInfo, PersonSearchResult } from "./types";
 import { createContext, useContext, type Accessor } from "solid-js";
 
-export interface PersonalRankingsContextValue {
+interface PersonalRankingsContextValue {
   selectedPerson: Accessor<PersonSearchResult | undefined>;
   committedDate: Accessor<Date>;
   isPending: Accessor<boolean>;

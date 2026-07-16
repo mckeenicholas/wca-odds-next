@@ -4,8 +4,6 @@ export type Theme = "light" | "dark" | "system";
 
 const [theme, setTheme] = createSignal<Theme>((localStorage.getItem("theme") as Theme) || "system");
 
-export { theme };
-
 export function changeTheme(newTheme: Theme) {
   setTheme(newTheme);
   localStorage.setItem("theme", newTheme);

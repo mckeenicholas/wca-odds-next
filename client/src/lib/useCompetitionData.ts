@@ -1,10 +1,5 @@
-import {
-  type Competitor,
-  type Person,
-  type SupportedWCAEvent,
-  type Wcif,
-  supportedWCAEvents,
-} from "./types";
+import type { Person, Competition } from "@wca/helpers";
+import { type Competitor, type SupportedWCAEvent, supportedWCAEvents } from "./types";
 
 type EventRegistration = Partial<Record<SupportedWCAEvent, Competitor[]>>;
 
@@ -28,7 +23,7 @@ const processCompetitor = (person: Person, event: SupportedWCAEvent): Competitor
 };
 
 export function getCompetitorData(
-  data: Wcif | undefined | null,
+  data: Competition | undefined | null,
   isError: boolean,
   selectedEventId: SupportedWCAEvent,
   setSelectedEventId: (val: SupportedWCAEvent) => void,

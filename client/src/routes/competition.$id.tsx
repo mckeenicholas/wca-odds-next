@@ -1,3 +1,4 @@
+import type { Competition } from "@wca/helpers";
 import { createEffect, Index, Show } from "solid-js";
 import { createQuery } from "@tanstack/solid-query";
 import { createFileRoute, useNavigate } from "@tanstack/solid-router";
@@ -9,7 +10,7 @@ import { Checkbox } from "../components/ui/checkbox";
 import { compSettingsStore } from "../lib/stores/compSettings";
 import { supportedWCAEvents, type SupportedWCAEvent } from "../lib/types";
 import { getCompetitorData } from "../lib/useCompetitionData";
-import { fetchWCIF, buildSimulationQuery, cn } from "../lib/utils";
+import { fetchWCAInfo, buildSimulationQuery, cn } from "../lib/utils";
 
 const currentSelectedCompetitors = () => {
   const list = compSettingsStore.competitorsByEvent()[compSettingsStore.selectedEventId()];
@@ -42,7 +43,10 @@ function CompetitionPage() {
   const navigate = useNavigate();
 
   const query = createQuery(() => ({
-    queryFn: () => fetchWCIF(params().id),
+    queryFn: () =>
+      fetchWCAInfo<Competition>(
+        `https://api.worldcubeassociation.org/competitions/${params().id}/wcif/public`,
+      ),
     queryKey: ["competition", params().id],
     staleTime: Infinity,
   }));

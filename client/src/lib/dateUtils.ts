@@ -1,4 +1,4 @@
-export function clearTime(d: Date): Date {
+function clearTime(d: Date): Date {
   return new Date(d.getFullYear(), d.getMonth(), d.getDate());
 }
 
@@ -21,7 +21,7 @@ export function isFuture(d: Date): boolean {
   return clearTime(d) > clearTime(new Date());
 }
 
-export function isInRange(d: Date, start: Date | undefined, end: Date | undefined): boolean {
+function isInRange(d: Date, start: Date | undefined, end: Date | undefined): boolean {
   if (!start || !end) {
     return false;
   }
@@ -29,7 +29,7 @@ export function isInRange(d: Date, start: Date | undefined, end: Date | undefine
   return t >= clearTime(start) && t <= clearTime(end);
 }
 
-export function isInHoverRange(
+function isInHoverRange(
   d: Date,
   start: Date | undefined,
   end: Date | undefined,
