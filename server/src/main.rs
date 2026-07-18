@@ -1,13 +1,14 @@
-use std::env;
-use std::time::Duration;
+use std::{env, time::Duration};
 
-use axum::http::Method;
-use axum::routing::{get, post};
-use axum::{Router, middleware};
+use axum::{
+    Router,
+    http::Method,
+    middleware,
+    routing::{get, post},
+};
 use moka::future::Cache;
 use sqlx::postgres::PgPoolOptions;
-use tower_governor::GovernorLayer;
-use tower_governor::governor::GovernorConfigBuilder;
+use tower_governor::{GovernorLayer, governor::GovernorConfigBuilder};
 use tower_http::cors::CorsLayer;
 use utils::http::{ForwardedIpExtractor, ResponseCache, caching_middleware};
 

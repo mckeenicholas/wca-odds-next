@@ -1,5 +1,7 @@
-use super::builder::{HistogramChartBuilder, IndividualHistogramBuilder};
-use super::models::{ChartData, HistogramData};
+use super::{
+    builder::{HistogramChartBuilder, IndividualHistogramBuilder},
+    models::{ChartData, HistogramData},
+};
 
 const PAD_AMOUNT_CS: i32 = 20; // 20 centiseconds
 const PAD_AMOUNT_MOVES: i32 = 100; // 1 move for FMC

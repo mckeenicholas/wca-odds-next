@@ -1,5 +1,7 @@
-use super::builder::RankChartBuilder;
-use super::models::{ChartData, RankStats};
+use super::{
+    builder::RankChartBuilder,
+    models::{ChartData, RankStats},
+};
 
 pub fn generate_rank_chart(competitors: &[(&str, &RankStats)]) -> ChartData {
     let mut builder = RankChartBuilder::new();
@@ -13,8 +15,7 @@ pub fn generate_rank_chart(competitors: &[(&str, &RankStats)]) -> ChartData {
 
 #[cfg(test)]
 mod tests {
-    use super::super::models::RankAccumulator;
-    use super::*;
+    use super::{super::models::RankAccumulator, *};
 
     #[test]
     fn test_generate_rank_chart() {

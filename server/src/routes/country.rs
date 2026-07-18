@@ -1,6 +1,8 @@
-use axum::Json;
-use axum::extract::{Query, State};
-use axum::response::IntoResponse;
+use axum::{
+    Json,
+    extract::{Query, State},
+    response::IntoResponse,
+};
 use serde::{Deserialize, Serialize};
 use sqlx::{FromRow, PgPool};
 

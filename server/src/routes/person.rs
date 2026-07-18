@@ -1,15 +1,17 @@
 use std::collections::HashMap;
 
-use axum::Json;
-use axum::extract::{Query, State};
-use axum::response::IntoResponse;
+use axum::{
+    Json,
+    extract::{Query, State},
+    response::IntoResponse,
+};
 use chrono::NaiveDate;
 use serde::{Deserialize, Serialize};
 use sqlx::{FromRow, PgPool};
 
-use crate::utils::database::fetch_competitor_rank_info;
-use crate::utils::http::AppError;
-use crate::utils::wca::clean_and_validate_wca_id;
+use crate::utils::{
+    database::fetch_competitor_rank_info, http::AppError, wca::clean_and_validate_wca_id,
+};
 
 #[derive(Deserialize)]
 pub struct SearchQuery {

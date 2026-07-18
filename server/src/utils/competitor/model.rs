@@ -1,4 +1,6 @@
-use super::statistics::{self, SkewNormParams, WeightedStats};
+use super::statistics::{
+    SkewNormParams, WeightedStats, {self},
+};
 
 #[derive(Debug, Clone)]
 pub struct DatedCompetitionResult {

@@ -1,13 +1,13 @@
-use axum::Json;
-use axum::extract::State;
-use axum::response::IntoResponse;
+use axum::{Json, extract::State, response::IntoResponse};
 use sqlx::PgPool;
 
-use crate::utils::competitor::{CompetitorContext, validate_request_constraints};
-use crate::utils::http::AppError;
-use crate::utils::simulation;
-use crate::utils::types::SimulationRequest;
-use crate::utils::wca::EventType;
+use crate::utils::{
+    competitor::{CompetitorContext, validate_request_constraints},
+    http::AppError,
+    simulation,
+    types::SimulationRequest,
+    wca::EventType,
+};
 
 const SIMULATION_COUNT: u32 = 100_000;
 

@@ -1,15 +1,18 @@
-use std::hash::{DefaultHasher, Hash, Hasher};
-use std::time::Instant;
+use std::{
+    hash::{DefaultHasher, Hash, Hasher},
+    time::Instant,
+};
 
-use axum::body::Body;
-use axum::extract::State;
-use axum::http::{Request, StatusCode};
-use axum::middleware::Next;
-use axum::response::{IntoResponse, Response};
+use axum::{
+    body::Body,
+    extract::State,
+    http::{Request, StatusCode},
+    middleware::Next,
+    response::{IntoResponse, Response},
+};
 use http_body_util::BodyExt;
 use moka::future::Cache;
-use tower_governor::GovernorError;
-use tower_governor::key_extractor::KeyExtractor;
+use tower_governor::{GovernorError, key_extractor::KeyExtractor};
 
 /// IP extractor that handles proxied requests (Cloudflare, Nginx).
 #[derive(Clone, Copy)]
