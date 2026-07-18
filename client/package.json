@@ -13,8 +13,8 @@
   "dependencies": {
     "@cubing/icons": "^3.0.5",
     "@kobalte/core": "^0.13.12",
-    "@tailwindcss/vite": "^4.3.2",
-    "@tanstack/router-plugin": "^1.168.20",
+    "@tailwindcss/vite": "^4.3.3",
+    "@tanstack/router-plugin": "^1.168.21",
     "@tanstack/solid-query": "^5.101.2",
     "@tanstack/solid-router": "^1.170.18",
     "@tanstack/solid-router-devtools": "^1.167.0",
@@ -23,10 +23,10 @@
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "flag-icons": "^7.5.0",
-    "lucide-solid": "^1.24.0",
+    "lucide-solid": "^1.25.0",
     "solid-js": "^1.9.14",
     "tailwind-merge": "^3.6.0",
-    "tailwindcss": "^4.3.2",
+    "tailwindcss": "^4.3.3",
     "tailwindcss-animate": "^1.0.7"
   },
   "devDependencies": {
@@ -35,10 +35,10 @@
     "eslint-plugin-solid": "^0.14.5",
     "oxfmt": "^0.59.0",
     "oxlint": "^1.74.0",
-    "oxlint-tsgolint": "^0.24.0",
+    "oxlint-tsgolint": "^0.25.0",
     "solid-devtools": "^0.34.5",
     "typescript": "^7.0.2",
-    "vite": "^8.1.4",
+    "vite": "^8.1.5",
     "vite-plugin-solid": "^2.11.12"
   }
 }

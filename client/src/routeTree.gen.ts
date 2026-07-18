@@ -18,14 +18,19 @@ import { Route as RankingsPersonalRouteImport } from "./routes/rankings.personal
 import { Route as RankingsPersonalIdRouteImport } from "./routes/rankings.personal.$id";
 import { Route as RankingsPersonalIndexRouteImport } from "./routes/rankings.personal.index";
 
+const IndexRoute = IndexRouteImport.update({
+  id: "/",
+  path: "/",
+  getParentRoute: () => rootRouteImport,
+} as any);
 const CustomRoute = CustomRouteImport.update({
   id: "/custom",
   path: "/custom",
   getParentRoute: () => rootRouteImport,
 } as any);
-const IndexRoute = IndexRouteImport.update({
-  id: "/",
-  path: "/",
+const CompetitionIdRoute = CompetitionIdRouteImport.update({
+  id: "/competition/$id",
+  path: "/competition/$id",
   getParentRoute: () => rootRouteImport,
 } as any);
 const RankingsIndexRoute = RankingsIndexRouteImport.update({
@@ -38,9 +43,9 @@ const RankingsPersonalRoute = RankingsPersonalRouteImport.update({
   path: "/rankings/personal",
   getParentRoute: () => rootRouteImport,
 } as any);
-const CompetitionIdRoute = CompetitionIdRouteImport.update({
-  id: "/competition/$id",
-  path: "/competition/$id",
+const CompetitionIdResultsRoute = CompetitionIdResultsRouteImport.update({
+  id: "/competition/$id_/results",
+  path: "/competition/$id/results",
   getParentRoute: () => rootRouteImport,
 } as any);
 const RankingsPersonalIndexRoute = RankingsPersonalIndexRouteImport.update({
@@ -52,11 +57,6 @@ const RankingsPersonalIdRoute = RankingsPersonalIdRouteImport.update({
   id: "/$id",
   path: "/$id",
   getParentRoute: () => RankingsPersonalRoute,
-} as any);
-const CompetitionIdResultsRoute = CompetitionIdResultsRouteImport.update({
-  id: "/competition/$id_/results",
-  path: "/competition/$id/results",
-  getParentRoute: () => rootRouteImport,
 } as any);
 
 export interface FileRoutesByFullPath {
@@ -132,6 +132,13 @@ export interface RootRouteChildren {
 
 declare module "@tanstack/solid-router" {
   interface FileRoutesByPath {
+    "/": {
+      id: "/";
+      path: "/";
+      fullPath: "/";
+      preLoaderRoute: typeof IndexRouteImport;
+      parentRoute: typeof rootRouteImport;
+    };
     "/custom": {
       id: "/custom";
       path: "/custom";
@@ -139,11 +146,11 @@ declare module "@tanstack/solid-router" {
       preLoaderRoute: typeof CustomRouteImport;
       parentRoute: typeof rootRouteImport;
     };
-    "/": {
-      id: "/";
-      path: "/";
-      fullPath: "/";
-      preLoaderRoute: typeof IndexRouteImport;
+    "/competition/$id": {
+      id: "/competition/$id";
+      path: "/competition/$id";
+      fullPath: "/competition/$id";
+      preLoaderRoute: typeof CompetitionIdRouteImport;
       parentRoute: typeof rootRouteImport;
     };
     "/rankings/": {
@@ -160,11 +167,11 @@ declare module "@tanstack/solid-router" {
       preLoaderRoute: typeof RankingsPersonalRouteImport;
       parentRoute: typeof rootRouteImport;
     };
-    "/competition/$id": {
-      id: "/competition/$id";
-      path: "/competition/$id";
-      fullPath: "/competition/$id";
-      preLoaderRoute: typeof CompetitionIdRouteImport;
+    "/competition/$id_/results": {
+      id: "/competition/$id_/results";
+      path: "/competition/$id/results";
+      fullPath: "/competition/$id/results";
+      preLoaderRoute: typeof CompetitionIdResultsRouteImport;
       parentRoute: typeof rootRouteImport;
     };
     "/rankings/personal/": {
@@ -180,13 +187,6 @@ declare module "@tanstack/solid-router" {
       fullPath: "/rankings/personal/$id";
       preLoaderRoute: typeof RankingsPersonalIdRouteImport;
       parentRoute: typeof RankingsPersonalRoute;
-    };
-    "/competition/$id_/results": {
-      id: "/competition/$id_/results";
-      path: "/competition/$id/results";
-      fullPath: "/competition/$id/results";
-      preLoaderRoute: typeof CompetitionIdResultsRouteImport;
-      parentRoute: typeof rootRouteImport;
     };
   }
 }
