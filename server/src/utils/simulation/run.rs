@@ -1,10 +1,10 @@
-use crate::utils::charts::{HistogramAccumulator, RankAccumulator};
-use crate::utils::competitor::{Competitor, CompetitorStats};
-use crate::utils::wca::{DNF_VALUE, EventType, calculate_average};
 use rand::prelude::*;
 use rand_distr::Normal;
 
 use super::results::SimulationResult;
+use crate::utils::charts::{HistogramAccumulator, RankAccumulator};
+use crate::utils::competitor::{Competitor, CompetitorStats};
+use crate::utils::wca::{DNF_VALUE, EventType, calculate_average};
 
 const HIST_INCLUDE_THRESHOLD: f64 = 0.0001;
 

@@ -1,8 +1,10 @@
-use crate::utils::competitor::DatedCompetitionResult;
+use std::collections::HashMap;
+
 use chrono::NaiveDate;
 use serde::Serialize;
 use sqlx::{FromRow, PgPool, Postgres, QueryBuilder};
-use std::collections::HashMap;
+
+use crate::utils::competitor::DatedCompetitionResult;
 
 /// Database row for competitor results.
 #[derive(Debug, FromRow)]

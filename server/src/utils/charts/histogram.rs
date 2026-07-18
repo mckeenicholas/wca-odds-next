@@ -1,5 +1,4 @@
-use super::builder::HistogramChartBuilder;
-use super::builder::IndividualHistogramBuilder;
+use super::builder::{HistogramChartBuilder, IndividualHistogramBuilder};
 use super::models::{ChartData, HistogramData};
 
 const PAD_AMOUNT_CS: i32 = 20; // 20 centiseconds

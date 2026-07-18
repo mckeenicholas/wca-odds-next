@@ -1,4 +1,6 @@
-use axum::{Json, extract::State, response::IntoResponse};
+use axum::Json;
+use axum::extract::State;
+use axum::response::IntoResponse;
 use sqlx::PgPool;
 
 use crate::utils::competitor::{CompetitorContext, validate_request_constraints};

@@ -1,10 +1,12 @@
+use std::collections::HashMap;
+
+use chrono::{Months, NaiveDate};
+use sqlx::PgPool;
+
 use super::model::{Competitor, DatedCompetitionResult};
 use crate::utils::database;
 use crate::utils::http::AppError;
 use crate::utils::wca::{EventType, clean_and_validate_wca_id};
-use chrono::{Months, NaiveDate};
-use sqlx::PgPool;
-use std::collections::HashMap;
 
 pub struct CompetitorContext {
     pub competitors: Vec<Competitor>,

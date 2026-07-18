@@ -1,18 +1,15 @@
-use axum::{
-    Router,
-    http::Method,
-    middleware,
-    routing::{get, post},
-};
-use sqlx::postgres::PgPoolOptions;
 use std::env;
-use tower_http::cors::CorsLayer;
-
-use moka::future::Cache;
 use std::time::Duration;
-use tower_governor::{GovernorLayer, governor::GovernorConfigBuilder};
-use utils::http::ForwardedIpExtractor;
-use utils::http::{ResponseCache, caching_middleware};
+
+use axum::http::Method;
+use axum::routing::{get, post};
+use axum::{Router, middleware};
+use moka::future::Cache;
+use sqlx::postgres::PgPoolOptions;
+use tower_governor::GovernorLayer;
+use tower_governor::governor::GovernorConfigBuilder;
+use tower_http::cors::CorsLayer;
+use utils::http::{ForwardedIpExtractor, ResponseCache, caching_middleware};
 
 const CACHE_TIMEOUT_SECNODS: u64 = 60 * 60;
 const CACHE_MAX_ITEMS: u64 = 10_000;
