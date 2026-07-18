@@ -1,3 +1,4 @@
+import { createMemo } from "solid-js";
 import { eventNames, type SimulationAPIResults, type SupportedWCAEvent } from "../../lib/types";
 import { formatPercentage, toClockFormat } from "../../lib/utils";
 import { PieChart } from "../charts/PieChart";
@@ -9,13 +10,14 @@ interface ResultsSummaryProps {
 }
 
 export function ResultsSummary(props: ResultsSummaryProps) {
-  const topCompetitor = () =>
+  const topCompetitor = createMemo(() =>
     props.data.competitor_results.reduce(
       (max, competitor) => (competitor.win_chance > max.win_chance ? competitor : max),
       props.data.competitor_results[0],
-    );
+    ),
+  );
 
-  const topCompetitorStats = () => {
+  const topCompetitorStats = createMemo(() => {
     const comp = topCompetitor();
     return {
       avgRank: comp.expected_rank.toFixed(2),
@@ -23,7 +25,7 @@ export function ResultsSummary(props: ResultsSummaryProps) {
       podiumChance: formatPercentage(comp.pod_chance, true),
       winChance: formatPercentage(comp.win_chance, true),
     };
-  };
+  });
 
   return (
     <div class="mb-2 flex h-full flex-col gap-2 md:flex-row">

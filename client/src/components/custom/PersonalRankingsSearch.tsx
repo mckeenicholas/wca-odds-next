@@ -1,9 +1,10 @@
 import type { PersonSearchResult } from "../../lib/types";
-import { createSignal, createEffect, createMemo, onCleanup, Show } from "solid-js";
+import { createSignal, createMemo, Show } from "solid-js";
 import { Search } from "@kobalte/core/search";
 import { createQuery } from "@tanstack/solid-query";
 import { Search as SearchIcon, LoaderCircle, X } from "lucide-solid";
 import { isToday } from "../../lib/dateUtils";
+import { useDebounce } from "../../lib/useDebounce";
 import { apiFetch } from "../../lib/utils";
 import { Button } from "../ui/button";
 import { DatePicker } from "./DatePicker";
@@ -28,17 +29,7 @@ export function PersonalRankingsSearch(props: PersonalRankingsSearchProps) {
 
   const [searchTerm, setSearchTerm] = createSignal("");
   const [isOpen, setIsOpen] = createSignal(false);
-  const [debouncedTerm, setDebouncedTerm] = createSignal("");
-
-  createEffect(() => {
-    const text = searchTerm();
-    const timer = setTimeout(() => {
-      setDebouncedTerm(text);
-    }, 300);
-    onCleanup(() => {
-      clearTimeout(timer);
-    });
-  });
+  const debouncedTerm = useDebounce(searchTerm, 300);
 
   const searchQuery = createQuery(() => ({
     enabled: isOpen() && debouncedTerm().trim().length >= 2,

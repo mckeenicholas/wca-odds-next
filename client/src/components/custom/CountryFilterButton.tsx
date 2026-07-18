@@ -1,6 +1,16 @@
 import type { CountryResult } from "../../lib/types";
-import { createSignal, createEffect, onCleanup, For, Show } from "solid-js";
+import {
+  createSignal,
+  createEffect,
+  onCleanup,
+  For,
+  Show,
+  Switch,
+  Match,
+  createMemo,
+} from "solid-js";
 import { createQuery } from "@tanstack/solid-query";
+import { createVirtualizer } from "@tanstack/solid-virtual";
 import { Check, ChevronDown, Globe, Search, X } from "lucide-solid";
 import { buildUrl, cn } from "../../lib/utils";
 import { Popover, PopoverContent, PopoverTrigger } from "../ui/popover";
@@ -48,7 +58,7 @@ export function CountryFilterButton(props: CountryFilterButtonProps) {
     query.data?.filter((c) => c.id !== "World" && !c.id.startsWith("_")) ?? [];
 
   const filteredSpecial = () => {
-    const q = search().toLowerCase();
+    const q = search().trim().toLowerCase();
     if (!q) {
       return specialEntries();
     }
@@ -56,12 +66,63 @@ export function CountryFilterButton(props: CountryFilterButtonProps) {
   };
 
   const filteredCountries = () => {
-    const q = search().toLowerCase();
+    const q = search().trim().toLowerCase();
     if (!q) {
       return realCountries();
     }
     return realCountries().filter((c) => c.name.toLowerCase().includes(q));
   };
+
+  type ListEntry =
+    | { type: "header"; label: string }
+    | { type: "separator" }
+    | { type: "item"; country: CountryResult };
+
+  const flatList = createMemo<ListEntry[]>(() => {
+    const entries: ListEntry[] = [];
+    const special = filteredSpecial();
+    const countries = filteredCountries();
+
+    if (special.length > 0) {
+      entries.push({ label: "Regions", type: "header" });
+      for (const c of special) {
+        entries.push({ country: c, type: "item" });
+      }
+    }
+    if (special.length > 0 && countries.length > 0) {
+      entries.push({ type: "separator" });
+    }
+    if (countries.length > 0) {
+      entries.push({ label: "Countries", type: "header" });
+      for (const c of countries) {
+        entries.push({ country: c, type: "item" });
+      }
+    }
+    return entries;
+  });
+
+  const [listRef, setListRef] = createSignal<HTMLDivElement | null>(null);
+
+  const virtualizer = createVirtualizer({
+    get count() {
+      return flatList().length;
+    },
+    getScrollElement: () => listRef(),
+    estimateSize: (index) => {
+      const entry = flatList()[index];
+      if (!entry) {
+        return 36;
+      }
+      if (entry.type === "header") {
+        return 26;
+      }
+      if (entry.type === "separator") {
+        return 9;
+      }
+      return 36;
+    },
+    overscan: 5,
+  });
 
   const select = (country: CountryResult) => {
     if (country.id === "World") {
@@ -131,84 +192,92 @@ export function CountryFilterButton(props: CountryFilterButtonProps) {
           </div>
 
           {/* List */}
-          <div class="max-h-75 overflow-x-hidden overflow-y-auto p-1">
+          <div ref={setListRef} class="max-h-75 overflow-x-hidden overflow-y-auto p-1">
             <Show
-              when={filteredSpecial().length > 0 || filteredCountries().length > 0}
+              when={flatList().length > 0}
               fallback={
                 <div class="py-6 text-center text-sm text-muted-foreground">
                   No countries found.
                 </div>
               }
             >
-              {/* Regions Group */}
-              <Show when={filteredSpecial().length > 0}>
-                <div class="px-3 py-1.5 text-xs font-medium text-muted-foreground">Regions</div>
-                <For each={filteredSpecial()}>
-                  {(c) => {
-                    const isSelected = () =>
-                      (!props.value && c.id === "World") ||
-                      (props.value !== undefined && props.value.id === c.id);
-
+              <div
+                style={{
+                  height: `${virtualizer.getTotalSize()}px`,
+                  width: "100%",
+                  position: "relative",
+                }}
+              >
+                <For each={virtualizer.getVirtualItems()}>
+                  {(row) => {
+                    const entry = () => flatList()[row.index];
                     return (
-                      <button
-                        onClick={() => {
-                          select(c);
+                      <div
+                        ref={(el) => {
+                          if (el) {
+                            virtualizer.measureElement(el);
+                          }
                         }}
-                        class={cn(
-                          "relative flex w-full cursor-pointer items-center gap-2 rounded-sm px-2 py-1.5 text-left text-sm outline-none select-none hover:bg-accent hover:text-accent-foreground",
-                          isSelected() && "bg-accent/50 text-accent-foreground",
-                        )}
+                        data-index={row.index}
+                        style={{
+                          position: "absolute",
+                          top: 0,
+                          left: 0,
+                          width: "100%",
+                          transform: `translateY(${row.start}px)`,
+                        }}
                       >
-                        <Check
-                          class={cn("h-4 w-4 shrink-0", isSelected() ? "opacity-100" : "opacity-0")}
-                        />
-                        <Show
-                          when={c.id === "World"}
-                          fallback={<FlagIcon code={c.iso2} showTooltip={false} />}
-                        >
-                          <Globe class="h-4 w-4 opacity-50" />
-                        </Show>
-                        <span>{c.name}</span>
-                      </button>
+                        <Switch>
+                          <Match when={entry()?.type === "header"}>
+                            <div class="px-3 py-1.5 text-xs font-medium text-muted-foreground">
+                              {(entry() as { label: string }).label}
+                            </div>
+                          </Match>
+                          <Match when={entry()?.type === "separator"}>
+                            <div class="px-1 py-1">
+                              <div class="h-px bg-border" />
+                            </div>
+                          </Match>
+                          <Match when={entry()?.type === "item"}>
+                            {(() => {
+                              const c = (entry() as { country: CountryResult }).country;
+                              const isSelected = () =>
+                                (!props.value && c.id === "World") ||
+                                (props.value !== undefined && props.value.id === c.id);
+
+                              return (
+                                <button
+                                  onClick={() => {
+                                    select(c);
+                                  }}
+                                  class={cn(
+                                    "relative flex w-full cursor-pointer items-center gap-2 rounded-sm px-2 py-1.5 text-left text-sm outline-none select-none hover:bg-accent hover:text-accent-foreground",
+                                    isSelected() && "bg-accent/50 text-accent-foreground",
+                                  )}
+                                >
+                                  <Check
+                                    class={cn(
+                                      "h-4 w-4 shrink-0",
+                                      isSelected() ? "opacity-100" : "opacity-0",
+                                    )}
+                                  />
+                                  <Show
+                                    when={c.id === "World"}
+                                    fallback={<FlagIcon code={c.iso2} showTooltip={false} />}
+                                  >
+                                    <Globe class="h-4 w-4 opacity-50" />
+                                  </Show>
+                                  <span>{c.name}</span>
+                                </button>
+                              );
+                            })()}
+                          </Match>
+                        </Switch>
+                      </div>
                     );
                   }}
                 </For>
-              </Show>
-
-              {/* Separator */}
-              <Show when={filteredSpecial().length > 0 && filteredCountries().length > 0}>
-                <div class="px-1 py-1">
-                  <div class="h-px bg-border" />
-                </div>
-              </Show>
-
-              {/* Countries Group */}
-              <Show when={filteredCountries().length > 0}>
-                <div class="px-3 py-1.5 text-xs font-medium text-muted-foreground">Countries</div>
-                <For each={filteredCountries()}>
-                  {(c) => {
-                    const isSelected = () => props.value !== undefined && props.value.id === c.id;
-
-                    return (
-                      <button
-                        onClick={() => {
-                          select(c);
-                        }}
-                        class={cn(
-                          "relative flex w-full cursor-pointer items-center gap-2 rounded-sm px-2 py-1.5 text-left text-sm outline-none select-none hover:bg-accent hover:text-accent-foreground",
-                          isSelected() && "bg-accent/50 text-accent-foreground",
-                        )}
-                      >
-                        <Check
-                          class={cn("h-4 w-4 shrink-0", isSelected() ? "opacity-100" : "opacity-0")}
-                        />
-                        <FlagIcon code={c.iso2} showTooltip={false} />
-                        <span>{c.name}</span>
-                      </button>
-                    );
-                  }}
-                </For>
-              </Show>
+              </div>
             </Show>
           </div>
         </div>

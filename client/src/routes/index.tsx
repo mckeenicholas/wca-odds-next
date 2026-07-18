@@ -1,10 +1,11 @@
-import { createSignal, createEffect, onCleanup, Show } from "solid-js";
+import { createSignal, createEffect, Show } from "solid-js";
 import { Search } from "@kobalte/core/search";
 import { createQuery } from "@tanstack/solid-query";
 import { createFileRoute, useNavigate, Link } from "@tanstack/solid-router";
 import { Search as SearchIcon, LoaderCircle } from "lucide-solid";
 import { buttonVariants } from "../components/ui/button";
 import { formatDate } from "../lib/dateUtils";
+import { useDebounce } from "../lib/useDebounce";
 import { fetchWCAInfo } from "../lib/utils";
 
 interface Competition {
@@ -35,21 +36,17 @@ function Home() {
   const queryText = () => search().q ?? "";
   const [rawInput, setRawInput] = createSignal(queryText());
 
-  // Debounce typed input to update the URL query parameter (which triggers the query)
-  createEffect(() => {
-    const inputVal = rawInput();
-    const timer = setTimeout(() => {
-      if (inputVal !== queryText()) {
-        void navigate({
-          replace: true,
-          search: (old) => ({ ...old, q: inputVal || undefined }),
-        });
-      }
-    }, 250);
+  const debouncedInput = useDebounce(rawInput, 250);
 
-    onCleanup(() => {
-      clearTimeout(timer);
-    });
+  // Update the URL query parameter (which triggers the query) when debounced input changes
+  createEffect(() => {
+    const debouncedVal = debouncedInput();
+    if (debouncedVal !== queryText()) {
+      void navigate({
+        replace: true,
+        search: (old) => ({ ...old, q: debouncedVal || undefined }),
+      });
+    }
   });
 
   // Automatically keep rawInput in sync if the URL changes (e.g. Back/Forward browser navigation)
@@ -71,18 +68,9 @@ function Home() {
     queryKey: ["competitionSearch", queryText()],
   }));
 
-  const [results, setResults] = createSignal<Competition[]>([]);
+  const results = () => query.data ?? [];
   const [isOpen, setIsOpen] = createSignal(false);
   const dropdownOpen = () => isOpen() && rawInput().trim().length > 0;
-
-  createEffect(() => {
-    const { data } = query;
-    if (data) {
-      setResults(data);
-    } else if (!queryText().trim()) {
-      setResults([]);
-    }
-  });
 
   const isSearchingOrDebouncing = () =>
     query.isFetching || (rawInput().trim().length > 0 && rawInput() !== queryText());

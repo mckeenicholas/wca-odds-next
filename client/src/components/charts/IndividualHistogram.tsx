@@ -1,5 +1,5 @@
 import type { ChartData, SupportedWCAEvent } from "../../lib/types";
-import { createSignal, createMemo, For } from "solid-js";
+import { createSignal, createMemo, For, createUniqueId } from "solid-js";
 import { VisXYContainer, VisArea, VisLine, VisAxis, VisCrosshair, VisTooltip } from "@unovis/solid";
 import { CurveType, Line } from "@unovis/ts";
 import { computeCDF, renderTime, toInt } from "../../lib/utils";
@@ -22,6 +22,9 @@ const x = (_d: unknown, i: number) => i;
 
 export function IndividualHistogram(props: IndividualHistogramProps) {
   const [isCDF, setIsCDF] = createSignal(false);
+  const chartId = createUniqueId();
+  const singleGradientId = `grad-single-${chartId}`;
+  const avgGradientId = `grad-avg-${chartId}`;
 
   const histData = createMemo(() => {
     const chartValues = isCDF() ? computeCDF(props.data.data) : props.data.data;
@@ -45,8 +48,6 @@ export function IndividualHistogram(props: IndividualHistogramProps) {
 
   const categories = ["single", "average"];
   const colors = () => [props.color, `${props.color}88`];
-
-  const gradientId = () => `grad-${props.color.replace("#", "")}`;
 
   const crosshairY = [
     (d: IndividualHistogramDataPoint) => d.single ?? 0,
@@ -101,17 +102,11 @@ export function IndividualHistogram(props: IndividualHistogramProps) {
         <VisXYContainer data={histData()} height={240}>
           <svg width="0" height="0">
             <defs>
-              <linearGradient id={gradientId()} x1="0" y1="0" x2="0" y2="1">
+              <linearGradient id={singleGradientId} x1="0" y1="0" x2="0" y2="1">
                 <stop offset="0%" stop-color={props.color} stop-opacity="0.6" />
                 <stop offset="100%" stop-color={props.color} stop-opacity="0" />
               </linearGradient>
-              <linearGradient
-                id={`grad-avg-${props.color.replace("#", "")}`}
-                x1="0"
-                y1="0"
-                x2="0"
-                y2="1"
-              >
+              <linearGradient id={avgGradientId} x1="0" y1="0" x2="0" y2="1">
                 <stop offset="0%" stop-color={props.color} stop-opacity="0.3" />
                 <stop offset="100%" stop-color={props.color} stop-opacity="0" />
               </linearGradient>
@@ -120,13 +115,13 @@ export function IndividualHistogram(props: IndividualHistogramProps) {
           <VisArea
             x={x}
             y={(d: IndividualHistogramDataPoint) => d.single ?? 0}
-            color={`url(#${gradientId()})`}
+            color={`url(#${singleGradientId})`}
             curveType={CurveType.MonotoneX}
           />
           <VisArea
             x={x}
             y={(d: IndividualHistogramDataPoint) => d.average ?? 0}
-            color={`url(#grad-avg-${props.color.replace("#", "")})`}
+            color={`url(#${avgGradientId})`}
             curveType={CurveType.MonotoneX}
           />
           <VisLine
