@@ -76,7 +76,7 @@ pub async fn search_handler(
 
     let mut persons_map: HashMap<String, Person> = HashMap::new();
 
-    for p in id_results.into_iter().chain(name_results.into_iter()) {
+    for p in id_results.into_iter().chain(name_results) {
         persons_map.insert(p.person_id.clone(), p);
     }
 
