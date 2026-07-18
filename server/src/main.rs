@@ -4,28 +4,18 @@ use axum::{
     middleware,
     routing::{get, post},
 };
-use cfg_if::cfg_if;
 use sqlx::postgres::PgPoolOptions;
 use std::env;
 use tower_http::cors::CorsLayer;
 
-cfg_if! {
-    if #[cfg(feature = "enable_cache")] {
-        use std::time::Duration;
-        use moka::future::Cache;
-        use utils::http::{ResponseCache, caching_middleware};
-    }
-}
+use moka::future::Cache;
+use std::time::Duration;
+use tower_governor::{GovernorLayer, governor::GovernorConfigBuilder};
+use utils::http::ForwardedIpExtractor;
+use utils::http::{ResponseCache, caching_middleware};
 
-cfg_if! {
-    if #[cfg(feature = "enable_governor")] {
-        use tower_governor::{GovernorLayer, governor::GovernorConfigBuilder};
-        use utils::http::ForwardedIpExtractor;
-
-        const CACHE_TIMEOUT_SECNODS: u64 = 60 * 60;
-        const CACHE_MAX_ITEMS: u64 = 10_000;
-    }
-}
+const CACHE_TIMEOUT_SECNODS: u64 = 60 * 60;
+const CACHE_MAX_ITEMS: u64 = 10_000;
 
 mod routes;
 mod utils;
@@ -50,7 +40,19 @@ async fn main() {
         .map(|v| v.parse::<u16>().expect("Invalid port number"))
         .unwrap_or(3000);
 
-    let database_url = format!("postgres://{}:{}@{}:{}/{}", user, pass, host, port, db_name);
+    let enable_cache = env::var("ENABLE_CACHE")
+        .map(|val| val.to_lowercase() != "false")
+        .unwrap_or(true);
+    let enable_rate_limiting = env::var("ENABLE_RATE_LIMIT")
+        .map(|val| val.to_lowercase() != "false")
+        .unwrap_or(true);
+
+    let encoded_user = urlencoding::encode(&user);
+    let encoded_pass = urlencoding::encode(&pass);
+    let database_url = format!(
+        "postgres://{}:{}@{}:{}/{}",
+        encoded_user, encoded_pass, host, port, db_name
+    );
 
     let pool = PgPoolOptions::new()
         .max_connections(5)
@@ -84,42 +86,38 @@ async fn main() {
         .route("/api/persons", post(person::person_rank_details))
         .route("/api/countries", get(country::country_list_handler));
 
-    cfg_if! {
-        if #[cfg(feature = "enable_governor")] {
-            let stats_governor = GovernorConfigBuilder::default()
-                .per_second(5)
-                .burst_size(10)
-                .key_extractor(ForwardedIpExtractor)
-                .finish()
-                .expect("Failed to init governor");
-            let stats_routes_limited = stats_routes.layer(GovernorLayer::new(stats_governor));
+    let (stats_routes, crud_routes) = if enable_rate_limiting {
+        let stats_governor = GovernorConfigBuilder::default()
+            .per_second(5)
+            .burst_size(10)
+            .key_extractor(ForwardedIpExtractor)
+            .finish()
+            .expect("Failed to init governor");
+        let stats_routes_limited = stats_routes.layer(GovernorLayer::new(stats_governor));
 
-            let crud_governor = GovernorConfigBuilder::default()
-                .per_second(20)
-                .burst_size(60)
-                .key_extractor(ForwardedIpExtractor)
-                .finish()
-                .expect("Failed to init governor");
-            let crud_routes_limited = crud_routes.layer(GovernorLayer::new(crud_governor));
-        } else {
-            let stats_routes_limited = stats_routes;
-            let crud_routes_limited = crud_routes;
-        }
-    }
+        let crud_governor = GovernorConfigBuilder::default()
+            .per_second(20)
+            .burst_size(60)
+            .key_extractor(ForwardedIpExtractor)
+            .finish()
+            .expect("Failed to init governor");
+        let crud_routes_limited = crud_routes.layer(GovernorLayer::new(crud_governor));
+        (stats_routes_limited, crud_routes_limited)
+    } else {
+        (stats_routes, crud_routes)
+    };
 
     let mut app = Router::new()
-        .merge(stats_routes_limited)
-        .merge(crud_routes_limited)
+        .merge(stats_routes)
+        .merge(crud_routes)
         .with_state(pool);
 
-    cfg_if! {
-        if #[cfg(feature = "enable_cache")] {
-            let cache: ResponseCache = Cache::builder()
-                .max_capacity(CACHE_MAX_ITEMS)
-                .time_to_live(Duration::from_secs(CACHE_TIMEOUT_SECNODS))
-                .build();
-            app = app.layer(middleware::from_fn_with_state(cache, caching_middleware));
-        }
+    if enable_cache {
+        let cache: ResponseCache = Cache::builder()
+            .max_capacity(CACHE_MAX_ITEMS)
+            .time_to_live(Duration::from_secs(CACHE_TIMEOUT_SECNODS))
+            .build();
+        app = app.layer(middleware::from_fn_with_state(cache, caching_middleware));
     }
 
     app = app.layer(middleware::from_fn(timer_middleware)).layer(cors);

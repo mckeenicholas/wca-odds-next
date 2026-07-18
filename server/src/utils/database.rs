@@ -1,5 +1,5 @@
 use crate::utils::competitor::DatedCompetitionResult;
-use chrono::{NaiveDate, Utc};
+use chrono::NaiveDate;
 use serde::Serialize;
 use sqlx::{FromRow, PgPool, Postgres, QueryBuilder};
 use std::collections::HashMap;
@@ -82,16 +82,15 @@ pub fn group_results_by_date(
 
 pub fn convert_to_dated_results(
     grouped: HashMap<String, HashMap<NaiveDate, Vec<i32>>>,
+    ref_date: NaiveDate,
 ) -> HashMap<String, Vec<DatedCompetitionResult>> {
-    let today = Utc::now().date_naive();
-
     let raw_data: HashMap<String, Vec<DatedCompetitionResult>> = grouped
         .into_iter()
         .map(|(name, dates)| {
             let results = dates
                 .into_iter()
                 .map(|(date, times)| {
-                    let days_since = (today - date).num_days() as i32;
+                    let days_since = (ref_date - date).num_days() as i32;
                     DatedCompetitionResult {
                         days_since,
                         results: times,

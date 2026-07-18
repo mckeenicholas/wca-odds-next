@@ -34,17 +34,16 @@ pub async fn simulation_handler(
     }
 
     let include_dnf = payload.include_dnf.unwrap_or(false);
-    let results = simulation::run_simulations(
-        &ctx.competitors,
-        &ctx.event_type,
-        include_dnf,
-        SIMULATION_COUNT,
-    );
+    let event_type = ctx.event_type;
+    let competitors = ctx.competitors.clone();
+    let response = tokio::task::spawn_blocking(move || {
+        let results =
+            simulation::run_simulations(&competitors, &event_type, include_dnf, SIMULATION_COUNT);
 
-    let response = simulation::format_results(
-        ctx.competitors,
-        results,
-        matches!(ctx.event_type, EventType::Fmc),
-    );
+        simulation::format_results(competitors, results, matches!(event_type, EventType::Fmc))
+    })
+    .await
+    .map_err(|e| AppError::Internal(e.to_string()))?;
+
     Ok(Json(response).into_response())
 }

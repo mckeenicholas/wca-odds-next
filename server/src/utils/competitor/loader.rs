@@ -37,7 +37,7 @@ impl CompetitorContext {
             .collect();
 
         let grouped_by_date = database::group_results_by_date(results);
-        let mut dated_results_map = database::convert_to_dated_results(grouped_by_date);
+        let mut dated_results_map = database::convert_to_dated_results(grouped_by_date, end_date);
 
         let competitors: Vec<Competitor> = valid_ids
             .into_iter()

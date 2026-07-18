@@ -8,6 +8,7 @@ use serde_json::json;
 pub enum AppError {
     BadRequest(String),
     Database(sqlx::Error),
+    Internal(String),
 }
 
 impl From<sqlx::Error> for AppError {
@@ -22,6 +23,13 @@ impl IntoResponse for AppError {
             AppError::BadRequest(msg) => (StatusCode::BAD_REQUEST, msg),
             AppError::Database(e) => {
                 eprintln!("Database error: {}", e);
+                (
+                    StatusCode::INTERNAL_SERVER_ERROR,
+                    "Internal Server Error".to_string(),
+                )
+            }
+            AppError::Internal(e) => {
+                eprintln!("Internal error: {}", e);
                 (
                     StatusCode::INTERNAL_SERVER_ERROR,
                     "Internal Server Error".to_string(),

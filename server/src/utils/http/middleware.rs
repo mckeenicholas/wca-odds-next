@@ -63,6 +63,10 @@ pub async fn caching_middleware(
     req: Request<Body>,
     next: Next,
 ) -> Result<Response, StatusCode> {
+    if req.uri().path() == "/api/health" {
+        return Ok(next.run(req).await);
+    }
+
     let method = req.method().clone();
     let uri = req.uri().to_string();
 
