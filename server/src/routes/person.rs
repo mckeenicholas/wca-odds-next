@@ -1,4 +1,5 @@
-use crate::utils::{database::fetch_competitor_rank_info, wca::clean_and_validate_wca_id};
+use std::collections::HashMap;
+
 use axum::{
     Json,
     extract::{Query, State},
@@ -7,9 +8,10 @@ use axum::{
 use chrono::NaiveDate;
 use serde::{Deserialize, Serialize};
 use sqlx::{FromRow, PgPool};
-use std::collections::HashMap;
 
-use crate::utils::http::AppError;
+use crate::utils::{
+    database::fetch_competitor_rank_info, http::AppError, wca::clean_and_validate_wca_id,
+};
 
 #[derive(Deserialize)]
 pub struct SearchQuery {
@@ -76,7 +78,7 @@ pub async fn search_handler(
 
     let mut persons_map: HashMap<String, Person> = HashMap::new();
 
-    for p in id_results.into_iter().chain(name_results.into_iter()) {
+    for p in id_results.into_iter().chain(name_results) {
         persons_map.insert(p.person_id.clone(), p);
     }
 

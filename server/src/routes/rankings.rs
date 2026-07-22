@@ -2,11 +2,15 @@ use axum::{Json, extract::State, response::IntoResponse};
 use serde::Serialize;
 use sqlx::PgPool;
 
-use crate::utils::competitor::validate_date_range;
-use crate::utils::database::{self, CountryFilter};
-use crate::utils::http::AppError;
-use crate::utils::types::{RankingHistoryRequest, RankingRequest};
-use crate::utils::wca::EventType;
+use crate::utils::{
+    competitor::validate_date_range,
+    database::{
+        CountryFilter, {self},
+    },
+    http::AppError,
+    types::{RankingHistoryRequest, RankingRequest},
+    wca::EventType,
+};
 
 const MAX_WINDOW_DAYS: i64 = 31 * 12 * 5; // ~5 years
 const PAGE_SIZE: i32 = 32;

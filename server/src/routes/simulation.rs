@@ -1,11 +1,13 @@
 use axum::{Json, extract::State, response::IntoResponse};
 use sqlx::PgPool;
 
-use crate::utils::competitor::{CompetitorContext, validate_request_constraints};
-use crate::utils::http::AppError;
-use crate::utils::simulation;
-use crate::utils::types::SimulationRequest;
-use crate::utils::wca::EventType;
+use crate::utils::{
+    competitor::{CompetitorContext, validate_request_constraints},
+    http::AppError,
+    simulation,
+    types::SimulationRequest,
+    wca::EventType,
+};
 
 const SIMULATION_COUNT: u32 = 100_000;
 
@@ -34,17 +36,16 @@ pub async fn simulation_handler(
     }
 
     let include_dnf = payload.include_dnf.unwrap_or(false);
-    let results = simulation::run_simulations(
-        &ctx.competitors,
-        &ctx.event_type,
-        include_dnf,
-        SIMULATION_COUNT,
-    );
+    let event_type = ctx.event_type;
+    let competitors = ctx.competitors.clone();
+    let response = tokio::task::spawn_blocking(move || {
+        let results =
+            simulation::run_simulations(&competitors, &event_type, include_dnf, SIMULATION_COUNT);
 
-    let response = simulation::format_results(
-        ctx.competitors,
-        results,
-        matches!(ctx.event_type, EventType::Fmc),
-    );
+        simulation::format_results(competitors, results, matches!(event_type, EventType::Fmc))
+    })
+    .await
+    .map_err(|e| AppError::Internal(e.to_string()))?;
+
     Ok(Json(response).into_response())
 }

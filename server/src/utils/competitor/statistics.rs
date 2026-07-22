@@ -60,7 +60,11 @@ pub fn calc_weighted_stats(data: &[(i32, f32)]) -> WeightedStats {
 
     let variance = if data.len() > 1 {
         let effective_n = total_weight.powi(2) / data.iter().map(|(_, w)| w.powi(2)).sum::<f32>();
-        weighted_sq_diff / (total_weight * (effective_n - 1.0) / effective_n)
+        if effective_n > 1.001 {
+            weighted_sq_diff / (total_weight * (effective_n - 1.0) / effective_n)
+        } else {
+            0.0
+        }
     } else {
         0.0
     };

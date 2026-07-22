@@ -1,3 +1,8 @@
+use std::{
+    hash::{DefaultHasher, Hash, Hasher},
+    time::Instant,
+};
+
 use axum::{
     body::Body,
     extract::State,
@@ -7,10 +12,6 @@ use axum::{
 };
 use http_body_util::BodyExt;
 use moka::future::Cache;
-use std::{
-    hash::{DefaultHasher, Hash, Hasher},
-    time::Instant,
-};
 use tower_governor::{GovernorError, key_extractor::KeyExtractor};
 
 /// IP extractor that handles proxied requests (Cloudflare, Nginx).
@@ -63,6 +64,10 @@ pub async fn caching_middleware(
     req: Request<Body>,
     next: Next,
 ) -> Result<Response, StatusCode> {
+    if req.uri().path() == "/api/health" {
+        return Ok(next.run(req).await);
+    }
+
     let method = req.method().clone();
     let uri = req.uri().to_string();
 

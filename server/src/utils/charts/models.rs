@@ -1,6 +1,7 @@
+use std::collections::HashMap;
+
 use itertools::Itertools;
 use serde::Serialize;
-use std::collections::HashMap;
 
 #[derive(Serialize)]
 pub struct ChartData {
