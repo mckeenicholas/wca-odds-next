@@ -76,41 +76,6 @@ export const eventOrder: Record<SupportedWCAEvent, number> = {
 
 export type SupportedWCAEvent = (typeof supportedWCAEvents)[number];
 
-interface Registration {
-  wcaRegistrationId: number;
-  eventIds: SupportedWCAEvent[];
-  status: string;
-  isCompeting: boolean;
-}
-
-export interface Person {
-  name: string;
-  wcaId: string;
-  countryIso2: string;
-  personalBests: PersonalBest[];
-  registration: Registration;
-}
-
-interface PersonalBest {
-  eventId: string;
-  best: number;
-  worldRanking: number;
-}
-
-export interface WcifEvent {
-  id: SupportedWCAEvent;
-}
-
-export interface Wcif {
-  name: string;
-  id: string;
-  events: WcifEvent[];
-  persons: Person[];
-  schedule: {
-    startDate: string;
-  };
-}
-
 export interface SimulationRouteQuery {
   competitors?: string;
   eventId?: string;
@@ -143,9 +108,7 @@ export interface WCALiveCompetitionError {
   };
 }
 
-export type WCALiveCompetitionData =
-  | WCALiveCompetitionSuccess
-  | WCALiveCompetitionError;
+export type WCALiveCompetitionData = WCALiveCompetitionSuccess | WCALiveCompetitionError;
 
 export interface WCALiveEventRound {
   id: string;
@@ -157,6 +120,11 @@ export interface WCALiveCompetitionEvent {
     id: string;
   };
   rounds: WCALiveEventRound[];
+}
+
+export interface FetchRoundResultsGraphQLResponse {
+  data?: WCALiveRoundDataWrapper;
+  errors?: { message: string; [key: string]: string }[];
 }
 
 export interface WCALiveAttempt {
@@ -183,11 +151,6 @@ export interface WCALiveRoundDetails {
 
 export interface WCALiveRoundDataWrapper {
   round: WCALiveRoundDetails;
-}
-
-export interface FetchRoundResultsGraphQLResponse {
-  data?: WCALiveRoundDataWrapper;
-  errors?: { message: string; [key: string]: string }[];
 }
 
 export interface Competitor {
