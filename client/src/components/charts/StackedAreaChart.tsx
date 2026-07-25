@@ -21,6 +21,13 @@ const dateFormatter = (timestamp: number | Date) => {
   });
 };
 
+const formatRankValue = (val: number) => {
+  if (Math.abs(val - Math.round(val)) < 1e-6) {
+    return Math.round(val).toString();
+  }
+  return val.toFixed(2);
+};
+
 export function StackedAreaChart(props: StackedAreaChartProps) {
   const isStacked = () => props.stacked !== false && props.metric !== "rank";
 
@@ -78,8 +85,12 @@ export function StackedAreaChart(props: StackedAreaChartProps) {
   const yDomain = createMemo<[number, number]>(() => {
     if (props.metric === "rank") {
       const allRanks = processedData().flatMap((d) => competitorMeta().map((m) => d[m.id]));
+      if (allRanks.length === 0) {
+        return [1, 5];
+      }
       const maxRank = Math.max(...allRanks, 3);
-      return [maxRank + 0.5, 1];
+      const minRank = Math.min(...allRanks, 1);
+      return [Math.max(1, Math.floor(minRank)), Math.ceil(maxRank)];
     }
     return [0, 100];
   });
@@ -87,7 +98,10 @@ export function StackedAreaChart(props: StackedAreaChartProps) {
   const yTickFormat = (v: number | Date) => {
     const num = typeof v === "number" ? v : v.getTime();
     if (props.metric === "rank") {
-      return num.toFixed(1);
+      if (Math.abs(num - Math.round(num)) > 1e-6) {
+        return "";
+      }
+      return Math.round(num).toString();
     }
     return `${Math.round(num)}%`;
   };
@@ -141,7 +155,9 @@ export function StackedAreaChart(props: StackedAreaChartProps) {
                 <span>{item.name}</span>
               </div>
               <span class="ml-4 font-semibold">
-                {props.metric === "rank" ? item.value.toFixed(2) : formatPercentage(item.value)}
+                {props.metric === "rank"
+                  ? formatRankValue(item.value)
+                  : formatPercentage(item.value)}
               </span>
             </div>
           )}

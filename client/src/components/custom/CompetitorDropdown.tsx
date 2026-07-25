@@ -1,4 +1,5 @@
 import { Show, Index } from "solid-js";
+import { Collapsible } from "@kobalte/core/collapsible";
 import { CircleAlert } from "lucide-solid";
 import {
   type CompetitorSimulationResult,
@@ -31,12 +32,13 @@ export function CompetitorDropdown(props: CompetitorDropdownProps) {
   const expectedRank = () => props.result.expected_rank.toFixed(4);
 
   return (
-    <div>
-      <button
-        type="button"
-        onClick={() => {
-          props.onToggle();
-        }}
+    <Collapsible
+      open={props.isOpen}
+      onOpenChange={() => {
+        props.onToggle();
+      }}
+    >
+      <Collapsible.Trigger
         aria-label={`Details for ${props.result.id}`}
         class="flex w-full items-center justify-between rounded-md p-2 ps-1 text-left hover:bg-secondary focus:outline-none focus-visible:bg-secondary"
       >
@@ -64,44 +66,32 @@ export function CompetitorDropdown(props: CompetitorDropdownProps) {
         <div class="flex-1 text-center">{podiumPercentage()}</div>
         <div class="flex-1 text-center">{expectedRank()}</div>
         <RotatableChevron up={props.isOpen} />
-      </button>
+      </Collapsible.Trigger>
 
-      <Show when={props.isOpen}>
-        <div class="mt-1 space-y-4 rounded-md px-2 py-3 duration-200 animate-in fade-in-0">
-          <IndividualHistogram
-            color={props.color}
-            data={props.result.histogram}
-            event={props.event}
-          />
+      <Collapsible.Content class="mt-1 space-y-4 overflow-hidden rounded-md px-2 py-3 duration-200 ease-out animate-in fade-in-0 data-[expanded]:overflow-visible">
+        <IndividualHistogram
+          color={props.color}
+          data={props.result.histogram}
+          event={props.event}
+        />
 
-          <div class="flex flex-wrap items-center gap-2 px-2 lg:ms-2 lg:gap-4">
-            <Index each={Array.from({ length: eventAttempts[props.event] })}>
-              {(_, idx) => {
-                const attemptId = () => `attempt-${props.result.id}-${idx + 1}`;
-                return (
-                  <div class="flex items-center gap-2">
-                    <label
-                      for={attemptId()}
-                      class="cursor-pointer text-xs whitespace-nowrap text-muted-foreground select-none"
-                    >
-                      Attempt {idx + 1}:
-                    </label>
-                    <div class="max-w-24">
-                      <Show
-                        when={props.event !== "333fm"}
-                        fallback={
-                          <FMCEntryField
-                            id={attemptId()}
-                            value={props.value[idx] ?? 0}
-                            onChange={(val) => {
-                              const updated = [...props.value];
-                              updated[idx] = val;
-                              props.onChange(updated);
-                            }}
-                          />
-                        }
-                      >
-                        <TimeEntryField
+        <div class="flex flex-wrap items-center gap-2 px-2 lg:ms-2 lg:gap-4">
+          <Index each={Array.from({ length: eventAttempts[props.event] })}>
+            {(_, idx) => {
+              const attemptId = () => `attempt-${props.result.id}-${idx + 1}`;
+              return (
+                <div class="flex items-center gap-2">
+                  <label
+                    for={attemptId()}
+                    class="cursor-pointer text-xs whitespace-nowrap text-muted-foreground select-none"
+                  >
+                    Attempt {idx + 1}:
+                  </label>
+                  <div class="max-w-24">
+                    <Show
+                      when={props.event !== "333fm"}
+                      fallback={
+                        <FMCEntryField
                           id={attemptId()}
                           value={props.value[idx] ?? 0}
                           onChange={(val) => {
@@ -110,15 +100,25 @@ export function CompetitorDropdown(props: CompetitorDropdownProps) {
                             props.onChange(updated);
                           }}
                         />
-                      </Show>
-                    </div>
+                      }
+                    >
+                      <TimeEntryField
+                        id={attemptId()}
+                        value={props.value[idx] ?? 0}
+                        onChange={(val) => {
+                          const updated = [...props.value];
+                          updated[idx] = val;
+                          props.onChange(updated);
+                        }}
+                      />
+                    </Show>
                   </div>
-                );
-              }}
-            </Index>
-          </div>
+                </div>
+              );
+            }}
+          </Index>
         </div>
-      </Show>
-    </div>
+      </Collapsible.Content>
+    </Collapsible>
   );
 }

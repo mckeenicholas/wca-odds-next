@@ -8,6 +8,7 @@ import {
   Switch,
   Match,
   createMemo,
+  type JSX,
 } from "solid-js";
 import { createQuery } from "@tanstack/solid-query";
 import { createVirtualizer } from "@tanstack/solid-virtual";
@@ -22,11 +23,46 @@ interface CountryFilterButtonProps {
   includeRegions?: boolean;
 }
 
+type ListEntry =
+  | { type: "header"; label: string }
+  | { type: "separator" }
+  | { type: "item"; country: CountryResult };
+
+interface CountryItemRowProps {
+  country: CountryResult;
+  isSelected: boolean;
+  onSelect: (country: CountryResult) => void;
+}
+
+function CountryItemRow(props: CountryItemRowProps) {
+  return (
+    <button
+      onClick={() => {
+        props.onSelect(props.country);
+      }}
+      class={cn(
+        "relative flex w-full cursor-pointer items-center gap-2 rounded-sm px-2 py-1.5 text-left text-sm outline-none select-none hover:bg-accent hover:text-accent-foreground",
+        props.isSelected && "bg-accent/50 text-accent-foreground",
+      )}
+    >
+      <Check class={cn("h-4 w-4 shrink-0", props.isSelected ? "opacity-100" : "opacity-0")} />
+      <Show
+        when={props.country.id === "World"}
+        fallback={<FlagIcon code={props.country.iso2} showTooltip={false} />}
+      >
+        <Globe class="h-4 w-4 opacity-50" />
+      </Show>
+      <span>{props.country.name}</span>
+    </button>
+  );
+}
+
 export function CountryFilterButton(props: CountryFilterButtonProps) {
   const [open, setOpen] = createSignal(false);
   const [search, setSearch] = createSignal("");
   // eslint-disable-next-line no-unassigned-vars
   let inputRef: HTMLInputElement | undefined;
+  const [listRef, setListRef] = createSignal<HTMLDivElement | null>(null);
 
   const query = createQuery(() => ({
     queryFn: async () => {
@@ -38,18 +74,6 @@ export function CountryFilterButton(props: CountryFilterButtonProps) {
     queryKey: ["countries", { include_regions: props.includeRegions ?? false }],
     staleTime: Infinity,
   }));
-
-  createEffect(() => {
-    if (open()) {
-      setSearch("");
-      const timer = setTimeout(() => {
-        inputRef?.focus();
-      }, 0);
-      onCleanup(() => {
-        clearTimeout(timer);
-      });
-    }
-  });
 
   const specialEntries = () =>
     query.data?.filter((c) => c.id === "World" || c.id.startsWith("_")) ?? [];
@@ -72,11 +96,6 @@ export function CountryFilterButton(props: CountryFilterButtonProps) {
     }
     return realCountries().filter((c) => c.name.toLowerCase().includes(q));
   };
-
-  type ListEntry =
-    | { type: "header"; label: string }
-    | { type: "separator" }
-    | { type: "item"; country: CountryResult };
 
   const flatList = createMemo<ListEntry[]>(() => {
     const entries: ListEntry[] = [];
@@ -101,41 +120,94 @@ export function CountryFilterButton(props: CountryFilterButtonProps) {
     return entries;
   });
 
-  const [listRef, setListRef] = createSignal<HTMLDivElement | null>(null);
+  const resetScroll = () => {
+    const el = listRef();
+    if (el) {
+      el.scrollTop = 0;
+    }
+    virtualizer.scrollToOffset(0);
+  };
+
+  const getEntrySize = (index: number) => {
+    const entry = flatList()[index];
+    if (!entry) {
+      return 36;
+    }
+    if (entry.type === "header") {
+      return 26;
+    }
+    if (entry.type === "separator") {
+      return 9;
+    }
+    return 36;
+  };
+
+  const getEntryKey = (index: number) => {
+    const entry = flatList()[index];
+    if (!entry) {
+      return index;
+    }
+    if (entry.type === "header") {
+      return `header-${entry.label}`;
+    }
+    if (entry.type === "separator") {
+      return `sep-${index}`;
+    }
+    return `item-${entry.country.id}`;
+  };
 
   const virtualizer = createVirtualizer({
     get count() {
       return flatList().length;
     },
     getScrollElement: () => listRef(),
-    estimateSize: (index) => {
-      const entry = flatList()[index];
-      if (!entry) {
-        return 36;
-      }
-      if (entry.type === "header") {
-        return 26;
-      }
-      if (entry.type === "separator") {
-        return 9;
-      }
-      return 36;
-    },
+    estimateSize: getEntrySize,
+    getItemKey: getEntryKey,
     overscan: 5,
   });
 
-  const select = (country: CountryResult) => {
-    if (country.id === "World") {
-      props.onChange();
+  createEffect(() => {
+    if (open()) {
+      setSearch("");
+      const timer = setTimeout(() => {
+        inputRef?.focus();
+      }, 0);
+
+      resetScroll();
+      const raf = requestAnimationFrame(resetScroll);
+
+      onCleanup(() => {
+        clearTimeout(timer);
+        cancelAnimationFrame(raf);
+      });
     } else {
-      props.onChange(country);
+      virtualizer.scrollToOffset(0);
     }
+  });
+
+  createEffect(() => {
+    search();
+    if (open()) {
+      resetScroll();
+    }
+  });
+
+  const select = (country: CountryResult) => {
+    const changeValue = country.id === "World" ? undefined : country;
+    props.onChange(changeValue);
     setOpen(false);
   };
 
   const clear = (e: MouseEvent) => {
     e.stopPropagation();
     props.onChange();
+  };
+
+  const isSelected = (c: CountryResult) =>
+    (!props.value && c.id === "World") || (props.value !== undefined && props.value.id === c.id);
+
+  const handleSearchInput: JSX.EventHandler<HTMLInputElement, InputEvent> = (e) => {
+    setSearch(e.currentTarget.value);
   };
 
   return (
@@ -182,9 +254,7 @@ export function CountryFilterButton(props: CountryFilterButtonProps) {
                 inputRef = el;
               }}
               value={search()}
-              onInput={(e) => {
-                setSearch(e.currentTarget.value);
-              }}
+              onInput={handleSearchInput}
               placeholder="Search countries..."
               id="country-filter-input"
               class="flex h-10 w-full rounded-md bg-transparent py-3 text-sm outline-none placeholder:text-muted-foreground"
@@ -213,11 +283,6 @@ export function CountryFilterButton(props: CountryFilterButtonProps) {
                     const entry = () => flatList()[row.index];
                     return (
                       <div
-                        ref={(el) => {
-                          if (el) {
-                            virtualizer.measureElement(el);
-                          }
-                        }}
                         data-index={row.index}
                         style={{
                           position: "absolute",
@@ -239,38 +304,15 @@ export function CountryFilterButton(props: CountryFilterButtonProps) {
                             </div>
                           </Match>
                           <Match when={entry()?.type === "item"}>
-                            {(() => {
-                              const c = (entry() as { country: CountryResult }).country;
-                              const isSelected = () =>
-                                (!props.value && c.id === "World") ||
-                                (props.value !== undefined && props.value.id === c.id);
-
-                              return (
-                                <button
-                                  onClick={() => {
-                                    select(c);
-                                  }}
-                                  class={cn(
-                                    "relative flex w-full cursor-pointer items-center gap-2 rounded-sm px-2 py-1.5 text-left text-sm outline-none select-none hover:bg-accent hover:text-accent-foreground",
-                                    isSelected() && "bg-accent/50 text-accent-foreground",
-                                  )}
-                                >
-                                  <Check
-                                    class={cn(
-                                      "h-4 w-4 shrink-0",
-                                      isSelected() ? "opacity-100" : "opacity-0",
-                                    )}
-                                  />
-                                  <Show
-                                    when={c.id === "World"}
-                                    fallback={<FlagIcon code={c.iso2} showTooltip={false} />}
-                                  >
-                                    <Globe class="h-4 w-4 opacity-50" />
-                                  </Show>
-                                  <span>{c.name}</span>
-                                </button>
-                              );
-                            })()}
+                            <CountryItemRow
+                              country={
+                                (entry() as { type: "item"; country: CountryResult }).country
+                              }
+                              isSelected={isSelected(
+                                (entry() as { type: "item"; country: CountryResult }).country,
+                              )}
+                              onSelect={select}
+                            />
                           </Match>
                         </Switch>
                       </div>

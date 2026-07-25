@@ -5,10 +5,14 @@ import { RotatableChevron } from "./RotatableChevron";
 
 type sortCol = "name" | "win" | "pod" | "rank";
 
-interface GroupedResults {
-  idx: number;
-  results: CompetitorSimulationResult;
-  color: string;
+interface CompetitorItem {
+  id: string;
+  results: () => CompetitorSimulationResult;
+  setResults: (r: CompetitorSimulationResult) => void;
+  color: () => string;
+  setColor: (c: string) => void;
+  idx: () => number;
+  setIdx: (i: number) => void;
 }
 
 interface CompetitorListProps {
@@ -74,25 +78,70 @@ export function CompetitorList(props: CompetitorListProps) {
     }
   };
 
-  const groupedProps = createMemo(() => {
-    const getSortValue = (item: GroupedResults): number | string => {
-      switch (sortBy()) {
-        case "name":
-          return item.results.name;
-        case "win":
-          return item.results.win_chance;
-        case "pod":
-          return item.results.pod_chance;
-        case "rank":
-          return item.results.expected_rank;
-        default:
-          return 0;
-      }
-    };
+  const itemCache = new Map<string, CompetitorItem>();
 
-    const sortFn = (a: GroupedResults, b: GroupedResults) => {
-      const aVal = getSortValue(a);
-      const bVal = getSortValue(b);
+  const getSortValue = (res: CompetitorSimulationResult): number | string => {
+    switch (sortBy()) {
+      case "name":
+        return res.name;
+      case "win":
+        return res.win_chance;
+      case "pod":
+        return res.pod_chance;
+      case "rank":
+        return res.expected_rank;
+      default:
+        return 0;
+    }
+  };
+
+  const getCompetitorItems = () => {
+    const currentResults = props.simulationResults;
+    const currentColors = props.colors;
+    const currentIds = new Set<string>();
+
+    currentResults.forEach((results, idx) => {
+      const { id } = results;
+      currentIds.add(id);
+      const color = currentColors[idx] ?? "";
+      const existing = itemCache.get(id);
+      if (existing) {
+        existing.setResults(results);
+        existing.setColor(color);
+        existing.setIdx(idx);
+      } else {
+        const [resSignal, setResults] = createSignal(results);
+        const [colorSignal, setColor] = createSignal(color);
+        const [idxSignal, setIdx] = createSignal(idx);
+        itemCache.set(id, {
+          id,
+          results: resSignal,
+          setResults,
+          color: colorSignal,
+          setColor,
+          idx: idxSignal,
+          setIdx,
+        });
+      }
+    });
+
+    for (const id of itemCache.keys()) {
+      if (!currentIds.has(id)) {
+        itemCache.delete(id);
+      }
+    }
+
+    return currentResults
+      .map((r) => itemCache.get(r.id))
+      .filter((item): item is CompetitorItem => item !== undefined);
+  };
+
+  const sortedItems = createMemo(() => {
+    const items = getCompetitorItems();
+
+    const sortFn = (a: CompetitorItem, b: CompetitorItem) => {
+      const aVal = getSortValue(a.results());
+      const bVal = getSortValue(b.results());
 
       const comparison =
         typeof aVal === "string" && typeof bVal === "string"
@@ -104,13 +153,7 @@ export function CompetitorList(props: CompetitorListProps) {
       return effectiveAsc ? comparison : -comparison;
     };
 
-    return props.simulationResults
-      .map((results, idx) => ({
-        color: props.colors[idx],
-        idx,
-        results,
-      }))
-      .toSorted(sortFn);
+    return items.toSorted(sortFn);
   });
 
   return (
@@ -136,22 +179,22 @@ export function CompetitorList(props: CompetitorListProps) {
       </div>
       <hr class="mx-2 border-border" />
       <ol class="space-y-0.5 p-1">
-        <For each={groupedProps()}>
+        <For each={sortedItems()}>
           {(person) => (
             <li>
               <CompetitorDropdown
-                value={props.value[person.idx] || []}
+                value={props.value[person.idx()] || []}
                 onChange={(updatedRow) => {
                   const updated = [...props.value];
-                  updated[person.idx] = updatedRow;
+                  updated[person.idx()] = updatedRow;
                   props.onChange(updated);
                 }}
-                result={person.results}
+                result={person.results()}
                 event={props.event}
-                color={person.color}
-                isOpen={expandedIds().has(person.results.id)}
+                color={person.color()}
+                isOpen={expandedIds().has(person.id)}
                 onToggle={() => {
-                  toggleExpanded(person.results.id);
+                  toggleExpanded(person.id);
                 }}
               />
             </li>

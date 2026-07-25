@@ -111,13 +111,16 @@ export function RankingsAreaChart(props: RankingsAreaChartProps) {
   const yTickFormat = (v: number | Date) => {
     const num = typeof v === "number" ? v : v.getTime();
     if (props.metric === "rank") {
-      if (num % 1 !== 0) {
+      if (Math.abs(num - Math.round(num)) > 1e-6) {
         return "";
       }
-      return num.toFixed(0);
+      return Math.round(num).toString();
     }
     if (props.isTime) {
       return renderTime(num, props.isFMC ?? false);
+    }
+    if (Math.abs(num - Math.round(num)) < 1e-6) {
+      return Math.round(num).toString();
     }
     return num.toFixed(1);
   };

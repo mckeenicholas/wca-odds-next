@@ -77,7 +77,7 @@ function Home() {
 
   return (
     <div class="flex flex-col items-center justify-center p-4">
-      <div class="mt-[12vh] flex w-full max-w-[70vw] flex-col items-center justify-center">
+      <div class="mt-[8vh] flex w-full max-w-[70vw] flex-col items-center justify-center">
         <h1 class="m-6 text-center text-3xl font-bold">WCA Competition Predictor</h1>
         <h1 class="m-4 text-center text-xl">View stats for competition</h1>
 
