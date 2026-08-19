@@ -11,4 +11,4 @@ WORKDIR /app
 
 COPY --from=builder /app/target/release/server .
 
-CMD ["./server"]
+CMD ["./wca-odds-server"]
