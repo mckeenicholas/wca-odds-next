@@ -1,7 +1,9 @@
 use itertools::Itertools;
 
-use super::histogram::HistogramKeys;
-use super::models::{ChartData, ChartPoint, HistogramData, RankStats};
+use super::{
+    histogram::HistogramKeys,
+    models::{ChartData, ChartPoint, HistogramData, RankStats},
+};
 
 pub struct HistogramChartBuilder<'a> {
     series: Vec<(&'a str, &'a HistogramData)>,

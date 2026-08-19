@@ -1,10 +1,14 @@
-use super::model::{Competitor, DatedCompetitionResult};
-use crate::utils::database;
-use crate::utils::http::AppError;
-use crate::utils::wca::{EventType, clean_and_validate_wca_id};
+use std::collections::HashMap;
+
 use chrono::{Months, NaiveDate};
 use sqlx::PgPool;
-use std::collections::HashMap;
+
+use super::model::{Competitor, DatedCompetitionResult};
+use crate::utils::{
+    database,
+    http::AppError,
+    wca::{EventType, clean_and_validate_wca_id},
+};
 
 pub struct CompetitorContext {
     pub competitors: Vec<Competitor>,
@@ -37,7 +41,7 @@ impl CompetitorContext {
             .collect();
 
         let grouped_by_date = database::group_results_by_date(results);
-        let mut dated_results_map = database::convert_to_dated_results(grouped_by_date);
+        let mut dated_results_map = database::convert_to_dated_results(grouped_by_date, end_date);
 
         let competitors: Vec<Competitor> = valid_ids
             .into_iter()

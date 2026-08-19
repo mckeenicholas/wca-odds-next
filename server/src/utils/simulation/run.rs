@@ -1,10 +1,12 @@
-use crate::utils::charts::{HistogramAccumulator, RankAccumulator};
-use crate::utils::competitor::{Competitor, CompetitorStats};
-use crate::utils::wca::{DNF_VALUE, EventType, calculate_average};
 use rand::prelude::*;
 use rand_distr::Normal;
 
 use super::results::SimulationResult;
+use crate::utils::{
+    charts::{HistogramAccumulator, RankAccumulator},
+    competitor::{Competitor, CompetitorStats},
+    wca::{DNF_VALUE, EventType, calculate_average},
+};
 
 const HIST_INCLUDE_THRESHOLD: f64 = 0.0001;
 
@@ -57,10 +59,16 @@ impl CompetitorAccumulator {
     }
 }
 
-fn generate_skewnorm_value(stats: &CompetitorStats, rng: &mut ThreadRng, include_dnf: bool) -> i32 {
-    let normal = Normal::new(0.0, 1.0).expect("Failed to init normal dist");
-
-    if stats.location.is_nan() || stats.shape.is_nan() {
+fn generate_skewnorm_value(
+    stats: &CompetitorStats,
+    rng: &mut ThreadRng,
+    normal: &Normal<f64>,
+    include_dnf: bool,
+) -> i32 {
+    let invalid = [stats.location, stats.shape, stats.skew]
+        .iter()
+        .any(|&x| x.is_nan() || x.is_infinite());
+    if invalid {
         return DNF_VALUE;
     }
 
@@ -68,8 +76,8 @@ fn generate_skewnorm_value(stats: &CompetitorStats, rng: &mut ThreadRng, include
         return DNF_VALUE;
     }
 
-    let u0 = normal.sample(rng);
-    let v = normal.sample(rng);
+    let u0 = normal.sample(rng) as f32;
+    let v = normal.sample(rng) as f32;
 
     let alpha = stats.skew;
     let omega = stats.shape;
@@ -88,6 +96,7 @@ fn simulate_round(
     competitor: &Competitor,
     event_type: &EventType,
     rng: &mut rand::rngs::ThreadRng,
+    normal: &Normal<f64>,
     include_dnf: bool,
     acc: &mut CompetitorAccumulator,
 ) -> (i32, i32) {
@@ -104,7 +113,7 @@ fn simulate_round(
                 manual_time
             };
         } else if let Some(stats) = &competitor.stats {
-            let val = generate_skewnorm_value(stats, rng, include_dnf);
+            let val = generate_skewnorm_value(stats, rng, normal, include_dnf);
 
             *solve = match event_type {
                 EventType::Fmc => val * 100,
@@ -128,6 +137,7 @@ pub fn run_simulations(
 ) -> Vec<SimulationResult> {
     let num_competitors = competitors.len();
     let mut rng = rand::rng();
+    let normal = Normal::new(0.0, 1.0).expect("Failed to init normal dist");
 
     let mut accumulators: Vec<CompetitorAccumulator> = (0..num_competitors)
         .map(|_| CompetitorAccumulator::new(num_competitors))
@@ -139,7 +149,7 @@ pub fn run_simulations(
         for (idx, comp) in competitors.iter().enumerate() {
             let acc = &mut accumulators[idx];
 
-            let (avg, best) = simulate_round(comp, event_type, &mut rng, include_dnf, acc);
+            let (avg, best) = simulate_round(comp, event_type, &mut rng, &normal, include_dnf, acc);
 
             if avg != DNF_VALUE {
                 acc.record_average(avg, event_type.is_fmc());

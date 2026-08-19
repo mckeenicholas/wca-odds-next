@@ -1,4 +1,6 @@
-use super::statistics::{self, SkewNormParams, WeightedStats};
+use super::statistics::{
+    SkewNormParams, WeightedStats, {self},
+};
 
 #[derive(Debug, Clone)]
 pub struct DatedCompetitionResult {
@@ -6,7 +8,7 @@ pub struct DatedCompetitionResult {
     pub results: Vec<i32>,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct CompetitorStats {
     /// Location parameter (xi) from skew-normal fit
     pub location: f32,
@@ -22,7 +24,7 @@ pub struct CompetitorStats {
     pub num_non_dnf_results: u32,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct Competitor {
     pub name: String,
     pub id: String,

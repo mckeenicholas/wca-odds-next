@@ -1,10 +1,10 @@
-use crate::utils::charts::{
-    HistogramData, RankStats, create_full_histogram_chart, create_individual_histogram_chart,
-    generate_rank_chart,
-};
-use crate::utils::competitor::Competitor;
-use crate::utils::types::{
-    CompetitorSimulationResult, FullHistogramChartData, SimulationEndpointResults,
+use crate::utils::{
+    charts::{
+        HistogramData, RankStats, create_full_histogram_chart, create_individual_histogram_chart,
+        generate_rank_chart,
+    },
+    competitor::Competitor,
+    types::{CompetitorSimulationResult, FullHistogramChartData, SimulationEndpointResults},
 };
 
 pub struct SimulationResult {

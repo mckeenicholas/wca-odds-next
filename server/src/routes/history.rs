@@ -2,10 +2,12 @@ use axum::{Json, extract::State, response::IntoResponse};
 use chrono::Months;
 use sqlx::PgPool;
 
-use crate::utils::competitor::{HistoryContext, validate_request_constraints};
-use crate::utils::http::AppError;
-use crate::utils::simulation;
-use crate::utils::types::{CompetitorHistoryStat, HistoryPoint, SimulationHistoryRequest};
+use crate::utils::{
+    competitor::{HistoryContext, validate_request_constraints},
+    http::AppError,
+    simulation,
+    types::{CompetitorHistoryStat, HistoryPoint, SimulationHistoryRequest},
+};
 
 const HISTORY_STEPS: u32 = 12;
 const NUM_SIMULATIONS: u32 = 10_000;
