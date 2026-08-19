@@ -2,10 +2,10 @@ import type {
   FetchRoundResultsGraphQLResponse,
   SupportedWCAEvent,
   WCALiveCompetitionData,
-  WCALiveCompetitionError,
 } from "./types";
 
-const WCA_LIVE_ENDPOINT = "https://live.worldcubeassociation.org/api";
+const WCA_LIVE_ENDPOINT = "https://live.worldcubeassociation.org";
+const WCA_LIVE_API_ENDPOINT = `${WCA_LIVE_ENDPOINT}/api`;
 
 const fetchWCALiveResults = async (
   competitionId: string,
@@ -25,22 +25,17 @@ const fetchWCALiveResults = async (
     );
   }
 
-  const finalRound = targetEvent.rounds.reduce((acc, round) => {
-    return round.number > acc.number ? round : acc;
-  }, targetEvent.rounds[0]);
+  const finalRound = targetEvent.rounds.reduce(
+    (acc, round) => (round.number > acc.number ? round : acc),
+    targetEvent.rounds[0],
+  );
 
   const roundResultsResponse = (await fetchRoundResults(
     finalRound.id,
   )) as FetchRoundResultsGraphQLResponse;
-  const processedOutput: number[][] = [];
-
   if (roundResultsResponse.errors && roundResultsResponse.errors.length > 0) {
-    const errorMessages = roundResultsResponse.errors
-      .map((e) => e.message)
-      .join("; ");
-    throw new Error(
-      `GraphQL query for round '${finalRound.id}' failed: ${errorMessages}`,
-    );
+    const errorMessages = roundResultsResponse.errors.map((e) => e.message).join("; ");
+    throw new Error(`GraphQL query for round '${finalRound.id}' failed: ${errorMessages}`);
   }
 
   if (!roundResultsResponse.data?.round?.format) {
@@ -53,28 +48,21 @@ const fetchWCALiveResults = async (
   const { numberOfAttempts } = roundDetails.format;
   const actualRoundResultsList = roundDetails.results || [];
 
-  const personAttemptsMap = new Map<string, number[]>();
-  for (const resultItem of actualRoundResultsList) {
-    if (resultItem.person?.wcaId && resultItem.attempts) {
-      const attemptValues = resultItem.attempts.map((att) => att.result);
-      personAttemptsMap.set(resultItem.person.wcaId, attemptValues);
-    }
-  }
+  const personAttemptsMap = new Map<string, number[]>(
+    actualRoundResultsList
+      .filter((resultItem) => resultItem.person?.wcaId && resultItem.attempts)
+      .map((resultItem) => [
+        resultItem.person.wcaId!,
+        resultItem.attempts.map((att) => att.result),
+      ]),
+  );
 
-  for (const wcaId of ids) {
-    const individualPersonAttempts: number[] = [];
+  return ids.map((wcaId) => {
     const recordedAttempts = personAttemptsMap.get(wcaId);
-
-    for (let i = 0; i < numberOfAttempts; i++) {
-      if (recordedAttempts && i < recordedAttempts.length) {
-        individualPersonAttempts.push(recordedAttempts[i]);
-      } else {
-        individualPersonAttempts.push(0);
-      }
-    }
-    processedOutput.push(individualPersonAttempts);
-  }
-  return processedOutput;
+    return Array.from({ length: numberOfAttempts }, (_, i) =>
+      recordedAttempts && i < recordedAttempts.length ? recordedAttempts[i] : 0,
+    );
+  });
 };
 
 const fetchRoundResults = async (roundId: string) => {
@@ -127,14 +115,10 @@ const fetchCompetitionRounds = async (id: string) => {
     if ("data" in response && response.data?.competition) {
       return response.data.competition;
     } else if ("errors" in response && response.errors) {
-      const errorDetail =
-        (response as WCALiveCompetitionError).errors.detail ||
-        "Unknown GraphQL error";
+      const errorDetail = response.errors.detail || "Unknown GraphQL error";
       throw new Error(`GraphQL query 'Competition' failed: ${errorDetail}`);
     } else {
-      throw new Error(
-        "GraphQL query 'Competition' returned an unexpected response structure.",
-      );
+      throw new Error("GraphQL query 'Competition' returned an unexpected response structure.");
     }
   } catch (error) {
     if (error instanceof Error) {
@@ -150,7 +134,7 @@ const fetchCompetitionRounds = async (id: string) => {
 };
 
 const getWCALiveID = async (competitionId: string) => {
-  const linkUrl = `https://live.worldcubeassociation.org/link/competitions/${competitionId}`;
+  const linkUrl = `${WCA_LIVE_ENDPOINT}/link/competitions/${competitionId}`;
   const response = await fetch(linkUrl, {
     method: "GET",
     redirect: "follow",
@@ -162,23 +146,24 @@ const getWCALiveID = async (competitionId: string) => {
     );
   }
 
-  const match = response.url.match(/\/competitions\/([^/]+)/);
+  const match = /\/competitions\/(?<id>[^/]+)/u.exec(response.url);
 
-  if (!match || !match[1]) {
+  if (!match) {
     throw new Error(
       `Unable to extract WCA Live ID from redirected URL: ${response.url} (original competition ID: ${competitionId})`,
     );
   }
 
-  const wcaLiveID = match[1];
+  const [, wcaLiveID] = match;
+  if (!wcaLiveID) {
+    throw new Error(
+      `Unable to extract WCA Live ID from redirected URL: ${response.url} (original competition ID: ${competitionId})`,
+    );
+  }
   return wcaLiveID;
 };
 
-const fetchGraphQL = async (
-  operationName: string,
-  query: string,
-  variables: object,
-) => {
+const fetchGraphQL = async (operationName: string, query: string, variables: object) => {
   const requestOptions = {
     body: JSON.stringify({ operationName, query, variables }),
     headers: {
@@ -187,14 +172,14 @@ const fetchGraphQL = async (
     method: "POST",
   };
 
-  const response = await fetch(WCA_LIVE_ENDPOINT, requestOptions);
+  const response = await fetch(WCA_LIVE_API_ENDPOINT, requestOptions);
   if (!response.ok) {
     const errorBody = await response.text();
     throw new Error(
       `GraphQL request failed with status ${response.status} ${response.statusText}: ${errorBody}`,
     );
   }
-  return await response.json();
+  return response.json();
 };
 
 export default fetchWCALiveResults;
