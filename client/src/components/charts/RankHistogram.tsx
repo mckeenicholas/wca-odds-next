@@ -32,7 +32,7 @@ export function RankHistogram(props: RankHistogramProps) {
     props.data.data.map((point) => {
       const result: RankChartDataPoint = { name: point.name };
       props.data.labels.forEach((label, index) => {
-        result[label] = point.values[index];
+        result[index.toString()] = point.values[index];
       });
       return result;
     }),
@@ -50,18 +50,18 @@ export function RankHistogram(props: RankHistogramProps) {
     return n.toString();
   };
 
-  const categories = () => props.data.labels;
-  const y = () => categories().map((label) => (d: RankChartDataPoint) => d[label] as number);
+  const categories = () => props.data.labels.map((_, index) => index.toString());
+  const y = () => categories().map((key) => (d: RankChartDataPoint) => d[key] as number);
   const color = (_d: unknown, i: number) => props.colors[i];
 
   const tooltipTemplate = (d: RankChartDataPoint) => {
-    const items = categories()
-      .map((category, idx) => {
-        const val = d[category] as number;
+    const items = props.data.labels
+      .map((label, idx) => {
+        const val = d[idx.toString()] as number;
         if (val === undefined || val === 0) {
           return null;
         }
-        return { category, val, color: props.colors[idx] };
+        return { category: label, val, color: props.colors[idx] };
       })
       .filter((item): item is NonNullable<typeof item> => item !== null);
 

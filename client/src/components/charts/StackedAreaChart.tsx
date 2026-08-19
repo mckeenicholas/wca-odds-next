@@ -69,7 +69,7 @@ export function StackedAreaChart(props: StackedAreaChartProps) {
         } else if (props.metric === "rank") {
           val = c.expected_rank;
         }
-        dataPoint[c.name] = val;
+        dataPoint[c.id] = val;
       });
       return dataPoint;
     });
@@ -77,7 +77,7 @@ export function StackedAreaChart(props: StackedAreaChartProps) {
 
   const yDomain = createMemo<[number, number]>(() => {
     if (props.metric === "rank") {
-      const allRanks = processedData().flatMap((d) => competitorMeta().map((m) => d[m.name]));
+      const allRanks = processedData().flatMap((d) => competitorMeta().map((m) => d[m.id]));
       const maxRank = Math.max(...allRanks, 3);
       return [maxRank + 0.5, 1];
     }
@@ -93,17 +93,17 @@ export function StackedAreaChart(props: StackedAreaChartProps) {
   };
 
   const yStacked = createMemo(() =>
-    competitorMeta().map((meta) => (d: Record<string, number>) => d[meta.name] || 0),
+    competitorMeta().map((meta) => (d: Record<string, number>) => d[meta.id] || 0),
   );
 
   const yStackedCumulative = createMemo(() => {
     const meta = competitorMeta();
     return meta.map((_, i) => {
-      const namesSlice = meta.slice(0, i + 1).map((m) => m.name);
+      const idsSlice = meta.slice(0, i + 1).map((m) => m.id);
       return (d: Record<string, number>) => {
         let sum = 0;
-        for (const name of namesSlice) {
-          sum += d[name] || 0;
+        for (const id of idsSlice) {
+          sum += d[id] || 0;
         }
         return sum;
       };
@@ -123,7 +123,7 @@ export function StackedAreaChart(props: StackedAreaChartProps) {
       .map((meta) => ({
         name: meta.name,
         color: meta.color,
-        value: d[meta.name] ?? 0,
+        value: d[meta.id] ?? 0,
       }))
       .toSorted((a, b) => b.value - a.value);
 
@@ -154,7 +154,7 @@ export function StackedAreaChart(props: StackedAreaChartProps) {
     if (isStacked()) {
       return yStackedCumulative();
     }
-    return competitorMeta().map((comp) => (d: Record<string, number>) => d[comp.name] || 0);
+    return competitorMeta().map((comp) => (d: Record<string, number>) => d[comp.id] || 0);
   });
 
   return (
@@ -164,13 +164,7 @@ export function StackedAreaChart(props: StackedAreaChartProps) {
           <defs>
             <For each={competitorMeta()}>
               {(comp) => (
-                <linearGradient
-                  id={`grad-stack-${comp.color.replace("#", "")}`}
-                  x1="0"
-                  y1="0"
-                  x2="0"
-                  y2="1"
-                >
+                <linearGradient id={`grad-stack-${comp.id}`} x1="0" y1="0" x2="0" y2="1">
                   <stop offset="0%" stop-color={comp.color} stop-opacity="0.4" />
                   <stop offset="100%" stop-color={comp.color} stop-opacity="0" />
                 </linearGradient>
@@ -184,13 +178,13 @@ export function StackedAreaChart(props: StackedAreaChartProps) {
             <>
               <VisArea
                 x={x}
-                y={(d: Record<string, number>) => d[comp.name] || 0}
-                color={`url(#grad-stack-${comp.color.replace("#", "")})`}
+                y={(d: Record<string, number>) => d[comp.id] || 0}
+                color={`url(#grad-stack-${comp.id})`}
                 curveType={CurveType.MonotoneX}
               />
               <VisLine
                 x={x}
-                y={(d: Record<string, number>) => d[comp.name] || 0}
+                y={(d: Record<string, number>) => d[comp.id] || 0}
                 color={comp.color}
                 curveType={CurveType.MonotoneX}
                 attributes={{

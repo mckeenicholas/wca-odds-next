@@ -10,8 +10,8 @@ import { Checkbox } from "../ui/checkbox";
 import { Popover, PopoverTrigger, PopoverContent } from "../ui/popover";
 import { MultiLabelSwitch } from "./MultiLabelSwitch";
 
-const trimChartItems = (chart: ChartData, disabledNames: Set<string>): ChartData => {
-  const selectedIndices = chart.labels.map((name) => !disabledNames.has(name));
+const trimChartItems = (chart: ChartData, disabledIndices: Set<number>): ChartData => {
+  const selectedIndices = chart.labels.map((_, idx) => !disabledIndices.has(idx));
   const labels = chart.labels.filter((_, idx) => selectedIndices[idx]);
   const trimmedChartData = chart.data.map((v) => ({
     ...v,
@@ -34,13 +34,13 @@ interface TooltipItem {
 
 interface FullHistogramDataPoint {
   name: string;
-  [label: string]: string | number;
+  [key: string]: string | number;
 }
 
 export function FullHistogram(props: SimulationResultProps) {
   const [isAverage, setIsAverage] = createSignal(false);
   const [isCDF, setIsCDF] = createSignal(false);
-  const [disabledNames, setDisabledNames] = createSignal<Set<string>>(new Set());
+  const [disabledIndices, setDisabledIndices] = createSignal<Set<number>>(new Set());
 
   const histValues = createMemo(() =>
     isAverage() ? props.data.full_histogram.average : props.data.full_histogram.single,
@@ -48,24 +48,28 @@ export function FullHistogram(props: SimulationResultProps) {
 
   const names = createMemo(() => histValues().labels);
 
-  const activeLabels = createMemo(() => names().filter((name) => !disabledNames().has(name)));
+  const activeIndices = createMemo(() =>
+    names()
+      .map((_, idx) => idx)
+      .filter((idx) => !disabledIndices().has(idx)),
+  );
 
   const chartData = createMemo(() => {
-    const includedPersons = trimChartItems(histValues(), disabledNames());
-    const currentActiveLabels = activeLabels();
+    const includedPersons = trimChartItems(histValues(), disabledIndices());
+    const currentActiveIndices = activeIndices();
 
     const histData = isCDF() ? computeCDF(includedPersons.data) : includedPersons.data;
 
     return histData.map((point) => {
       const result: FullHistogramDataPoint = { name: point.name };
-      currentActiveLabels.forEach((label, index) => {
-        result[label] = point.values[index];
+      currentActiveIndices.forEach((nameIdx, index) => {
+        result[nameIdx.toString()] = point.values[index];
       });
       return result;
     });
   });
 
-  const xTicks = (tick: number | Date, i: number) => {
+  const xTicks = (_tick: unknown, i: number) => {
     const point = chartData()[i];
     if (!point) {
       return "";
@@ -78,17 +82,18 @@ export function FullHistogram(props: SimulationResultProps) {
     const timeRawValue = toInt(d.name, 0);
     const timeDisplayValue = renderTime(timeRawValue, props.event === "333fm");
 
-    const items: TooltipItem[] = activeLabels()
-      .map((label) => {
-        const val = d[label] as number;
+    const items: TooltipItem[] = activeIndices()
+      .map((nameIdx) => {
+        const val = d[nameIdx.toString()] as number;
         if (val === undefined) {
           return null;
         }
         if (props.event === "333fm" && timeRawValue % 100 !== 0) {
           return null;
         }
-        const nameIdx = names().indexOf(label);
-        return { label, val, color: props.colors[nameIdx] };
+        const label = names()[nameIdx];
+        const color = props.colors[nameIdx];
+        return { label, val, color };
       })
       .filter((item): item is TooltipItem => item !== null);
 
@@ -116,15 +121,13 @@ export function FullHistogram(props: SimulationResultProps) {
   };
 
   const crosshairY = createMemo(() =>
-    activeLabels().map((label) => (d: FullHistogramDataPoint) => d[label] as number),
+    activeIndices().map(
+      (nameIdx) => (d: FullHistogramDataPoint) => d[nameIdx.toString()] as number,
+    ),
   );
 
   const crosshairColor = (_d: unknown, i: number) => {
-    const label = activeLabels()[i];
-    if (!label) {
-      return "#888888";
-    }
-    const nameIdx = names().indexOf(label);
+    const nameIdx = activeIndices()[i];
     return props.colors[nameIdx] ?? "#888888";
   };
 
@@ -135,14 +138,8 @@ export function FullHistogram(props: SimulationResultProps) {
           <svg width="0" height="0">
             <defs>
               <For each={props.colors}>
-                {(color) => (
-                  <linearGradient
-                    id={`grad-full-${color.replace("#", "")}`}
-                    x1="0"
-                    y1="0"
-                    x2="0"
-                    y2="1"
-                  >
+                {(color, index) => (
+                  <linearGradient id={`grad-full-${index()}`} x1="0" y1="0" x2="0" y2="1">
                     <stop offset="0%" stop-color={color} stop-opacity="0.5" />
                     <stop offset="100%" stop-color={color} stop-opacity="0" />
                   </linearGradient>
@@ -150,29 +147,25 @@ export function FullHistogram(props: SimulationResultProps) {
               </For>
             </defs>
           </svg>
-          <For each={names()}>
-            {(label) => {
-              const nameIdx = names().indexOf(label);
-              const color = props.colors[nameIdx];
-              const cleanColor = color.replace("#", "");
-              const yValue = (d: FullHistogramDataPoint) =>
-                disabledNames().has(label) ? 0 : (d[label] as number);
+          <Index each={names()}>
+            {(label, nameIdx) => {
+              const yValue = (d: Record<string, string | number>) =>
+                disabledIndices().has(nameIdx) ? 0 : (d[nameIdx.toString()] as number);
               return (
                 <VisArea
                   x={x}
                   y={yValue}
-                  color={`url(#grad-full-${cleanColor})`}
+                  color={`url(#grad-full-${nameIdx})`}
                   curveType={CurveType.MonotoneX}
                 />
               );
             }}
-          </For>
-          <For each={names()}>
-            {(label) => {
-              const nameIdx = names().indexOf(label);
+          </Index>
+          <Index each={names()}>
+            {(label, nameIdx) => {
               const color = props.colors[nameIdx];
-              const yValue = (d: FullHistogramDataPoint) =>
-                disabledNames().has(label) ? 0 : (d[label] as number);
+              const yValue = (d: Record<string, string | number>) =>
+                disabledIndices().has(nameIdx) ? 0 : (d[nameIdx.toString()] as number);
               return (
                 <VisLine
                   x={x}
@@ -187,7 +180,7 @@ export function FullHistogram(props: SimulationResultProps) {
                 />
               );
             }}
-          </For>
+          </Index>
           <VisAxis type="x" tickFormat={xTicks} gridLine={false} domainLine={false} />
           <VisAxis
             type="y"
@@ -230,15 +223,15 @@ export function FullHistogram(props: SimulationResultProps) {
                     <li class="flex items-center">
                       <Checkbox
                         id={`checkbox-${idx}`}
-                        checked={!disabledNames().has(name())}
+                        checked={!disabledIndices().has(idx)}
                         onChange={(val: boolean) => {
-                          const next = new Set(disabledNames());
+                          const next = new Set(disabledIndices());
                           if (val) {
-                            next.delete(name());
+                            next.delete(idx);
                           } else {
-                            next.add(name());
+                            next.add(idx);
                           }
-                          setDisabledNames(next);
+                          setDisabledIndices(next);
                         }}
                         class="cursor-pointer"
                       >

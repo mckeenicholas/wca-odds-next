@@ -147,7 +147,7 @@ export function RankingsAreaChart(props: RankingsAreaChartProps) {
     const container = document.createElement("div");
     render(
       () => (
-        <div class="relative z-50 rounded-md border bg-popover p-2 font-sans text-xs text-popover-foreground shadow-md">
+        <div class="relative z-50 rounded-md bg-popover p-2 font-sans text-xs text-popover-foreground">
           <p class="mb-1 border-b border-border pb-1 font-semibold text-foreground">
             {dateDisplay}
           </p>
@@ -184,7 +184,7 @@ export function RankingsAreaChart(props: RankingsAreaChartProps) {
       class="flex h-60 w-full flex-col items-end select-none"
       style={{
         "--vis-text-color": "#888888",
-        "--vis-axis-grid-color": "#e5e7eb",
+        "--vis-axis-grid-color": "var(--vis-axis-grid-line-color)",
       }}
     >
       <Show

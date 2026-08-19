@@ -210,18 +210,14 @@ function RankingsPage() {
 
   const allItems = () => query.data?.pages.flat() ?? [];
 
-  let sentinelRef: HTMLDivElement | undefined;
-  let observer: IntersectionObserver | undefined;
+  const [sentinel, setSentinel] = createSignal<HTMLDivElement | null>(null);
 
   createEffect(() => {
-    const el = sentinelRef;
-    if (observer) {
-      observer.disconnect();
-    }
+    const el = sentinel();
     if (!el) {
       return;
     }
-    observer = new IntersectionObserver(
+    const observer = new IntersectionObserver(
       (entries) => {
         if (entries[0].isIntersecting && query.hasNextPage && !query.isFetchingNextPage) {
           void query.fetchNextPage();
@@ -231,7 +227,7 @@ function RankingsPage() {
     );
     observer.observe(el);
     onCleanup(() => {
-      observer?.disconnect();
+      observer.disconnect();
     });
   });
 
@@ -359,12 +355,7 @@ function RankingsPage() {
                 </ol>
 
                 {/* Infinite scroll sentinel */}
-                <div
-                  ref={(el) => {
-                    sentinelRef = el;
-                  }}
-                  class="h-1"
-                />
+                <div ref={setSentinel} class="h-1" />
 
                 {/* Loading more indicator */}
                 <Show when={query.isFetchingNextPage}>
