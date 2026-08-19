@@ -18,7 +18,7 @@ export function buildUrl(
 
   const cleanParams = Object.fromEntries(
     Object.entries(params)
-      .filter(([_, val]) => val !== undefined && val !== null)
+      .filter(([, val]) => val !== undefined && val !== null)
       .map(([key, val]) => [key, String(val)]),
   );
 
