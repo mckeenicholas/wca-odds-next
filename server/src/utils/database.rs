@@ -295,3 +295,65 @@ pub async fn fetch_competitor_rank_info(
     .fetch_all(pool)
     .await
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_group_results_by_date() {
+        let d1 = NaiveDate::from_ymd_opt(2025, 1, 1).unwrap();
+        let d2 = NaiveDate::from_ymd_opt(2025, 1, 2).unwrap();
+
+        let rows = vec![
+            CompetitorRow {
+                person_id: "2015MCKE02".to_string(),
+                competition_date: d1,
+                value: 1000,
+            },
+            CompetitorRow {
+                person_id: "2015MCKE02".to_string(),
+                competition_date: d1,
+                value: 1100,
+            },
+            CompetitorRow {
+                person_id: "2015MCKE02".to_string(),
+                competition_date: d2,
+                value: 900,
+            },
+            CompetitorRow {
+                person_id: "1982THAI01".to_string(),
+                competition_date: d1,
+                value: 1500,
+            },
+        ];
+
+        let grouped = group_results_by_date(rows);
+
+        assert_eq!(grouped.len(), 2);
+        let mcke = grouped.get("2015MCKE02").unwrap();
+        assert_eq!(mcke.get(&d1).unwrap(), &vec![1000, 1100]);
+        assert_eq!(mcke.get(&d2).unwrap(), &vec![900]);
+
+        let powl = grouped.get("1982THAI01").unwrap();
+        assert_eq!(powl.get(&d1).unwrap(), &vec![1500]);
+    }
+
+    #[test]
+    fn test_convert_to_dated_results() {
+        let d1 = NaiveDate::from_ymd_opt(2025, 1, 1).unwrap();
+        let ref_date = NaiveDate::from_ymd_opt(2025, 1, 11).unwrap(); // 10 days later
+
+        let mut grouped = HashMap::new();
+        let mut dates = HashMap::new();
+        dates.insert(d1, vec![1000, 1100]);
+        grouped.insert("2015MCKE02".to_string(), dates);
+
+        let dated = convert_to_dated_results(grouped, ref_date);
+        assert_eq!(dated.len(), 1);
+        let results = dated.get("2015MCKE02").unwrap();
+        assert_eq!(results.len(), 1);
+        assert_eq!(results[0].days_since, 10);
+        assert_eq!(results[0].results, vec![1000, 1100]);
+    }
+}

@@ -218,3 +218,105 @@ fn filter_and_convert_relative(
         })
         .collect()
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_validate_competitor_ids() {
+        let valid = vec!["2015MCKE02".to_string(), "1982THAI01".to_string()];
+        let res = validate_competitor_ids(&valid);
+        assert!(res.is_ok());
+        assert_eq!(res.unwrap(), vec!["2015MCKE02", "1982THAI01"]);
+
+        let invalid = vec!["2015MCKE02".to_string(), "INVALID".to_string()];
+        assert!(validate_competitor_ids(&invalid).is_err());
+    }
+
+    #[test]
+    fn test_validate_request_constraints() {
+        let start = NaiveDate::from_ymd_opt(2025, 1, 1).unwrap();
+        let end = NaiveDate::from_ymd_opt(2025, 3, 1).unwrap();
+
+        // Valid count (<= 32) and valid date range (>= 28 days)
+        assert!(validate_request_constraints(10, start, end).is_ok());
+        assert!(validate_request_constraints(32, start, end).is_ok());
+
+        // Invalid: > 32 competitors
+        assert!(validate_request_constraints(33, start, end).is_err());
+
+        // Invalid: date range too short (< 28 days)
+        let short_end = NaiveDate::from_ymd_opt(2025, 1, 10).unwrap();
+        assert!(validate_request_constraints(10, start, short_end).is_err());
+    }
+
+    #[test]
+    fn test_validate_date_range() {
+        let start = NaiveDate::from_ymd_opt(2025, 1, 1).unwrap();
+        let end = NaiveDate::from_ymd_opt(2025, 1, 31).unwrap(); // 30 days
+
+        assert!(validate_date_range(start, end, Some(28), Some(60)).is_ok());
+        assert!(validate_date_range(start, end, Some(35), None).is_err());
+        assert!(validate_date_range(start, end, None, Some(20)).is_err());
+    }
+
+    #[test]
+    fn test_calculate_fetch_start() {
+        let start = NaiveDate::from_ymd_opt(2025, 6, 15).unwrap();
+        // 12 steps + 2 buffer = 14 months prior -> 2024-04-15
+        let fetch_start = HistoryContext::calculate_fetch_start(start, 12);
+        assert_eq!(fetch_start, NaiveDate::from_ymd_opt(2024, 4, 15).unwrap());
+    }
+
+    #[test]
+    fn test_filter_and_convert_relative() {
+        let mut raw_data = HashMap::new();
+        let d1 = NaiveDate::from_ymd_opt(2025, 1, 10).unwrap();
+        let d2 = NaiveDate::from_ymd_opt(2025, 2, 10).unwrap();
+        let d3 = NaiveDate::from_ymd_opt(2025, 3, 10).unwrap();
+
+        raw_data.insert(d1, vec![1000, 1100]);
+        raw_data.insert(d2, vec![900, 950]);
+        raw_data.insert(d3, vec![800]);
+
+        let window_start = NaiveDate::from_ymd_opt(2025, 2, 1).unwrap();
+        let window_end = NaiveDate::from_ymd_opt(2025, 2, 28).unwrap();
+
+        let filtered = filter_and_convert_relative(&raw_data, window_start, window_end);
+        // Only d2 should be included (2025-02-10)
+        assert_eq!(filtered.len(), 1);
+        assert_eq!(filtered[0].results, vec![900, 950]);
+        // days_since: 2025-02-28 - 2025-02-10 = 18 days
+        assert_eq!(filtered[0].days_since, 18);
+    }
+
+    #[test]
+    fn test_with_manual_entries() {
+        let comp1 = Competitor::new(
+            "P1".to_string(),
+            "2020P101".to_string(),
+            "US".to_string(),
+            vec![],
+            30.0,
+        );
+        let comp2 = Competitor::new(
+            "P2".to_string(),
+            "2020P201".to_string(),
+            "CA".to_string(),
+            vec![],
+            30.0,
+        );
+
+        let ctx = CompetitorContext {
+            competitors: vec![comp1, comp2],
+            event_type: EventType::Ao5,
+        };
+
+        let manual = vec![vec![1000, 1100], vec![900]];
+        let updated = ctx.with_manual_entries(manual);
+
+        assert_eq!(updated.competitors[0].entered_results, vec![1000, 1100]);
+        assert_eq!(updated.competitors[1].entered_results, vec![900]);
+    }
+}

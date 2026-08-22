@@ -115,4 +115,27 @@ mod tests {
         // Steps: 1900, 2000, 2100, 2200, 2300
         assert_eq!(keys, vec![1900, 2000, 2100, 2200, 2300]);
     }
+
+    #[test]
+    fn test_histogram_keys_fmc_average() {
+        // FMC Average, steps 33, 34, 33 (e.g. 2000 -> 2033 -> 2067 -> 2100)
+        let keys: Vec<i32> = HistogramKeys::new(2100, 2200, true, true)
+            .unwrap()
+            .collect();
+        // Min 2100 -> Start 2000. Max 2200 -> End 2300.
+        // Steps: 2000, 2033, 2067, 2100, 2133, 2167, 2200, 2233, 2267, 2300
+        assert_eq!(
+            keys,
+            vec![2000, 2033, 2067, 2100, 2133, 2167, 2200, 2233, 2267, 2300]
+        );
+    }
+
+    #[test]
+    fn test_histogram_keys_invalid_start() {
+        // Standard time requires (min - 20) % 10 == 0 -> e.g. min = 105 -> start = 85 -> 85 % 10 != 0 -> None
+        assert!(HistogramKeys::new(105, 130, false, false).is_none());
+
+        // FMC requires decimals to be 0, 33, or 67 -> e.g. min = 2050 -> start = 1950 -> decimals = 50 -> None
+        assert!(HistogramKeys::new(2050, 2200, true, true).is_none());
+    }
 }

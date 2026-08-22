@@ -108,3 +108,95 @@ impl Competitor {
         weighted
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_competitor_empty_results() {
+        let comp = Competitor::new(
+            "Test Person".to_string(),
+            "2020TEST01".to_string(),
+            "US".to_string(),
+            vec![],
+            30.0,
+        );
+        assert_eq!(comp.name, "Test Person");
+        assert_eq!(comp.id, "2020TEST01");
+        assert_eq!(comp.country_iso2, "US");
+        assert!(comp.entered_results.is_empty());
+        assert!(comp.stats.is_none());
+    }
+
+    #[test]
+    fn test_competitor_all_dnf() {
+        let results = vec![DatedCompetitionResult {
+            days_since: 0,
+            results: vec![-1, -1, -1],
+        }];
+        let comp = Competitor::new(
+            "Test Person".to_string(),
+            "2020TEST01".to_string(),
+            "US".to_string(),
+            results,
+            30.0,
+        );
+        assert!(comp.stats.is_none());
+    }
+
+    #[test]
+    fn test_competitor_stats_calculation() {
+        let results = vec![
+            DatedCompetitionResult {
+                days_since: 0,
+                results: vec![1000, 1100, 900],
+            },
+            DatedCompetitionResult {
+                days_since: 30,
+                results: vec![1200, -1], // -1 is DNF
+            },
+        ];
+        let comp = Competitor::new(
+            "Test Person".to_string(),
+            "2020TEST01".to_string(),
+            "US".to_string(),
+            results,
+            30.0, // halflife = 30 days
+        );
+
+        assert!(comp.stats.is_some());
+        let stats = comp.stats.unwrap();
+
+        // 4 non-DNF results
+        assert_eq!(stats.num_non_dnf_results, 4);
+        // DNF rate: at day 0, weights are 1.0 (total 3.0). At day 30, weights are 0.5 (total 1.0: 0.5 valid, 0.5 DNF).
+        // Total weight = 3.0 + 1.0 = 4.0. DNF weight = 0.5. dnf_rate = 0.5 / 4.0 = 0.125
+        assert!((stats.dnf_rate - 0.125).abs() < 1e-4);
+        assert!(stats.mean > 0.0);
+        assert!(!stats.location.is_nan());
+        assert!(!stats.shape.is_nan());
+        assert!(!stats.skew.is_nan());
+    }
+
+    #[test]
+    fn test_apply_weights_halflife() {
+        let results = vec![
+            DatedCompetitionResult {
+                days_since: 0,
+                results: vec![1000],
+            },
+            DatedCompetitionResult {
+                days_since: 60,
+                results: vec![2000],
+            },
+        ];
+        let weighted = Competitor::apply_weights(&results, 60.0);
+        assert_eq!(weighted.len(), 2);
+        assert_eq!(weighted[0].0, 1000);
+        assert!((weighted[0].1 - 1.0).abs() < 1e-4);
+        assert_eq!(weighted[1].0, 2000);
+        // At 1 halflife, weight should be exactly 0.5
+        assert!((weighted[1].1 - 0.5).abs() < 1e-4);
+    }
+}

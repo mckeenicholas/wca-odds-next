@@ -200,3 +200,106 @@ impl Default for RankChartBuilder<'_> {
         Self::new()
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::utils::charts::models::HistogramAccumulator;
+
+    #[test]
+    fn test_histogram_chart_builder_empty() {
+        let builder = HistogramChartBuilder::new(false, false);
+        let chart = builder.build();
+        assert!(chart.labels.is_empty());
+        assert!(chart.data.is_empty());
+    }
+
+    #[test]
+    fn test_histogram_chart_builder_standard() {
+        let mut acc1 = HistogramAccumulator::new();
+        acc1.record(100);
+        acc1.record(110);
+        let data1 = acc1.into_histogram_data(10, 1, 0.0);
+
+        let mut acc2 = HistogramAccumulator::new();
+        acc2.record(110);
+        acc2.record(120);
+        let data2 = acc2.into_histogram_data(10, 1, 0.0);
+
+        let chart = HistogramChartBuilder::new(false, false)
+            .add_series("Alice", &data1)
+            .add_series("Bob", &data2)
+            .build();
+
+        assert_eq!(chart.labels, vec!["Alice", "Bob"]);
+        // Key range: min 100 -> start 80, max 120 -> end 140.
+        // Points: 80, 90, 100, 110, 120, 130, 140
+        assert_eq!(chart.data.len(), 7);
+        // At key 100: Alice has 0.1, Bob has 0.0
+        let pt_100 = chart.data.iter().find(|p| p.name == "100").unwrap();
+        assert_eq!(pt_100.values, vec![0.1, 0.0]);
+        // At key 110: Alice has 0.1, Bob has 0.1
+        let pt_110 = chart.data.iter().find(|p| p.name == "110").unwrap();
+        assert_eq!(pt_110.values, vec![0.1, 0.1]);
+    }
+
+    #[test]
+    fn test_histogram_chart_builder_point_merging() {
+        // Create histogram with wide span (> 256 keys of step 10)
+        let mut acc = HistogramAccumulator::new();
+        acc.record(1000);
+        acc.record(5000); // 400 steps of 10
+        let data = acc.into_histogram_data(10, 1, 0.0);
+
+        let chart = HistogramChartBuilder::new(false, false)
+            .add_series("Competitor", &data)
+            .build();
+
+        // Total raw points would be (5020 - 980) / 10 + 1 = 405 points.
+        // log2(405) = 9 -> merge_factor = 2^(9-8) = 2.
+        // Resulting points should be ~405 / 2 = 203.
+        assert!(chart.data.len() <= 256);
+        assert!(!chart.data.is_empty());
+    }
+
+    #[test]
+    fn test_individual_histogram_builder() {
+        let mut acc_s = HistogramAccumulator::new();
+        acc_s.record(100);
+        let singles = acc_s.into_histogram_data(10, 1, 0.0);
+
+        let mut acc_a = HistogramAccumulator::new();
+        acc_a.record(120);
+        let averages = acc_a.into_histogram_data(10, 1, 0.0);
+
+        let builder = IndividualHistogramBuilder::new(&singles, &averages, false);
+        let chart = builder.build();
+
+        assert_eq!(chart.labels, vec!["single", "average"]);
+        // Key range: 100 to 120 -> with padding 80 to 140 -> 7 points
+        assert_eq!(chart.data.len(), 7);
+        for pt in &chart.data {
+            assert_eq!(pt.values.len(), 2);
+        }
+    }
+
+    #[test]
+    fn test_individual_histogram_builder_empty() {
+        let singles = HistogramData::default();
+        let averages = HistogramData::default();
+
+        let builder = IndividualHistogramBuilder::new(&singles, &averages, false);
+        let chart = builder.build();
+
+        assert_eq!(chart.labels, vec!["single", "average"]);
+        assert!(chart.data.is_empty());
+    }
+
+    #[test]
+    fn test_rank_chart_builder_empty() {
+        let builder = RankChartBuilder::default();
+        let chart = builder.into_chart_data();
+        assert!(chart.labels.is_empty());
+        assert!(chart.data.is_empty());
+    }
+}

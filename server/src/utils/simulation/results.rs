@@ -117,3 +117,59 @@ pub fn format_results(
         rank_histogram,
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::utils::charts::models::{HistogramAccumulator, RankAccumulator};
+
+    #[test]
+    fn test_simulation_result_accessors() {
+        let mut rank_acc = RankAccumulator::new(3);
+        rank_acc.record_rank(0);
+        let rank_stats = rank_acc.into_rank_stats(1);
+
+        let mut hist_s = HistogramAccumulator::new();
+        hist_s.record(100);
+        let single_hist = hist_s.into_histogram_data(1, 1, 0.0);
+
+        let mut hist_a = HistogramAccumulator::new();
+        hist_a.record(110);
+        let avg_hist = hist_a.into_histogram_data(1, 1, 0.0);
+
+        let result = SimulationResult::new(rank_stats, single_hist, avg_hist);
+
+        assert_eq!(result.win_probability(), 1.0);
+        assert_eq!(result.podium_probability(), 1.0);
+        assert_eq!(result.expected_rank(), 1.0);
+        assert_eq!(result.single_histogram().get(&100), 1.0);
+        assert_eq!(result.average_histogram().get(&110), 1.0);
+    }
+
+    #[test]
+    fn test_format_results() {
+        let comp1 = Competitor {
+            name: "Alice".to_string(),
+            id: "2020ALIC01".to_string(),
+            country_iso2: "US".to_string(),
+            entered_results: vec![],
+            stats: None,
+        };
+
+        let mut rank_acc = RankAccumulator::new(1);
+        rank_acc.record_rank(0);
+        let rank_stats = rank_acc.into_rank_stats(1);
+        let single_hist = HistogramData::default();
+        let avg_hist = HistogramData::default();
+
+        let sim_res = SimulationResult::new(rank_stats, single_hist, avg_hist);
+
+        let endpoint_results = format_results(vec![comp1], vec![sim_res], false);
+
+        assert_eq!(endpoint_results.competitor_results.len(), 1);
+        assert_eq!(endpoint_results.competitor_results[0].name, "Alice");
+        assert_eq!(endpoint_results.competitor_results[0].id, "2020ALIC01");
+        assert_eq!(endpoint_results.competitor_results[0].win_chance, 1.0);
+        assert_eq!(endpoint_results.rank_histogram.labels, vec!["Alice"]);
+    }
+}

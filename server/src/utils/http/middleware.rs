@@ -118,3 +118,63 @@ pub async fn caching_middleware(
         Ok(res)
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use std::net::Ipv4Addr;
+
+    use super::*;
+
+    #[test]
+    fn test_forwarded_ip_extractor_cloudflare() {
+        let req = Request::builder()
+            .header("cf-connecting-ip", "203.0.113.195")
+            .body(())
+            .unwrap();
+
+        let extractor = ForwardedIpExtractor;
+        let ip = extractor.extract(&req).unwrap();
+        assert_eq!(ip, std::net::IpAddr::V4(Ipv4Addr::new(203, 0, 113, 195)));
+    }
+
+    #[test]
+    fn test_forwarded_ip_extractor_x_forwarded_for() {
+        let req = Request::builder()
+            .header(
+                "x-forwarded-for",
+                "198.51.100.1, 198.51.100.2, 198.51.100.3",
+            )
+            .body(())
+            .unwrap();
+
+        let extractor = ForwardedIpExtractor;
+        let ip = extractor.extract(&req).unwrap();
+        assert_eq!(ip, std::net::IpAddr::V4(Ipv4Addr::new(198, 51, 100, 1)));
+    }
+
+    #[test]
+    fn test_forwarded_ip_extractor_precedence() {
+        let req = Request::builder()
+            .header("cf-connecting-ip", "203.0.113.1")
+            .header("x-forwarded-for", "198.51.100.1")
+            .body(())
+            .unwrap();
+
+        let extractor = ForwardedIpExtractor;
+        let ip = extractor.extract(&req).unwrap();
+        // cf-connecting-ip takes precedence
+        assert_eq!(ip, std::net::IpAddr::V4(Ipv4Addr::new(203, 0, 113, 1)));
+    }
+
+    #[test]
+    fn test_forwarded_ip_extractor_missing_or_invalid() {
+        let req_empty = Request::builder().body(()).unwrap();
+        assert!(ForwardedIpExtractor.extract(&req_empty).is_err());
+
+        let req_invalid = Request::builder()
+            .header("x-forwarded-for", "not-an-ip-address")
+            .body(())
+            .unwrap();
+        assert!(ForwardedIpExtractor.extract(&req_invalid).is_err());
+    }
+}

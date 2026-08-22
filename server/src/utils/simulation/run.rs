@@ -251,4 +251,78 @@ mod tests {
         // Competitor C (index 2) should have rank 3 (100% probability for rank 3, i.e., fourth place 0-indexed rank 3)
         assert_eq!(results[2].rank_stats().as_slice()[3], 1.0);
     }
+
+    #[test]
+    fn test_simulation_with_manual_dnf() {
+        // Competitor with manual DNF solve: -1 is converted to DNF_VALUE
+        let comp_dnf = Competitor {
+            name: "DNFer".to_string(),
+            id: "2026DNF1".to_string(),
+            country_iso2: "US".to_string(),
+            entered_results: vec![-1, -1, 1000, 1000, 1000],
+            stats: None,
+        };
+        let comp_clean = Competitor {
+            name: "Clean".to_string(),
+            id: "2026CLN1".to_string(),
+            country_iso2: "US".to_string(),
+            entered_results: vec![1200, 1200, 1200, 1200, 1200],
+            stats: None,
+        };
+
+        let competitors = vec![comp_dnf, comp_clean];
+        let results = run_simulations(&competitors, &EventType::Ao5, false, 1);
+
+        // comp_dnf has 2 DNFs in Ao5 -> DNF average. comp_clean has 1200 avg.
+        // comp_clean should win (rank 0), comp_dnf should be rank 1.
+        assert_eq!(results[1].win_probability(), 1.0);
+        assert_eq!(results[0].win_probability(), 0.0);
+    }
+
+    #[test]
+    fn test_simulation_with_stats_generation() {
+        let stats = CompetitorStats {
+            location: 1000.0,
+            shape: 50.0,
+            skew: 0.0,
+            dnf_rate: 0.0,
+            mean: 1000.0,
+            num_non_dnf_results: 100,
+        };
+
+        let comp = Competitor {
+            name: "StatCompetitor".to_string(),
+            id: "2026STAT".to_string(),
+            country_iso2: "US".to_string(),
+            entered_results: vec![],
+            stats: Some(stats),
+        };
+
+        let results = run_simulations(&[comp], &EventType::Ao5, false, 100);
+        assert_eq!(results.len(), 1);
+        assert_eq!(results[0].win_probability(), 1.0); // Only 1 competitor, so 100% win
+        assert!(results[0].average_histogram().key_range().is_some());
+    }
+
+    #[test]
+    fn test_simulation_fmc_scaling() {
+        let comp_fmc1 = Competitor {
+            name: "FMC1".to_string(),
+            id: "2026FMC1".to_string(),
+            country_iso2: "US".to_string(),
+            entered_results: vec![2500, 2600, 2700], // 25, 26, 27 moves -> avg = 2600
+            stats: None,
+        };
+        let comp_fmc2 = Competitor {
+            name: "FMC2".to_string(),
+            id: "2026FMC2".to_string(),
+            country_iso2: "US".to_string(),
+            entered_results: vec![2800, 2900, 3000], // 28, 29, 30 moves -> avg = 2900
+            stats: None,
+        };
+
+        let results = run_simulations(&[comp_fmc1, comp_fmc2], &EventType::Fmc, false, 1);
+        assert_eq!(results[0].win_probability(), 1.0);
+        assert_eq!(results[1].win_probability(), 0.0);
+    }
 }

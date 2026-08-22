@@ -5,6 +5,7 @@ use axum::{
 };
 use serde_json::json;
 
+#[derive(Debug)]
 pub enum AppError {
     BadRequest(String),
     Database(sqlx::Error),
@@ -38,5 +39,47 @@ impl IntoResponse for AppError {
         };
 
         (status, Json(json!({ "error": error_message }))).into_response()
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use http_body_util::BodyExt;
+
+    #[tokio::test]
+    async fn test_bad_request_response() {
+        let err = AppError::BadRequest("Test error message".to_string());
+        let res = err.into_response();
+
+        assert_eq!(res.status(), StatusCode::BAD_REQUEST);
+
+        let body_bytes = res.into_body().collect().await.unwrap().to_bytes();
+        let json_val: serde_json::Value = serde_json::from_slice(&body_bytes).unwrap();
+        assert_eq!(json_val["error"], "Test error message");
+    }
+
+    #[tokio::test]
+    async fn test_internal_error_response() {
+        let err = AppError::Internal("Sensitive internal failure details".to_string());
+        let res = err.into_response();
+
+        assert_eq!(res.status(), StatusCode::INTERNAL_SERVER_ERROR);
+
+        let body_bytes = res.into_body().collect().await.unwrap().to_bytes();
+        let json_val: serde_json::Value = serde_json::from_slice(&body_bytes).unwrap();
+        assert_eq!(json_val["error"], "Internal Server Error");
+    }
+
+    #[tokio::test]
+    async fn test_database_error_response() {
+        let err: AppError = sqlx::Error::RowNotFound.into();
+        let res = err.into_response();
+
+        assert_eq!(res.status(), StatusCode::INTERNAL_SERVER_ERROR);
+
+        let body_bytes = res.into_body().collect().await.unwrap().to_bytes();
+        let json_val: serde_json::Value = serde_json::from_slice(&body_bytes).unwrap();
+        assert_eq!(json_val["error"], "Internal Server Error");
     }
 }

@@ -122,3 +122,121 @@ pub fn trim_outliers(data: Vec<(i32, f32)>, stats: &WeightedStats) -> Vec<(i32, 
         .filter(|&(val, _)| val <= threshold)
         .collect()
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_calc_weighted_stats_empty() {
+        let stats = calc_weighted_stats(&[]);
+        assert_eq!(stats.mean, 0.0);
+        assert_eq!(stats.variance, 0.0);
+        assert_eq!(stats.stdev, 0.0);
+
+        let zero_weight_stats = calc_weighted_stats(&[(100, 0.0), (200, 0.0)]);
+        assert_eq!(zero_weight_stats.mean, 0.0);
+        assert_eq!(zero_weight_stats.variance, 0.0);
+        assert_eq!(zero_weight_stats.stdev, 0.0);
+    }
+
+    #[test]
+    fn test_calc_weighted_stats_single() {
+        let stats = calc_weighted_stats(&[(1500, 1.0)]);
+        assert_eq!(stats.mean, 1500.0);
+        assert_eq!(stats.variance, 0.0);
+        assert_eq!(stats.stdev, 0.0);
+    }
+
+    #[test]
+    fn test_calc_weighted_stats_uniform() {
+        let data = vec![(100, 1.0), (200, 1.0), (300, 1.0)];
+        let stats = calc_weighted_stats(&data);
+        assert!((stats.mean - 200.0).abs() < 1e-4);
+        // Sample variance for [100, 200, 300] = (( -100)^2 + 0^2 + 100^2 ) / 2 = 20000 / 2 = 10000
+        assert!((stats.variance - 10000.0).abs() < 1e-3);
+        assert!((stats.stdev - 100.0).abs() < 1e-4);
+    }
+
+    #[test]
+    fn test_calc_weighted_stats_weighted() {
+        // Double weight on 100: mean = (100*2 + 200*1) / 3 = 400 / 3 = 133.333
+        let data = vec![(100, 2.0), (200, 1.0)];
+        let stats = calc_weighted_stats(&data);
+        assert!((stats.mean - (400.0 / 3.0)).abs() < 1e-4);
+        assert!(stats.variance > 0.0);
+        assert!(stats.stdev > 0.0);
+    }
+
+    #[test]
+    fn test_fit_weighted_skewnorm_zero_variance() {
+        let data = vec![(1000, 1.0), (1000, 1.0)];
+        let params = fit_weighted_skewnorm(&data);
+        assert_eq!(params.alpha, 0.0);
+        assert_eq!(params.omega, 1.0);
+        assert_eq!(params.xi, 1000.0);
+    }
+
+    #[test]
+    fn test_fit_weighted_skewnorm_symmetric() {
+        // Symmetric data should have alpha ~ 0
+        let data = vec![
+            (800, 1.0),
+            (900, 2.0),
+            (1000, 4.0),
+            (1100, 2.0),
+            (1200, 1.0),
+        ];
+        let params = fit_weighted_skewnorm(&data);
+        assert!(params.alpha.abs() < 0.1);
+        assert!((params.xi - 1000.0).abs() < 10.0);
+        assert!(params.omega > 0.0);
+    }
+
+    #[test]
+    fn test_fit_weighted_skewnorm_skewed() {
+        // Right-skewed data (tail extends to the right)
+        let data = vec![(800, 5.0), (850, 4.0), (900, 3.0), (1200, 1.0), (1600, 1.0)];
+        let params = fit_weighted_skewnorm(&data);
+        assert!(params.alpha > 0.0);
+        assert!(!params.alpha.is_nan() && !params.alpha.is_infinite());
+        assert!(!params.omega.is_nan() && !params.omega.is_infinite());
+        assert!(!params.xi.is_nan() && !params.xi.is_infinite());
+    }
+
+    #[test]
+    fn test_trim_outliers() {
+        let stats = WeightedStats {
+            mean: 1000.0,
+            variance: 10000.0,
+            stdev: 100.0,
+        };
+
+        // Threshold is mean + 2*stdev = 1200
+        let data = vec![
+            (800, 1.0),
+            (1000, 1.0),
+            (1200, 1.0), // kept
+            (1201, 1.0), // trimmed
+            (1500, 1.0), // trimmed
+        ];
+
+        let trimmed = trim_outliers(data, &stats);
+        let vals: Vec<i32> = trimmed.into_iter().map(|(v, _)| v).collect();
+        assert_eq!(vals, vec![800, 1000, 1200]);
+    }
+
+    #[test]
+    fn test_trim_outliers_edge_cases() {
+        let stats = WeightedStats {
+            mean: 1000.0,
+            variance: 0.0,
+            stdev: 0.0,
+        };
+        let single = vec![(1000, 1.0)];
+        assert_eq!(trim_outliers(single.clone(), &stats), single);
+
+        let data = vec![(1000, 1.0), (1000, 1.0)];
+        assert_eq!(trim_outliers(data.clone(), &stats), data);
+    }
+}

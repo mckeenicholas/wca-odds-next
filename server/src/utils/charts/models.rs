@@ -46,6 +46,7 @@ impl HistogramAccumulator {
     }
 }
 
+#[derive(Clone, Default)]
 pub struct HistogramData {
     bins: HashMap<i32, f64>,
 }
@@ -118,5 +119,65 @@ impl RankStats {
 
     pub fn len(&self) -> usize {
         self.probabilities.len()
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_histogram_accumulator_and_data() {
+        let mut acc = HistogramAccumulator::new();
+        for _ in 0..50 {
+            acc.record(100);
+        }
+        for _ in 0..30 {
+            acc.record(110);
+        }
+        acc.record(120); // only 1 count
+
+        // Min threshold = 0.05 (needs at least 5 counts out of 100)
+        let data = acc.into_histogram_data(100, 1, 0.05);
+
+        assert_eq!(data.get(&100), 0.50);
+        assert_eq!(data.get(&110), 0.30);
+        assert_eq!(data.get(&120), 0.0); // filtered out by threshold
+        assert_eq!(data.get(&999), 0.0); // non-existent
+
+        assert_eq!(data.key_range(), Some((100, 110)));
+    }
+
+    #[test]
+    fn test_histogram_data_empty() {
+        let acc = HistogramAccumulator::new();
+        let data = acc.into_histogram_data(100, 1, 0.0);
+        assert_eq!(data.key_range(), None);
+        assert_eq!(data.get(&100), 0.0);
+    }
+
+    #[test]
+    fn test_rank_accumulator_and_stats() {
+        let mut acc = RankAccumulator::new(4);
+        for _ in 0..100 {
+            acc.record_rank(0);
+        }
+        for _ in 0..200 {
+            acc.record_rank(1);
+        }
+        for _ in 0..300 {
+            acc.record_rank(2);
+        }
+        for _ in 0..400 {
+            acc.record_rank(3);
+        }
+
+        let stats = acc.into_rank_stats(1000);
+        assert_eq!(stats.len(), 4);
+        assert_eq!(stats.win_probability(), 0.10);
+        assert!((stats.podium_probability() - 0.60).abs() < 1e-6);
+        // expected rank: 1*0.1 + 2*0.2 + 3*0.3 + 4*0.4 = 0.1 + 0.4 + 0.9 + 1.6 = 3.0
+        assert!((stats.expected_rank() - 3.0).abs() < 1e-6);
+        assert_eq!(stats.as_slice(), &[0.1, 0.2, 0.3, 0.4]);
     }
 }

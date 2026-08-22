@@ -86,3 +86,46 @@ pub struct RankingHistoryRequest {
     pub start_date: NaiveDate,
     pub end_date: NaiveDate,
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_simulation_request_deserialization() {
+        let json_str = r#"{
+            "competitor_ids": ["2015MCKE02", "1982THAI01"],
+            "event_id": "333",
+            "start_date": "2024-01-01",
+            "end_date": "2025-01-01",
+            "half_life": 90.0,
+            "entered_times": [[1000, 1100], []],
+            "include_dnf": true
+        }"#;
+
+        let req: SimulationRequest = serde_json::from_str(json_str).unwrap();
+        assert_eq!(req.competitor_ids.len(), 2);
+        assert_eq!(req.event_id, "333");
+        assert_eq!(req.start_date, NaiveDate::from_ymd_opt(2024, 1, 1).unwrap());
+        assert_eq!(req.end_date, NaiveDate::from_ymd_opt(2025, 1, 1).unwrap());
+        assert_eq!(req.half_life, 90.0);
+        assert_eq!(req.entered_times, Some(vec![vec![1000, 1100], vec![]]));
+        assert_eq!(req.include_dnf, Some(true));
+    }
+
+    #[test]
+    fn test_ranking_request_deserialization() {
+        let json_str = r#"{
+            "event_id": "333",
+            "date": "2025-01-01",
+            "country_id": "_North America",
+            "offset": 32
+        }"#;
+
+        let req: RankingRequest = serde_json::from_str(json_str).unwrap();
+        assert_eq!(req.event_id, "333");
+        assert_eq!(req.date, NaiveDate::from_ymd_opt(2025, 1, 1));
+        assert_eq!(req.country_id, Some("_North America".to_string()));
+        assert_eq!(req.offset, Some(32));
+    }
+}
