@@ -89,11 +89,15 @@ describe("utils", () => {
   });
 
   describe("cn", () => {
-    it("merges class names with tailwind-merge", () => {
+    it("merges class names with cn", () => {
       const showHidden = false;
+      const isActive = true;
       expect(cn("px-2 py-1", "px-4")).toBe("py-1 px-4");
       expect(cn("text-red-500", undefined, "text-blue-500")).toBe("text-blue-500");
       expect(cn("font-bold", showHidden && "hidden")).toBe("font-bold");
+      expect(cn("px-2 py-1", isActive && "bg-blue-500", { "text-white": isActive })).toBe(
+        "px-2 py-1 bg-blue-500 text-white",
+      );
     });
   });
 

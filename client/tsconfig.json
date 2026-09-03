@@ -14,7 +14,8 @@
 
     // Type Checking & Safety
     "skipLibCheck": true,
-    "strict": true
+    "strict": true,
+    "types": ["@types/bun"]
   },
   "exclude": ["node_modules", "dist"]
 }

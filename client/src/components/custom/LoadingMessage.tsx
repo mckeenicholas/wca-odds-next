@@ -8,7 +8,7 @@ interface LoadingMessageProps {
 
 export function LoadingMessage(props: LoadingMessageProps) {
   const [dots, setDots] = createSignal("");
-  let intervalId: number | undefined;
+  let intervalId: ReturnType<typeof setInterval> | undefined;
 
   const updateDots = () => {
     setDots((d) => (d.length < 3 ? `${d}.` : ""));

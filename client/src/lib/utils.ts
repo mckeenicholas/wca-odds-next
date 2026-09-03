@@ -4,8 +4,6 @@ import type {
   SupportedWCAEvent,
   ChartPoint,
 } from "./types";
-import { type ClassValue, clsx } from "clsx";
-import { twMerge } from "tailwind-merge";
 
 // Export const API_URL = import.meta.env.VITE_API_URL ?? "http://localhost:3000";
 const API_URL = import.meta.env.VITE_API_URL ?? "https://odds.nmckee.org";
@@ -27,9 +25,7 @@ export function buildUrl(
   return url.href;
 }
 
-export function cn(...inputs: ClassValue[]) {
-  return twMerge(clsx(inputs));
-}
+export { cn } from "cn";
 
 export const fetchWCAInfo = async <T>(url: string | URL): Promise<T> => {
   const response = await fetch(url);

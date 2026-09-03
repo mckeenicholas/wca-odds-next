@@ -111,9 +111,9 @@ export function StackedAreaChart(props: StackedAreaChartProps) {
   );
 
   const yStackedCumulative = createMemo(() => {
-    const meta = competitorMeta();
-    return meta.map((_, i) => {
-      const idsSlice = meta.slice(0, i + 1).map((m) => m.id);
+    const initialMeta = competitorMeta();
+    return initialMeta.map((_, i) => {
+      const idsSlice = initialMeta.slice(0, i + 1).map((m) => m.id);
       return (d: Record<string, number>) => {
         let sum = 0;
         for (const id of idsSlice) {

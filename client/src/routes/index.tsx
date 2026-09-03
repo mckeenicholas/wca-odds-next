@@ -121,10 +121,9 @@ function Home() {
                 value={rawInput()}
                 onKeyDown={(e) => {
                   if (e.key === "Enter") {
-                    const text = rawInput().trim();
                     void navigate({
                       replace: true,
-                      search: (old) => ({ ...old, q: text || undefined }),
+                      search: (old) => ({ ...old, q: rawInput().trim() || undefined }),
                     });
                   }
                 }}

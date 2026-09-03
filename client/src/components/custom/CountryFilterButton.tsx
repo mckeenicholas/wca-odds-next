@@ -82,19 +82,19 @@ export function CountryFilterButton(props: CountryFilterButtonProps) {
     query.data?.filter((c) => c.id !== "World" && !c.id.startsWith("_")) ?? [];
 
   const filteredSpecial = () => {
-    const q = search().trim().toLowerCase();
-    if (!q) {
+    const initialQ = search().trim().toLowerCase();
+    if (!initialQ) {
       return specialEntries();
     }
-    return specialEntries().filter((c) => c.name.toLowerCase().includes(q));
+    return specialEntries().filter((c) => c.name.toLowerCase().includes(initialQ));
   };
 
   const filteredCountries = () => {
-    const q = search().trim().toLowerCase();
-    if (!q) {
+    const initialQ = search().trim().toLowerCase();
+    if (!initialQ) {
       return realCountries();
     }
-    return realCountries().filter((c) => c.name.toLowerCase().includes(q));
+    return realCountries().filter((c) => c.name.toLowerCase().includes(initialQ));
   };
 
   const flatList = createMemo<ListEntry[]>(() => {

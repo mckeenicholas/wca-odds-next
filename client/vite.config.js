@@ -5,6 +5,12 @@ import { defineConfig } from "vite";
 import solid from "vite-plugin-solid";
 
 export default defineConfig({
+  resolve: {
+    alias: {
+      clsx: "cn",
+      "tailwind-merge": "cn",
+    },
+  },
   build: {
     minify: "oxc",
   },

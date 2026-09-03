@@ -1,8 +1,13 @@
-import { createSignal, createEffect, onCleanup } from "solid-js";
+import { createSignal, createEffect, onCleanup, createRoot } from "solid-js";
 
 export type Theme = "light" | "dark" | "system";
 
-const [theme, setTheme] = createSignal<Theme>((localStorage.getItem("theme") as Theme) || "system");
+const [theme, setTheme] = createRoot(() =>
+  createSignal<Theme>(
+    (typeof localStorage === "undefined" ? undefined : (localStorage.getItem("theme") as Theme)) ??
+      "system",
+  ),
+);
 
 export function changeTheme(newTheme: Theme) {
   setTheme(newTheme);

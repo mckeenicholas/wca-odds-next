@@ -45,9 +45,9 @@ function CustomPage() {
   });
 
   createEffect(() => {
-    const text = rawInput();
+    const initialText = rawInput();
     const timer = setTimeout(() => {
-      setDebouncedInput(text);
+      setDebouncedInput(initialText);
     }, 250);
     onCleanup(() => {
       clearTimeout(timer);

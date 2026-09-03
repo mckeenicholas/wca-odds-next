@@ -56,13 +56,13 @@ export function FullHistogram(props: SimulationResultProps) {
 
   const chartData = createMemo(() => {
     const includedPersons = trimChartItems(histValues(), disabledIndices());
-    const currentActiveIndices = activeIndices();
+    const initialActiveIndices = activeIndices();
 
     const histData = isCDF() ? computeCDF(includedPersons.data) : includedPersons.data;
 
     return histData.map((point) => {
       const result: FullHistogramDataPoint = { name: point.name };
-      currentActiveIndices.forEach((nameIdx, index) => {
+      initialActiveIndices.forEach((nameIdx, index) => {
         result[nameIdx.toString()] = point.values[index];
       });
       return result;
@@ -91,9 +91,8 @@ export function FullHistogram(props: SimulationResultProps) {
         if (props.event === "333fm" && timeRawValue % 100 !== 0) {
           return null;
         }
-        const label = names()[nameIdx];
         const color = props.colors[nameIdx];
-        return { label, val, color };
+        return { color, label: names()[nameIdx], val };
       })
       .filter((item): item is TooltipItem => item !== null);
 

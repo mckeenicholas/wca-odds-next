@@ -134,7 +134,7 @@ export function RankingsAreaChart(props: RankingsAreaChartProps) {
 
     const isRank = props.metric === "rank";
 
-    const sortedCompValues = competitorMeta()
+    const initialSortedCompValues = competitorMeta()
       .map((meta) => ({
         name: meta.name,
         color: meta.color,
@@ -154,7 +154,7 @@ export function RankingsAreaChart(props: RankingsAreaChartProps) {
           <p class="mb-1 border-b border-border pb-1 font-semibold text-foreground">
             {dateDisplay}
           </p>
-          <For each={sortedCompValues}>
+          <For each={initialSortedCompValues}>
             {(item) => (
               <div class="flex justify-between gap-4 py-0.5">
                 <div class="flex items-center">
