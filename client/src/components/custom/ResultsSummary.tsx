@@ -1,6 +1,6 @@
 import { createMemo } from "solid-js";
 import { eventNames, type SimulationAPIResults, type SupportedWCAEvent } from "../../lib/types";
-import { formatPercentage, toClockFormat } from "../../lib/utils";
+import { formatPercentage, renderTime } from "../../lib/utils";
 import { PieChart } from "../charts/PieChart";
 
 interface ResultsSummaryProps {
@@ -21,7 +21,7 @@ export function ResultsSummary(props: ResultsSummaryProps) {
     const comp = topCompetitor();
     return {
       avgRank: comp.expected_rank.toFixed(2),
-      expectedAvg: toClockFormat(comp.mean_no_dnf),
+      expectedAvg: renderTime(comp.mean_no_dnf, props.event == "333fm"),
       podiumChance: formatPercentage(comp.pod_chance, true),
       winChance: formatPercentage(comp.win_chance, true),
     };
