@@ -49,7 +49,7 @@ impl EventType {
 
 /// Calculate the official WCA average/result from a set of solves.
 /// Returns a tuple of (average, best)
-pub fn calculate_average(solves: &mut [i32], event_type: EventType) -> (i32, i32) {
+pub fn calculate_average(solves: &[i32], event_type: EventType) -> (i32, i32) {
     if solves.is_empty() {
         return (DNF_VALUE, DNF_VALUE);
     }
@@ -60,40 +60,53 @@ pub fn calculate_average(solves: &mut [i32], event_type: EventType) -> (i32, i32
                 let best = solves.iter().copied().min().unwrap_or(DNF_VALUE);
                 return (DNF_VALUE, best);
             }
-            solves.sort_unstable();
-            let best_time = solves[0];
-            if solves[3] >= DNF_VALUE {
+            let (s0, s1, s2, s3, s4) = (solves[0], solves[1], solves[2], solves[3], solves[4]);
+            let best_time = s0.min(s1).min(s2).min(s3).min(s4);
+
+            let dnf_count = (s0 >= DNF_VALUE) as u32
+                + (s1 >= DNF_VALUE) as u32
+                + (s2 >= DNF_VALUE) as u32
+                + (s3 >= DNF_VALUE) as u32
+                + (s4 >= DNF_VALUE) as u32;
+
+            if dnf_count >= 2 {
                 (DNF_VALUE, best_time)
             } else {
-                let sum = solves[1] + solves[2] + solves[3];
-                ((sum + 1) / 3, best_time)
+                let worst_time = s0.max(s1).max(s2).max(s3).max(s4);
+                let middle_sum = s0 + s1 + s2 + s3 + s4 - best_time - worst_time;
+                ((middle_sum + 1) / 3, best_time)
             }
         }
         EventType::Mo3 | EventType::Fmc => {
-            let active_solves = if solves.len() >= 3 {
-                &solves[..3]
-            } else {
-                &solves[..]
-            };
-            let best_time = active_solves.iter().copied().min().unwrap_or(DNF_VALUE);
-            if active_solves.len() < 3 || active_solves.iter().any(|&x| x >= DNF_VALUE) {
+            if solves.len() < 3 {
+                let best_time = solves.iter().copied().min().unwrap_or(DNF_VALUE);
+                return (DNF_VALUE, best_time);
+            }
+            let (s0, s1, s2) = (solves[0], solves[1], solves[2]);
+            let best_time = s0.min(s1).min(s2);
+            if s0 >= DNF_VALUE || s1 >= DNF_VALUE || s2 >= DNF_VALUE {
                 (DNF_VALUE, best_time)
             } else {
-                let sum: i32 = active_solves.iter().sum();
+                let sum = s0 + s1 + s2;
                 ((sum + 1) / 3, best_time)
             }
         }
         EventType::Bo3 => {
-            let active_solves = if solves.len() >= 3 {
+            let active = if solves.len() >= 3 {
                 &solves[..3]
             } else {
-                &solves[..]
+                solves
             };
-            let best_time = active_solves.iter().copied().min().unwrap_or(DNF_VALUE);
+            let best_time = active.iter().copied().min().unwrap_or(DNF_VALUE);
             (best_time, best_time)
         }
         EventType::Bo5 => {
-            let best_time = solves.iter().copied().min().unwrap_or(DNF_VALUE);
+            let active = if solves.len() >= 5 {
+                &solves[..5]
+            } else {
+                solves
+            };
+            let best_time = active.iter().copied().min().unwrap_or(DNF_VALUE);
             (best_time, best_time)
         }
     }
@@ -140,8 +153,8 @@ mod tests {
 
     #[test]
     fn test_calculate_average_ao5_standard() {
-        let mut solves = [1000, 1200, 900, 1100, 1300];
-        let (avg, best) = calculate_average(&mut solves, EventType::Ao5);
+        let solves = [1000, 1200, 900, 1100, 1300];
+        let (avg, best) = calculate_average(&solves, EventType::Ao5);
         assert_eq!(best, 900);
         // Sorted: [900, 1000, 1100, 1200, 1300] -> drop 900 & 1300 -> avg of 1000, 1100, 1200 = 1100
         assert_eq!(avg, 1100);
@@ -149,18 +162,18 @@ mod tests {
 
     #[test]
     fn test_calculate_average_ao5_rounding() {
-        let mut solves1 = [1000, 1000, 1000, 1001, 1000];
-        let (avg1, _) = calculate_average(&mut solves1, EventType::Ao5);
+        let solves1 = [1000, 1000, 1000, 1001, 1000];
+        let (avg1, _) = calculate_average(&solves1, EventType::Ao5);
         // Middle: 1000, 1000, 1000 -> (3000+1)/3 = 1000
         assert_eq!(avg1, 1000);
 
-        let mut solves2 = [1000, 1000, 1001, 1001, 1000];
-        let (avg2, _) = calculate_average(&mut solves2, EventType::Ao5);
+        let solves2 = [1000, 1000, 1001, 1001, 1000];
+        let (avg2, _) = calculate_average(&solves2, EventType::Ao5);
         // Middle: 1000, 1000, 1001 -> sum=3001 -> (3001+1)/3 = 1000
         assert_eq!(avg2, 1000);
 
-        let mut solves3 = [1000, 1001, 1001, 1001, 1000];
-        let (avg3, _) = calculate_average(&mut solves3, EventType::Ao5);
+        let solves3 = [1000, 1001, 1001, 1001, 1000];
+        let (avg3, _) = calculate_average(&solves3, EventType::Ao5);
         // Middle: 1000, 1001, 1001 -> sum=3002 -> (3002+1)/3 = 1001
         assert_eq!(avg3, 1001);
     }
@@ -168,72 +181,72 @@ mod tests {
     #[test]
     fn test_calculate_average_ao5_dnf() {
         // Single DNF is dropped as the worst solve
-        let mut solves = [1000, 1200, DNF_VALUE, 1100, 900];
-        let (avg, best) = calculate_average(&mut solves, EventType::Ao5);
+        let solves = [1000, 1200, DNF_VALUE, 1100, 900];
+        let (avg, best) = calculate_average(&solves, EventType::Ao5);
         assert_eq!(best, 900);
         assert_eq!(avg, 1100);
 
         // Double DNF results in DNF average
-        let mut double_dnf = [1000, DNF_VALUE, DNF_VALUE, 1100, 900];
-        let (avg_dnf, best_dnf) = calculate_average(&mut double_dnf, EventType::Ao5);
+        let double_dnf = [1000, DNF_VALUE, DNF_VALUE, 1100, 900];
+        let (avg_dnf, best_dnf) = calculate_average(&double_dnf, EventType::Ao5);
         assert_eq!(best_dnf, 900);
         assert_eq!(avg_dnf, DNF_VALUE);
 
         // All DNF
-        let mut all_dnf = [DNF_VALUE; 5];
-        let (all_avg, all_best) = calculate_average(&mut all_dnf, EventType::Ao5);
+        let all_dnf = [DNF_VALUE; 5];
+        let (all_avg, all_best) = calculate_average(&all_dnf, EventType::Ao5);
         assert_eq!(all_best, DNF_VALUE);
         assert_eq!(all_avg, DNF_VALUE);
     }
 
     #[test]
     fn test_calculate_average_mo3_and_fmc() {
-        let mut solves = [1000, 1100, 1200, 0, 0];
-        let (avg, best) = calculate_average(&mut solves, EventType::Mo3);
+        let solves = [1000, 1100, 1200, 0, 0];
+        let (avg, best) = calculate_average(&solves, EventType::Mo3);
         assert_eq!(best, 1000);
         assert_eq!(avg, 1100);
 
         // FMC rounding test
-        let mut fmc_solves = [25, 26, 26, 0, 0];
-        let (fmc_avg, fmc_best) = calculate_average(&mut fmc_solves, EventType::Fmc);
+        let fmc_solves = [25, 26, 26, 0, 0];
+        let (fmc_avg, fmc_best) = calculate_average(&fmc_solves, EventType::Fmc);
         assert_eq!(fmc_best, 25);
         // (25 + 26 + 26 + 1) / 3 = 78 / 3 = 26
         assert_eq!(fmc_avg, 26);
 
         // Single DNF results in DNF average for Mo3
-        let mut mo3_dnf = [1000, DNF_VALUE, 1100, 0, 0];
-        let (avg_dnf, best_dnf) = calculate_average(&mut mo3_dnf, EventType::Mo3);
+        let mo3_dnf = [1000, DNF_VALUE, 1100, 0, 0];
+        let (avg_dnf, best_dnf) = calculate_average(&mo3_dnf, EventType::Mo3);
         assert_eq!(best_dnf, 1000);
         assert_eq!(avg_dnf, DNF_VALUE);
     }
 
     #[test]
     fn test_calculate_average_bo3_and_bo5() {
-        let mut bo3_solves = [1200, 900, 1100, 0, 0];
-        let (avg_bo3, best_bo3) = calculate_average(&mut bo3_solves, EventType::Bo3);
+        let bo3_solves = [1200, 900, 1100, 0, 0];
+        let (avg_bo3, best_bo3) = calculate_average(&bo3_solves, EventType::Bo3);
         assert_eq!(best_bo3, 900);
         assert_eq!(avg_bo3, 900);
 
-        let mut bo3_with_dnf = [DNF_VALUE, 950, 1100, 0, 0];
-        let (avg_dnf, best_dnf) = calculate_average(&mut bo3_with_dnf, EventType::Bo3);
+        let bo3_with_dnf = [DNF_VALUE, 950, 1100, 0, 0];
+        let (avg_dnf, best_dnf) = calculate_average(&bo3_with_dnf, EventType::Bo3);
         assert_eq!(best_dnf, 950);
         assert_eq!(avg_dnf, 950);
 
-        let mut bo5_solves = [1200, 1500, 850, 1100, 1300];
-        let (avg_bo5, best_bo5) = calculate_average(&mut bo5_solves, EventType::Bo5);
+        let bo5_solves = [1200, 1500, 850, 1100, 1300];
+        let (avg_bo5, best_bo5) = calculate_average(&bo5_solves, EventType::Bo5);
         assert_eq!(best_bo5, 850);
         assert_eq!(avg_bo5, 850);
     }
 
     #[test]
     fn test_calculate_average_empty_and_short() {
-        let mut empty: [i32; 0] = [];
-        let (avg, best) = calculate_average(&mut empty, EventType::Ao5);
+        let empty: [i32; 0] = [];
+        let (avg, best) = calculate_average(&empty, EventType::Ao5);
         assert_eq!(avg, DNF_VALUE);
         assert_eq!(best, DNF_VALUE);
 
-        let mut short = [1000, 1100];
-        let (avg_short, best_short) = calculate_average(&mut short, EventType::Ao5);
+        let short = [1000, 1100];
+        let (avg_short, best_short) = calculate_average(&short, EventType::Ao5);
         assert_eq!(avg_short, DNF_VALUE);
         assert_eq!(best_short, 1000);
     }

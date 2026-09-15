@@ -53,18 +53,31 @@ pub struct ChartPoint {
     pub values: Vec<f64>,
 }
 
-#[derive(Clone, Default)]
+#[derive(Clone)]
 pub struct HistogramAccumulator {
     counts: FastHashMap<i32, i32>,
 }
 
+impl Default for HistogramAccumulator {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl HistogramAccumulator {
     pub fn new() -> Self {
-        Self::default()
+        Self {
+            counts: FastHashMap::with_capacity_and_hasher(128, FxBuildHasher::default()),
+        }
     }
 
+    #[inline(always)]
     pub fn record(&mut self, key: i32) {
-        *self.counts.entry(key).or_default() += 1;
+        if let Some(count) = self.counts.get_mut(&key) {
+            *count += 1;
+        } else {
+            self.counts.insert(key, 1);
+        }
     }
 
     pub fn into_histogram_data(

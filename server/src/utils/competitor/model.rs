@@ -8,7 +8,7 @@ pub struct DatedCompetitionResult {
     pub results: Vec<i32>,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Copy)]
 pub struct CompetitorStats {
     /// Location parameter (xi) from skew-normal fit
     pub location: f32,

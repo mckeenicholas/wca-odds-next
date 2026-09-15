@@ -69,7 +69,7 @@ fn generate_skewnorm_value(
         return DNF_VALUE;
     }
 
-    if include_dnf && rng.random::<f32>() < stats.dnf_rate {
+    if include_dnf && stats.dnf_rate > 0.0 && rng.random::<f32>() < stats.dnf_rate {
         return DNF_VALUE;
     }
 
@@ -83,8 +83,15 @@ fn generate_skewnorm_value(
     (result as i32).max(1)
 }
 
+#[derive(Clone, Copy)]
+struct PreparedCompetitor {
+    stats: Option<CompetitorStats>,
+    manual_results: [i32; 5],
+    has_manual_results: bool,
+}
+
 fn simulate_round(
-    competitor: &Competitor,
+    competitor: &PreparedCompetitor,
     event_type: EventType,
     rng: &mut SmallRng,
     normal: Normal<f32>,
@@ -94,31 +101,58 @@ fn simulate_round(
 ) -> (i32, i32) {
     let count = event_type.num_solves();
     let mut solves = [DNF_VALUE; 5];
+    let is_fmc = event_type.is_fmc();
 
-    for (i, solve) in solves.iter_mut().take(count).enumerate() {
-        let manual_time = competitor.entered_results.get(i).copied().unwrap_or(0);
-
-        if manual_time != 0 {
-            *solve = if manual_time < 0 {
-                DNF_VALUE
-            } else {
-                manual_time
-            };
-        } else if let Some(stats) = &competitor.stats {
+    if competitor.has_manual_results {
+        for (i, solve_slot) in solves.iter_mut().take(count).enumerate() {
+            let manual_time = competitor.manual_results[i];
+            if manual_time != 0 {
+                *solve_slot = manual_time;
+            } else if let Some(stats) = &competitor.stats {
+                let val = generate_skewnorm_value(stats, rng, normal, include_dnf);
+                let solve = if is_fmc { val * 100 } else { val };
+                *solve_slot = solve;
+                if record_histograms && val < DNF_VALUE {
+                    acc.record_single(solve, is_fmc);
+                }
+            }
+        }
+    } else if let Some(stats) = &competitor.stats {
+        for solve_slot in solves.iter_mut().take(count) {
             let val = generate_skewnorm_value(stats, rng, normal, include_dnf);
-
-            *solve = match event_type {
-                EventType::Fmc => val * 100,
-                _ => val,
-            };
-
+            let solve = if is_fmc { val * 100 } else { val };
+            *solve_slot = solve;
             if record_histograms && val < DNF_VALUE {
-                acc.record_single(*solve, event_type.is_fmc());
+                acc.record_single(solve, is_fmc);
             }
         }
     }
 
-    calculate_average(&mut solves, event_type)
+    calculate_average(&solves, event_type)
+}
+
+/// Encapsulates a competitor's round result (average and best single) bit-packed into a `u64`.
+///
+/// High 32 bits: `average` (primary ranking criterion)
+/// Low 32 bits: `best` single (tie-breaker criterion)
+///
+/// Because all official WCA results and `DNF_VALUE` are non-negative integers fitting in `u32`,
+/// the natural ordering of `u64` matches official WCA tie-break rules with zero branching overhead.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
+#[repr(transparent)]
+struct CompetitorScore(u64);
+
+impl CompetitorScore {
+    #[inline(always)]
+    fn new(average: i32, best: i32) -> Self {
+        Self(((average as u64) << 32) | (best as u32 as u64))
+    }
+}
+
+#[derive(Debug, Clone, Copy)]
+struct RoundEntry {
+    score: CompetitorScore,
+    idx: usize,
 }
 
 pub fn run_simulations(
@@ -131,17 +165,37 @@ pub fn run_simulations(
     let num_competitors = competitors.len();
     let mut rng = SmallRng::from_rng(&mut rand::rng());
     let normal = Normal::new(0.0f32, 1.0f32).expect("Failed to init normal dist");
+    let is_fmc = event_type.is_fmc();
+
+    let prepared_competitors: Vec<PreparedCompetitor> = competitors
+        .iter()
+        .map(|c| {
+            let mut manual = [0; 5];
+            let mut has_manual = false;
+            for (i, &res) in c.entered_results.iter().take(5).enumerate() {
+                if res != 0 {
+                    manual[i] = if res < 0 { DNF_VALUE } else { res };
+                    has_manual = true;
+                }
+            }
+            PreparedCompetitor {
+                stats: c.stats,
+                manual_results: manual,
+                has_manual_results: has_manual,
+            }
+        })
+        .collect();
 
     let mut accumulators: Vec<CompetitorAccumulator> = (0..num_competitors)
         .map(|_| CompetitorAccumulator::new(num_competitors))
         .collect();
 
-    let mut round_results: Vec<(usize, i32, i32)> = Vec::with_capacity(num_competitors);
+    let mut round_results: Vec<RoundEntry> = Vec::with_capacity(num_competitors);
 
     for _ in 0..simulation_count {
         round_results.clear();
 
-        for (idx, comp) in competitors.iter().enumerate() {
+        for (idx, comp) in prepared_competitors.iter().enumerate() {
             let acc = &mut accumulators[idx];
 
             let (avg, best) = simulate_round(
@@ -155,23 +209,23 @@ pub fn run_simulations(
             );
 
             if record_histograms && avg != DNF_VALUE {
-                acc.record_average(avg, event_type.is_fmc());
+                acc.record_average(avg, is_fmc);
             }
 
-            round_results.push((idx, avg, best));
+            round_results.push(RoundEntry {
+                score: CompetitorScore::new(avg, best),
+                idx,
+            });
         }
 
-        round_results.sort_unstable_by_key(|&(_, avg, best)| (avg, best));
+        round_results.sort_unstable_by_key(|entry| entry.score);
 
         let mut rank = 0;
-        for (i, &(original_idx, avg, best)) in round_results.iter().enumerate() {
-            if i > 0 {
-                let (_, prev_avg, prev_best) = round_results[i - 1];
-                if avg != prev_avg || best != prev_best {
-                    rank = i;
-                }
+        for (i, entry) in round_results.iter().enumerate() {
+            if i > 0 && entry.score != round_results[i - 1].score {
+                rank = i;
             }
-            accumulators[original_idx].add_rank(rank);
+            accumulators[entry.idx].add_rank(rank);
         }
     }
 
