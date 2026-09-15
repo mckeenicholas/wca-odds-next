@@ -6,9 +6,9 @@ use super::{
 pub fn generate_rank_chart(competitors: &[(&str, &RankStats)]) -> ChartData {
     let mut builder = RankChartBuilder::new();
 
-    competitors
-        .iter()
-        .for_each(|(name, stats)| builder.add_competitor(name, stats));
+    for &(name, stats) in competitors {
+        builder.add_competitor(name, stats);
+    }
 
     builder.into_chart_data()
 }

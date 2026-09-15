@@ -104,8 +104,8 @@ pub fn format_results(
                 expected_rank: res.expected_rank(),
                 win_chance: res.win_probability(),
                 pod_chance: res.podium_probability(),
-                sample_size: stats.map(|s| s.num_non_dnf_results).unwrap_or(0),
-                mean_no_dnf: stats.map(|s| s.mean as u32).unwrap_or(0),
+                sample_size: stats.map_or(0, |s| s.num_non_dnf_results),
+                mean_no_dnf: stats.map_or(0, |s| s.mean as u32),
                 histogram,
             }
         })
@@ -142,8 +142,8 @@ mod tests {
         assert_eq!(result.win_probability(), 1.0);
         assert_eq!(result.podium_probability(), 1.0);
         assert_eq!(result.expected_rank(), 1.0);
-        assert_eq!(result.single_histogram().get(&100), 1.0);
-        assert_eq!(result.average_histogram().get(&110), 1.0);
+        assert_eq!(result.single_histogram().get(100), 1.0);
+        assert_eq!(result.average_histogram().get(110), 1.0);
     }
 
     #[test]

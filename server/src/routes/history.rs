@@ -34,56 +34,49 @@ pub async fn simulation_history_handler(
     .await?;
 
     let include_dnf = payload.include_dnf.unwrap_or(false);
-    let mut history_points = Vec::with_capacity(HISTORY_STEPS as usize);
 
-    let mut curr_end_date = payload.end_date;
-    let mut curr_start_date = payload.start_date;
-
-    for _ in 0..HISTORY_STEPS {
-        let competitors = ctx.build_competitors_for_window(curr_start_date, curr_end_date);
-
-        let sim_results = simulation::run_simulations(
-            &competitors,
-            &ctx.event_type,
-            include_dnf,
-            NUM_SIMULATIONS,
-        );
-
-        let stats: Vec<CompetitorHistoryStat> = competitors
-            .iter()
-            .zip(sim_results)
-            .map(|(comp, res)| CompetitorHistoryStat {
-                id: comp.id.clone(),
-                name: comp.name.clone(),
-                country_iso2: comp.country_iso2.clone(),
-                win_chance: res.win_probability(),
-                pod_chance: res.podium_probability(),
-                expected_rank: res.expected_rank(),
-                sample_size: comp
-                    .stats
-                    .as_ref()
-                    .map(|s| s.num_non_dnf_results)
-                    .unwrap_or(0),
+    let history_points = tokio::task::spawn_blocking(move || {
+        (0..HISTORY_STEPS)
+            .rev()
+            .filter_map(|step| {
+                let start = payload.start_date.checked_sub_months(Months::new(step))?;
+                let end = payload.end_date.checked_sub_months(Months::new(step))?;
+                Some((start, end))
             })
-            .collect();
+            .map(|(curr_start_date, curr_end_date)| {
+                let competitors = ctx.build_competitors_for_window(curr_start_date, curr_end_date);
 
-        history_points.push(HistoryPoint {
-            date: curr_end_date,
-            competitors: stats,
-        });
+                let sim_results = simulation::run_simulations(
+                    &competitors,
+                    ctx.event_type,
+                    include_dnf,
+                    NUM_SIMULATIONS,
+                    false,
+                );
 
-        match (
-            curr_end_date.checked_sub_months(Months::new(1)),
-            curr_start_date.checked_sub_months(Months::new(1)),
-        ) {
-            (Some(ne), Some(ns)) => {
-                curr_end_date = ne;
-                curr_start_date = ns;
-            }
-            _ => break,
-        }
-    }
+                let stats: Vec<CompetitorHistoryStat> = competitors
+                    .into_iter()
+                    .zip(sim_results)
+                    .map(|(comp, res)| CompetitorHistoryStat {
+                        sample_size: comp.stats.as_ref().map_or(0, |s| s.num_non_dnf_results),
+                        id: comp.id,
+                        name: comp.name,
+                        country_iso2: comp.country_iso2,
+                        win_chance: res.win_probability(),
+                        pod_chance: res.podium_probability(),
+                        expected_rank: res.expected_rank(),
+                    })
+                    .collect();
 
-    history_points.reverse();
+                HistoryPoint {
+                    date: curr_end_date,
+                    competitors: stats,
+                }
+            })
+            .collect::<Vec<_>>()
+    })
+    .await
+    .map_err(|e| AppError::Internal(e.to_string()))?;
+
     Ok(Json(history_points).into_response())
 }

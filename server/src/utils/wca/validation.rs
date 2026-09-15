@@ -9,31 +9,18 @@
 /// but cannot check if the ID actually exists in the WCA database.
 /// Returns None if the ID is invalid.
 pub fn clean_and_validate_wca_id(id: &str) -> Option<String> {
-    let id_upper = id.to_uppercase();
+    let bytes = id.as_bytes();
 
     // Must be exactly 10 characters
-    if id_upper.len() != 10 {
+    if bytes.len() != 10
+        || !bytes[0..4].iter().all(u8::is_ascii_digit)
+        || !bytes[4..8].iter().all(u8::is_ascii_alphabetic)
+        || !bytes[8..10].iter().all(u8::is_ascii_digit)
+    {
         return None;
     }
 
-    let chars: Vec<char> = id_upper.chars().collect();
-
-    // First 4 characters must be digits (year)
-    if !chars[0..4].iter().all(|c| c.is_ascii_digit()) {
-        return None;
-    }
-
-    // Next 4 characters must be uppercase letters
-    if !chars[4..8].iter().all(|c| c.is_ascii_uppercase()) {
-        return None;
-    }
-
-    // Last 2 characters must be digits
-    if !chars[8..10].iter().all(|c| c.is_ascii_digit()) {
-        return None;
-    }
-
-    Some(id_upper)
+    Some(id.to_ascii_uppercase())
 }
 
 #[cfg(test)]

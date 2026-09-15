@@ -36,41 +36,34 @@ pub async fn country_list_handler(
     State(pool): State<PgPool>,
     query: Query<CountryOptionsQuery>,
 ) -> Result<impl IntoResponse, AppError> {
-    let mut results: Vec<CountryResult> = Vec::new();
-
-    if query.include_regions.unwrap_or(false) {
-        let world = CountryResult {
-            id: "World".to_string(),
-            iso2: "ZZ".to_string(),
-            name: "World".to_string(),
-            continent_id: String::new(),
-        };
-
-        results.push(world);
-
-        for (id, _iso2, name) in CONTINENTS {
-            let region = CountryResult {
-                id: id.to_string(),
-                iso2: _iso2.to_string(),
-                name: name.to_string(),
-                continent_id: id.to_string(),
-            };
-
-            results.push(region);
-        }
-    }
-
     let countries = sqlx::query_as::<_, CountryResult>(
-        r#"
-            SELECT id, iso2, name, continent_id
-            FROM countries
-            ORDER BY name ASC
-            "#,
+        r"
+        SELECT id, iso2, name, continent_id
+        FROM countries
+        ORDER BY name ASC
+        ",
     )
     .fetch_all(&pool)
     .await?;
 
-    results.extend(countries);
+    let results = if query.include_regions.unwrap_or(false) {
+        let regions = std::iter::once(CountryResult {
+            id: "World".to_string(),
+            iso2: "ZZ".to_string(),
+            name: "World".to_string(),
+            continent_id: String::new(),
+        })
+        .chain(CONTINENTS.iter().map(|&(id, iso2, name)| CountryResult {
+            id: id.to_string(),
+            iso2: iso2.to_string(),
+            name: name.to_string(),
+            continent_id: id.to_string(),
+        }));
+
+        regions.chain(countries).collect()
+    } else {
+        countries
+    };
 
     Ok(Json(results).into_response())
 }

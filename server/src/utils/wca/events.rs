@@ -1,4 +1,6 @@
-use super::constants::*;
+use super::constants::{
+    AO5_SOLVE_COUNT, BO3_SOLVE_COUNT, BO5_SOLVE_COUNT, DNF_VALUE, MO3_SOLVE_COUNT,
+};
 
 /// WCA event format types, defining how results are calculated.
 #[derive(Debug, Clone, PartialEq, Copy)]
@@ -16,7 +18,7 @@ pub enum EventType {
 }
 
 impl EventType {
-    /// Parse a WCA event ID string into an EventType.
+    /// Parse a WCA event ID string into an `EventType`.
     pub fn from_id(id: &str) -> Option<Self> {
         match id {
             "222" | "333" | "444" | "555" | "333oh" | "minx" | "pyram" | "clock" | "skewb"
@@ -30,18 +32,17 @@ impl EventType {
     }
 
     /// Get the number of solves for this event type.
-    pub fn num_solves(&self) -> usize {
+    pub fn num_solves(self) -> usize {
         match self {
             EventType::Ao5 => AO5_SOLVE_COUNT,
             EventType::Bo5 => BO5_SOLVE_COUNT,
-            EventType::Mo3 => MO3_SOLVE_COUNT,
-            EventType::Fmc => MO3_SOLVE_COUNT,
+            EventType::Mo3 | EventType::Fmc => MO3_SOLVE_COUNT,
             EventType::Bo3 => BO3_SOLVE_COUNT,
         }
     }
 
     /// Check if this is an FMC (Fewest Moves Challenge) event.
-    pub fn is_fmc(&self) -> bool {
+    pub fn is_fmc(self) -> bool {
         matches!(self, EventType::Fmc)
     }
 }
@@ -49,8 +50,16 @@ impl EventType {
 /// Calculate the official WCA average/result from a set of solves.
 /// Returns a tuple of (average, best)
 pub fn calculate_average(solves: &mut [i32], event_type: EventType) -> (i32, i32) {
+    if solves.is_empty() {
+        return (DNF_VALUE, DNF_VALUE);
+    }
+
     match event_type {
         EventType::Ao5 => {
+            if solves.len() < 5 {
+                let best = solves.iter().copied().min().unwrap_or(DNF_VALUE);
+                return (DNF_VALUE, best);
+            }
             solves.sort_unstable();
             let best_time = solves[0];
             if solves[3] >= DNF_VALUE {
@@ -61,9 +70,13 @@ pub fn calculate_average(solves: &mut [i32], event_type: EventType) -> (i32, i32
             }
         }
         EventType::Mo3 | EventType::Fmc => {
-            let active_solves = &solves[..3];
-            let best_time = *active_solves.iter().min().unwrap();
-            if active_solves.iter().any(|&x| x >= DNF_VALUE) {
+            let active_solves = if solves.len() >= 3 {
+                &solves[..3]
+            } else {
+                &solves[..]
+            };
+            let best_time = active_solves.iter().copied().min().unwrap_or(DNF_VALUE);
+            if active_solves.len() < 3 || active_solves.iter().any(|&x| x >= DNF_VALUE) {
                 (DNF_VALUE, best_time)
             } else {
                 let sum: i32 = active_solves.iter().sum();
@@ -71,11 +84,16 @@ pub fn calculate_average(solves: &mut [i32], event_type: EventType) -> (i32, i32
             }
         }
         EventType::Bo3 => {
-            let best_time = *solves[..3].iter().min().unwrap();
+            let active_solves = if solves.len() >= 3 {
+                &solves[..3]
+            } else {
+                &solves[..]
+            };
+            let best_time = active_solves.iter().copied().min().unwrap_or(DNF_VALUE);
             (best_time, best_time)
         }
         EventType::Bo5 => {
-            let best_time = *solves.iter().min().unwrap();
+            let best_time = solves.iter().copied().min().unwrap_or(DNF_VALUE);
             (best_time, best_time)
         }
     }
@@ -205,5 +223,18 @@ mod tests {
         let (avg_bo5, best_bo5) = calculate_average(&mut bo5_solves, EventType::Bo5);
         assert_eq!(best_bo5, 850);
         assert_eq!(avg_bo5, 850);
+    }
+
+    #[test]
+    fn test_calculate_average_empty_and_short() {
+        let mut empty: [i32; 0] = [];
+        let (avg, best) = calculate_average(&mut empty, EventType::Ao5);
+        assert_eq!(avg, DNF_VALUE);
+        assert_eq!(best, DNF_VALUE);
+
+        let mut short = [1000, 1100];
+        let (avg_short, best_short) = calculate_average(&mut short, EventType::Ao5);
+        assert_eq!(avg_short, DNF_VALUE);
+        assert_eq!(best_short, 1000);
     }
 }

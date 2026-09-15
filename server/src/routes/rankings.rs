@@ -9,7 +9,7 @@ use crate::utils::{
     },
     http::AppError,
     types::{RankingHistoryRequest, RankingRequest},
-    wca::EventType,
+    wca::{EventType, clean_and_validate_wca_id},
 };
 
 const MAX_WINDOW_DAYS: i64 = 31 * 12 * 5; // ~5 years
@@ -47,7 +47,7 @@ pub async fn rankings_handler(
         "all" | "kinch" | "kinch_strict" => payload.event_id.as_str(),
         other => {
             EventType::from_id(other)
-                .ok_or_else(|| AppError::BadRequest(format!("Invalid event: \"{}\"", other)))?;
+                .ok_or_else(|| AppError::BadRequest(format!("Invalid event: \"{other}\"")))?;
             other
         }
     };
@@ -62,9 +62,9 @@ pub async fn rankings_handler(
         if id.is_empty() || id == "World" {
             None
         } else if id.starts_with('_') {
-            Some(CountryFilter::Continent(id.to_string()))
+            Some(CountryFilter::Continent(id))
         } else {
-            Some(CountryFilter::Country(id.to_string()))
+            Some(CountryFilter::Country(id))
         }
     });
 
@@ -130,14 +130,18 @@ pub async fn competitor_rankings_history_handler(
         "all" | "kinch" | "kinch_strict" => payload.event_id.as_str(),
         other => {
             EventType::from_id(other)
-                .ok_or_else(|| AppError::BadRequest(format!("Invalid event: \"{}\"", other)))?;
+                .ok_or_else(|| AppError::BadRequest(format!("Invalid event: \"{other}\"")))?;
             other
         }
     };
 
+    let competitor_id = clean_and_validate_wca_id(&payload.competitor_id).ok_or_else(|| {
+        AppError::BadRequest(format!("Invalid WCA ID \"{}\"", payload.competitor_id))
+    })?;
+
     let rows = database::fetch_competitor_ranking_history(
         &pool,
-        &payload.competitor_id,
+        &competitor_id,
         db_event_id,
         payload.start_date,
         payload.end_date,

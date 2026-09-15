@@ -49,7 +49,7 @@ impl<'a> HistogramChartBuilder<'a> {
 
         let raw_points: Vec<ChartPoint> = key_iter
             .map(|key| {
-                let values = self.series.iter().map(|(_, data)| data.get(&key)).collect();
+                let values = self.series.iter().map(|(_, data)| data.get(key)).collect();
                 ChartPoint {
                     name: key.to_string(),
                     values,
@@ -145,7 +145,7 @@ impl<'a> IndividualHistogramBuilder<'a> {
         let data = key_iter
             .map(|key| ChartPoint {
                 name: key.to_string(),
-                values: vec![self.singles.get(&key), self.averages.get(&key)],
+                values: vec![self.singles.get(key), self.averages.get(key)],
             })
             .collect();
 
@@ -176,7 +176,13 @@ impl<'a> RankChartBuilder<'a> {
             };
         }
 
-        let rank_count = self.series[0].1.len();
+        let rank_count = self
+            .series
+            .iter()
+            .map(|(_, dist)| dist.len())
+            .max()
+            .unwrap_or(0);
+
         let data = (0..rank_count)
             .map(|rank_idx| {
                 let values: Vec<f64> = self

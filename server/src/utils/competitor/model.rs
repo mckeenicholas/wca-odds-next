@@ -14,14 +14,54 @@ pub struct CompetitorStats {
     pub location: f32,
     /// Scale/shape parameter (omega) from skew-normal fit
     pub shape: f32,
-    /// Skewness parameter (alpha) from skew-normal fit
-    pub skew: f32,
     /// Rate of DNF results (0.0 to 1.0)
     pub dnf_rate: f32,
     /// Weighted mean of non-DNF times
     pub mean: f32,
     /// Number of non-DNF results used in the calculation
     pub num_non_dnf_results: u32,
+    /// Precalculated delta: alpha / sqrt(1 + alpha^2)
+    pub delta: f32,
+    /// Precalculated delta factor: sqrt(1 - delta^2)
+    pub delta_factor: f32,
+    /// Pre-validated flag for NaN / Inf
+    pub is_valid: bool,
+}
+
+impl CompetitorStats {
+    pub fn new(
+        location: f32,
+        shape: f32,
+        skew: f32,
+        dnf_rate: f32,
+        mean: f32,
+        num_non_dnf_results: u32,
+    ) -> Self {
+        let is_valid = ![location, shape, skew]
+            .iter()
+            .any(|&x| x.is_nan() || x.is_infinite());
+        let delta = if is_valid {
+            skew / (1.0 + skew.powi(2)).sqrt()
+        } else {
+            0.0
+        };
+        let delta_factor = if is_valid {
+            (1.0 - delta.powi(2)).max(0.0).sqrt()
+        } else {
+            1.0
+        };
+
+        Self {
+            location,
+            shape,
+            dnf_rate,
+            mean,
+            num_non_dnf_results,
+            delta,
+            delta_factor,
+            is_valid,
+        }
+    }
 }
 
 #[derive(Debug, Clone)]
@@ -38,10 +78,10 @@ impl Competitor {
         name: String,
         id: String,
         country_iso2: String,
-        results: Vec<DatedCompetitionResult>,
+        results: &[DatedCompetitionResult],
         halflife: f32,
     ) -> Self {
-        let stats = Self::calculate_stats(&results, halflife);
+        let stats = Self::calculate_stats(results, halflife);
         Self {
             name,
             id,
@@ -55,18 +95,31 @@ impl Competitor {
         results: &[DatedCompetitionResult],
         halflife: f32,
     ) -> Option<CompetitorStats> {
-        let weighted = Self::apply_weights(results, halflife);
-        if weighted.is_empty() {
+        let total_results: usize = results.iter().map(|r| r.results.len()).sum();
+        if total_results == 0 {
             return None;
         }
 
-        let (dnf_sum, total_w) = weighted.iter().fold((0.0, 0.0), |(dnf, w_sum), &(val, w)| {
-            if val < 0 {
-                (dnf + w, w_sum + w)
-            } else {
-                (dnf, w_sum + w)
+        let decay_rate = std::f32::consts::LN_2 / halflife;
+        let mut valid_times = Vec::with_capacity(total_results);
+        let mut total_w = 0.0f32;
+        let mut dnf_sum = 0.0f32;
+
+        for set in results {
+            let weight = (-decay_rate * set.days_since as f32).exp();
+            for &val in &set.results {
+                total_w += weight;
+                if val < 0 {
+                    dnf_sum += weight;
+                } else if val > 0 {
+                    valid_times.push((val, weight));
+                }
             }
-        });
+        }
+
+        if valid_times.is_empty() {
+            return None;
+        }
 
         let dnf_rate = if total_w > 0.0 {
             dnf_sum / total_w
@@ -74,32 +127,27 @@ impl Competitor {
             0.0
         };
 
-        let valid_times: Vec<(i32, f32)> =
-            weighted.into_iter().filter(|&(val, _)| val > 0).collect();
-        if valid_times.is_empty() {
-            return None;
-        }
-
         let num_non_dnf_results = valid_times.len() as u32;
         let stats: WeightedStats = statistics::calc_weighted_stats(&valid_times);
         let trimmed = statistics::trim_outliers(valid_times, &stats);
         let params: SkewNormParams = statistics::fit_weighted_skewnorm(&trimmed);
 
-        Some(CompetitorStats {
-            location: params.xi,
-            shape: params.omega,
-            skew: params.alpha,
+        Some(CompetitorStats::new(
+            params.xi,
+            params.omega,
+            params.alpha,
             dnf_rate,
-            mean: stats.mean,
+            stats.mean,
             num_non_dnf_results,
-        })
+        ))
     }
 
-    fn apply_weights(results: &[DatedCompetitionResult], halflife: f32) -> Vec<(i32, f32)> {
+    #[cfg(test)]
+    pub fn apply_weights(results: &[DatedCompetitionResult], halflife: f32) -> Vec<(i32, f32)> {
         let decay_rate = std::f32::consts::LN_2 / halflife;
-        let mut weighted = Vec::new();
+        let total_results: usize = results.iter().map(|r| r.results.len()).sum();
+        let mut weighted = Vec::with_capacity(total_results);
         for set in results {
-            // Formula: e^(-decay * days)
             let weight = (-decay_rate * set.days_since as f32).exp();
             for &time in &set.results {
                 weighted.push((time, weight));
@@ -119,7 +167,7 @@ mod tests {
             "Test Person".to_string(),
             "2020TEST01".to_string(),
             "US".to_string(),
-            vec![],
+            &[],
             30.0,
         );
         assert_eq!(comp.name, "Test Person");
@@ -139,7 +187,7 @@ mod tests {
             "Test Person".to_string(),
             "2020TEST01".to_string(),
             "US".to_string(),
-            results,
+            &results,
             30.0,
         );
         assert!(comp.stats.is_none());
@@ -161,7 +209,7 @@ mod tests {
             "Test Person".to_string(),
             "2020TEST01".to_string(),
             "US".to_string(),
-            results,
+            &results,
             30.0, // halflife = 30 days
         );
 
@@ -176,7 +224,8 @@ mod tests {
         assert!(stats.mean > 0.0);
         assert!(!stats.location.is_nan());
         assert!(!stats.shape.is_nan());
-        assert!(!stats.skew.is_nan());
+        assert!(!stats.delta.is_nan());
+        assert!(!stats.delta_factor.is_nan());
     }
 
     #[test]

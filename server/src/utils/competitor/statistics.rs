@@ -3,7 +3,8 @@ use std::f32::consts::PI;
 // Max skew for a skew-normal distribution derived from Azzalini's skew-normal distribution properties.
 const MAX_SKEW_LIMIT: f32 = 0.99527;
 
-/// Weighted statistics result with named fields for clarity. #[derive(Debug, Clone, Copy)]
+/// Weighted statistics result with named fields for clarity.
+#[derive(Debug, Clone, Copy)]
 pub struct WeightedStats {
     pub mean: f32,
     pub variance: f32,
@@ -45,12 +46,16 @@ pub fn calc_weighted_stats(data: &[(i32, f32)]) -> WeightedStats {
         return WeightedStats::default();
     }
 
-    let total_weight: f32 = data.iter().map(|(_, w)| *w).sum();
+    let (total_weight, weighted_sum, sum_w_sq) = data
+        .iter()
+        .fold((0.0f32, 0.0f32, 0.0f32), |(tw, ws, wsq), &(val, w)| {
+            (tw + w, ws + (val as f32 * w), wsq + w.powi(2))
+        });
+
     if total_weight <= 0.0 {
         return WeightedStats::default();
     }
 
-    let weighted_sum: f32 = data.iter().map(|&(val, w)| val as f32 * w).sum();
     let mean = weighted_sum / total_weight;
 
     let weighted_sq_diff: f32 = data
@@ -59,7 +64,7 @@ pub fn calc_weighted_stats(data: &[(i32, f32)]) -> WeightedStats {
         .sum();
 
     let variance = if data.len() > 1 {
-        let effective_n = total_weight.powi(2) / data.iter().map(|(_, w)| w.powi(2)).sum::<f32>();
+        let effective_n = total_weight.powi(2) / sum_w_sq;
         if effective_n > 1.001 {
             weighted_sq_diff / (total_weight * (effective_n - 1.0) / effective_n)
         } else {
@@ -87,12 +92,16 @@ pub fn fit_weighted_skewnorm(data: &[(i32, f32)]) -> SkewNormParams {
         };
     }
 
-    let total_weight: f32 = data.iter().map(|(_, w)| *w).sum();
-    let weighted_skewness = data
-        .iter()
-        .map(|&(val, w)| w * ((val as f32 - stats.mean) / stats.stdev).powi(3))
-        .sum::<f32>()
-        / total_weight;
+    let (total_weight, sum_cubed) = data.iter().fold((0.0f32, 0.0f32), |(tw, sc), &(val, w)| {
+        let diff = (val as f32 - stats.mean) / stats.stdev;
+        (tw + w, sc + w * diff.powi(3))
+    });
+
+    let weighted_skewness = if total_weight > 0.0 {
+        sum_cubed / total_weight
+    } else {
+        0.0
+    };
 
     // Constants for skew normal approximation
     let max_skew =
@@ -111,16 +120,15 @@ pub fn fit_weighted_skewnorm(data: &[(i32, f32)]) -> SkewNormParams {
 }
 
 /// Remove outliers beyond 2 standard deviations from the mean.
-pub fn trim_outliers(data: Vec<(i32, f32)>, stats: &WeightedStats) -> Vec<(i32, f32)> {
+pub fn trim_outliers(mut data: Vec<(i32, f32)>, stats: &WeightedStats) -> Vec<(i32, f32)> {
     if data.len() <= 1 || stats.stdev == 0.0 {
         return data;
     }
 
     let threshold = (stats.mean + stats.stdev * 2.0) as i32;
 
-    data.into_iter()
-        .filter(|&(val, _)| val <= threshold)
-        .collect()
+    data.retain(|&(val, _)| val <= threshold);
+    data
 }
 
 #[cfg(test)]

@@ -57,9 +57,8 @@ impl Iterator for HistogramKeys {
 
         self.count = match (self.is_fmc, self.is_average, decimals) {
             // FMC & Average: Steps of 33/34/33 to approximate 100/3
-            (true, true, 0) => self.count + 33,
+            (true, true, 0 | 67) => self.count + 33,
             (true, true, 33) => self.count + 34,
-            (true, true, 67) => self.count + 33,
             // FMC & Single: Step 100 (1 move)
             (true, false, _) => self.count + 100,
             // Standard Time: Step 10
@@ -83,11 +82,13 @@ pub fn create_full_histogram_chart(
     is_fmc: bool,
     is_average: bool,
 ) -> ChartData {
-    let mut builder = HistogramChartBuilder::new(is_fmc, is_average);
-    for (name, data) in competitors {
-        builder = builder.add_series(name, data);
-    }
-    builder.build()
+    competitors
+        .iter()
+        .fold(
+            HistogramChartBuilder::new(is_fmc, is_average),
+            |builder, &(name, data)| builder.add_series(name, data),
+        )
+        .build()
 }
 
 #[cfg(test)]

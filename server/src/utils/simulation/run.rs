@@ -39,7 +39,7 @@ impl CompetitorAccumulator {
         self.ranks.record_rank(rank);
     }
 
-    fn finalize(self, simulation_count: u32, event_type: &EventType) -> SimulationResult {
+    fn finalize(self, simulation_count: u32, event_type: EventType) -> SimulationResult {
         let single_scale = 100 / event_type.num_solves() as i32;
 
         SimulationResult::new(
@@ -62,13 +62,10 @@ impl CompetitorAccumulator {
 fn generate_skewnorm_value(
     stats: &CompetitorStats,
     rng: &mut ThreadRng,
-    normal: &Normal<f64>,
+    normal: Normal<f32>,
     include_dnf: bool,
 ) -> i32 {
-    let invalid = [stats.location, stats.shape, stats.skew]
-        .iter()
-        .any(|&x| x.is_nan() || x.is_infinite());
-    if invalid {
+    if !stats.is_valid {
         return DNF_VALUE;
     }
 
@@ -76,29 +73,24 @@ fn generate_skewnorm_value(
         return DNF_VALUE;
     }
 
-    let u0 = normal.sample(rng) as f32;
-    let v = normal.sample(rng) as f32;
+    let u0 = normal.sample(rng);
+    let v = normal.sample(rng);
 
-    let alpha = stats.skew;
-    let omega = stats.shape;
-    let xi = stats.location;
-
-    let delta = alpha / (1.0 + alpha.powi(2)).sqrt();
-    let u1 = delta * u0 + (1.0 - delta.powi(2)).sqrt() * v;
-
+    let u1 = stats.delta * u0 + stats.delta_factor * v;
     let z = if u0 >= 0.0 { u1 } else { -u1 };
 
-    let result = xi + (omega * z);
+    let result = stats.location + (stats.shape * z);
     (result as i32).max(1)
 }
 
 fn simulate_round(
     competitor: &Competitor,
-    event_type: &EventType,
+    event_type: EventType,
     rng: &mut rand::rngs::ThreadRng,
-    normal: &Normal<f64>,
+    normal: Normal<f32>,
     include_dnf: bool,
     acc: &mut CompetitorAccumulator,
+    record_histograms: bool,
 ) -> (i32, i32) {
     let count = event_type.num_solves();
     let mut solves = [DNF_VALUE; 5];
@@ -120,38 +112,49 @@ fn simulate_round(
                 _ => val,
             };
 
-            if val < DNF_VALUE {
+            if record_histograms && val < DNF_VALUE {
                 acc.record_single(*solve, event_type.is_fmc());
             }
         }
     }
 
-    calculate_average(&mut solves, *event_type)
+    calculate_average(&mut solves, event_type)
 }
 
 pub fn run_simulations(
     competitors: &[Competitor],
-    event_type: &EventType,
+    event_type: EventType,
     include_dnf: bool,
     simulation_count: u32,
+    record_histograms: bool,
 ) -> Vec<SimulationResult> {
     let num_competitors = competitors.len();
     let mut rng = rand::rng();
-    let normal = Normal::new(0.0, 1.0).expect("Failed to init normal dist");
+    let normal = Normal::new(0.0f32, 1.0f32).expect("Failed to init normal dist");
 
     let mut accumulators: Vec<CompetitorAccumulator> = (0..num_competitors)
         .map(|_| CompetitorAccumulator::new(num_competitors))
         .collect();
 
+    let mut round_results: Vec<(usize, i32, i32)> = Vec::with_capacity(num_competitors);
+
     for _ in 0..simulation_count {
-        let mut round_results: Vec<(usize, i32, i32)> = Vec::with_capacity(num_competitors);
+        round_results.clear();
 
         for (idx, comp) in competitors.iter().enumerate() {
             let acc = &mut accumulators[idx];
 
-            let (avg, best) = simulate_round(comp, event_type, &mut rng, &normal, include_dnf, acc);
+            let (avg, best) = simulate_round(
+                comp,
+                event_type,
+                &mut rng,
+                normal,
+                include_dnf,
+                acc,
+                record_histograms,
+            );
 
-            if avg != DNF_VALUE {
+            if record_histograms && avg != DNF_VALUE {
                 acc.record_average(avg, event_type.is_fmc());
             }
 
@@ -228,7 +231,7 @@ mod tests {
         let event_type = EventType::Ao5;
 
         // Run 1 simulation
-        let results = run_simulations(&competitors, &event_type, false, 1);
+        let results = run_simulations(&competitors, event_type, false, 1, true);
 
         // Under WCA tie-breaker rules:
         // - B and D have Avg = 1000, Best = 900
@@ -271,7 +274,7 @@ mod tests {
         };
 
         let competitors = vec![comp_dnf, comp_clean];
-        let results = run_simulations(&competitors, &EventType::Ao5, false, 1);
+        let results = run_simulations(&competitors, EventType::Ao5, false, 1, true);
 
         // comp_dnf has 2 DNFs in Ao5 -> DNF average. comp_clean has 1200 avg.
         // comp_clean should win (rank 0), comp_dnf should be rank 1.
@@ -281,14 +284,7 @@ mod tests {
 
     #[test]
     fn test_simulation_with_stats_generation() {
-        let stats = CompetitorStats {
-            location: 1000.0,
-            shape: 50.0,
-            skew: 0.0,
-            dnf_rate: 0.0,
-            mean: 1000.0,
-            num_non_dnf_results: 100,
-        };
+        let stats = CompetitorStats::new(1000.0, 50.0, 0.0, 0.0, 1000.0, 100);
 
         let comp = Competitor {
             name: "StatCompetitor".to_string(),
@@ -298,7 +294,7 @@ mod tests {
             stats: Some(stats),
         };
 
-        let results = run_simulations(&[comp], &EventType::Ao5, false, 100);
+        let results = run_simulations(&[comp], EventType::Ao5, false, 100, true);
         assert_eq!(results.len(), 1);
         assert_eq!(results[0].win_probability(), 1.0); // Only 1 competitor, so 100% win
         assert!(results[0].average_histogram().key_range().is_some());
@@ -321,7 +317,7 @@ mod tests {
             stats: None,
         };
 
-        let results = run_simulations(&[comp_fmc1, comp_fmc2], &EventType::Fmc, false, 1);
+        let results = run_simulations(&[comp_fmc1, comp_fmc2], EventType::Fmc, false, 1, true);
         assert_eq!(results[0].win_probability(), 1.0);
         assert_eq!(results[1].win_probability(), 0.0);
     }

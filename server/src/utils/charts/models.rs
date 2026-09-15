@@ -1,7 +1,45 @@
-use std::collections::HashMap;
+use std::{
+    collections::HashMap,
+    hash::{BuildHasherDefault, Hasher},
+};
 
 use itertools::Itertools;
 use serde::Serialize;
+
+#[derive(Default)]
+pub struct FxHasher {
+    hash: u64,
+}
+
+impl Hasher for FxHasher {
+    #[inline]
+    fn finish(&self) -> u64 {
+        self.hash
+    }
+
+    #[inline]
+    fn write(&mut self, bytes: &[u8]) {
+        for &byte in bytes {
+            self.hash =
+                self.hash.rotate_left(5) ^ u64::from(byte).wrapping_mul(0x517c_c1b7_2722_0a95);
+        }
+    }
+
+    #[inline]
+    fn write_i32(&mut self, i: i32) {
+        #[allow(clippy::cast_sign_loss)]
+        let unsigned = i as u64;
+        self.hash = self.hash.rotate_left(5) ^ unsigned.wrapping_mul(0x517c_c1b7_2722_0a95);
+    }
+
+    #[inline]
+    fn write_u32(&mut self, i: u32) {
+        self.hash = self.hash.rotate_left(5) ^ u64::from(i).wrapping_mul(0x517c_c1b7_2722_0a95);
+    }
+}
+
+pub type FxBuildHasher = BuildHasherDefault<FxHasher>;
+pub type FastHashMap<K, V> = HashMap<K, V, FxBuildHasher>;
 
 #[derive(Serialize)]
 pub struct ChartData {
@@ -17,7 +55,7 @@ pub struct ChartPoint {
 
 #[derive(Clone, Default)]
 pub struct HistogramAccumulator {
-    counts: HashMap<i32, i32>,
+    counts: FastHashMap<i32, i32>,
 }
 
 impl HistogramAccumulator {
@@ -35,12 +73,17 @@ impl HistogramAccumulator {
         scale_factor: i32,
         min_threshold: f64,
     ) -> HistogramData {
-        let min_count = (min_threshold * sample_count as f64) as i32;
+        let min_count = (min_threshold * f64::from(sample_count)) as i32;
         let bins = self
             .counts
             .into_iter()
-            .filter(|(_, count)| *count >= min_count)
-            .map(|(key, count)| (key, (count * scale_factor) as f64 / sample_count as f64))
+            .filter(|&(_, count)| count >= min_count)
+            .map(|(key, count)| {
+                (
+                    key,
+                    f64::from(count * scale_factor) / f64::from(sample_count),
+                )
+            })
             .collect();
         HistogramData { bins }
     }
@@ -48,12 +91,12 @@ impl HistogramAccumulator {
 
 #[derive(Clone, Default)]
 pub struct HistogramData {
-    bins: HashMap<i32, f64>,
+    bins: FastHashMap<i32, f64>,
 }
 
 impl HistogramData {
-    pub fn get(&self, key: &i32) -> f64 {
-        *self.bins.get(key).unwrap_or(&0.0)
+    pub fn get(&self, key: i32) -> f64 {
+        *self.bins.get(&key).unwrap_or(&0.0)
     }
 
     pub fn key_range(&self) -> Option<(i32, i32)> {
@@ -84,7 +127,7 @@ impl RankAccumulator {
         let probabilities = self
             .counts
             .into_iter()
-            .map(|c| c as f64 / sample_count as f64)
+            .map(|c| f64::from(c) / f64::from(sample_count))
             .collect();
 
         RankStats { probabilities }
@@ -140,10 +183,10 @@ mod tests {
         // Min threshold = 0.05 (needs at least 5 counts out of 100)
         let data = acc.into_histogram_data(100, 1, 0.05);
 
-        assert_eq!(data.get(&100), 0.50);
-        assert_eq!(data.get(&110), 0.30);
-        assert_eq!(data.get(&120), 0.0); // filtered out by threshold
-        assert_eq!(data.get(&999), 0.0); // non-existent
+        assert_eq!(data.get(100), 0.50);
+        assert_eq!(data.get(110), 0.30);
+        assert_eq!(data.get(120), 0.0); // filtered out by threshold
+        assert_eq!(data.get(999), 0.0); // non-existent
 
         assert_eq!(data.key_range(), Some((100, 110)));
     }
@@ -153,7 +196,7 @@ mod tests {
         let acc = HistogramAccumulator::new();
         let data = acc.into_histogram_data(100, 1, 0.0);
         assert_eq!(data.key_range(), None);
-        assert_eq!(data.get(&100), 0.0);
+        assert_eq!(data.get(100), 0.0);
     }
 
     #[test]

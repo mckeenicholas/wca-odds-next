@@ -25,7 +25,7 @@ impl CompetitorContext {
         half_life: f32,
     ) -> Result<Self, AppError> {
         let event_type = EventType::from_id(event_id)
-            .ok_or_else(|| AppError::BadRequest(format!("Invalid event: {}", event_id)))?;
+            .ok_or_else(|| AppError::BadRequest(format!("Invalid event: {event_id}")))?;
 
         let valid_ids = validate_competitor_ids(competitor_ids)?;
 
@@ -50,7 +50,7 @@ impl CompetitorContext {
                     .remove(&id)
                     .unwrap_or_else(|| (id.clone(), String::new()));
                 let results = dated_results_map.remove(&id).unwrap_or_default();
-                Competitor::new(name, id, country_iso2, results, half_life)
+                Competitor::new(name, id, country_iso2, &results, half_life)
             })
             .collect();
 
@@ -88,7 +88,7 @@ impl HistoryContext {
         half_life: f32,
     ) -> Result<Self, AppError> {
         let event_type = EventType::from_id(event_id)
-            .ok_or_else(|| AppError::BadRequest(format!("Invalid event: {}", event_id)))?;
+            .ok_or_else(|| AppError::BadRequest(format!("Invalid event: {event_id}")))?;
 
         let valid_ids = validate_competitor_ids(competitor_ids)?;
 
@@ -137,7 +137,7 @@ impl HistoryContext {
                     name,
                     id.clone(),
                     country_iso2,
-                    dated_results,
+                    &dated_results,
                     self.half_life,
                 )
             })
@@ -156,7 +156,7 @@ pub fn validate_competitor_ids(ids: &[String]) -> Result<Vec<String>, AppError> 
     ids.iter()
         .map(|id| {
             clean_and_validate_wca_id(id)
-                .ok_or_else(|| AppError::BadRequest(format!("Invalid ID: {}", id)))
+                .ok_or_else(|| AppError::BadRequest(format!("Invalid ID: {id}")))
         })
         .collect()
 }
@@ -297,14 +297,14 @@ mod tests {
             "P1".to_string(),
             "2020P101".to_string(),
             "US".to_string(),
-            vec![],
+            &[],
             30.0,
         );
         let comp2 = Competitor::new(
             "P2".to_string(),
             "2020P201".to_string(),
             "CA".to_string(),
-            vec![],
+            &[],
             30.0,
         );
 

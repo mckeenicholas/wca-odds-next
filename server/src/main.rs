@@ -12,7 +12,7 @@ use tower_governor::{GovernorLayer, governor::GovernorConfigBuilder};
 use tower_http::cors::CorsLayer;
 use utils::http::{ForwardedIpExtractor, ResponseCache, caching_middleware};
 
-const CACHE_TIMEOUT_SECNODS: u64 = 60 * 60;
+const CACHE_TIMEOUT_SECONDS: u64 = 60 * 60;
 const CACHE_MAX_ITEMS: u64 = 10_000;
 
 mod routes;
@@ -37,6 +37,10 @@ async fn main() {
     let port_num: u16 = env::var("PORT")
         .map(|v| v.parse::<u16>().expect("Invalid port number"))
         .unwrap_or(3000);
+    let max_connections: u32 = env::var("DATABASE_MAX_CONNECTIONS")
+        .ok()
+        .and_then(|v| v.parse().ok())
+        .unwrap_or(10);
 
     let enable_cache = env::var("ENABLE_CACHE")
         .map(|val| val.to_lowercase() != "false")
@@ -47,13 +51,10 @@ async fn main() {
 
     let encoded_user = urlencoding::encode(&user);
     let encoded_pass = urlencoding::encode(&pass);
-    let database_url = format!(
-        "postgres://{}:{}@{}:{}/{}",
-        encoded_user, encoded_pass, host, port, db_name
-    );
+    let database_url = format!("postgres://{encoded_user}:{encoded_pass}@{host}:{port}/{db_name}");
 
     let pool = PgPoolOptions::new()
-        .max_connections(5)
+        .max_connections(max_connections)
         .connect(&database_url)
         .await
         .expect("Failed to connect to Postgres");
@@ -105,23 +106,26 @@ async fn main() {
         (stats_routes, crud_routes)
     };
 
-    let mut app = Router::new()
+    let app = Router::new()
         .merge(stats_routes)
         .merge(crud_routes)
         .with_state(pool);
 
-    if enable_cache {
+    let app = if enable_cache {
         let cache: ResponseCache = Cache::builder()
             .max_capacity(CACHE_MAX_ITEMS)
-            .time_to_live(Duration::from_secs(CACHE_TIMEOUT_SECNODS))
+            .time_to_live(Duration::from_secs(CACHE_TIMEOUT_SECONDS))
             .build();
-        app = app.layer(middleware::from_fn_with_state(cache, caching_middleware));
-    }
+        app.layer(middleware::from_fn_with_state(cache, caching_middleware))
+    } else {
+        app
+    };
 
-    app = app.layer(middleware::from_fn(timer_middleware)).layer(cors);
+    let app = app.layer(middleware::from_fn(timer_middleware)).layer(cors);
 
-    let addr = format!("0.0.0.0:{}", port_num);
-    println!("Server running on {}", addr);
+    let host_addr = env::var("HOST").unwrap_or_else(|_| "0.0.0.0".to_string());
+    let addr = format!("{host_addr}:{port_num}");
+    println!("Server running on {addr}");
     let listener = tokio::net::TcpListener::bind(addr)
         .await
         .expect("Failed to bind listener");

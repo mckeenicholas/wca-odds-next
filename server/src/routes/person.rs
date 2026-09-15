@@ -1,5 +1,3 @@
-use std::collections::HashMap;
-
 use axum::{
     Json,
     extract::{Query, State},
@@ -25,41 +23,39 @@ pub struct Person {
     pub country_iso2: Option<String>,
 }
 
-async fn query_name(pool: &PgPool, term: &str) -> Vec<Person> {
+async fn query_name(pool: &PgPool, term: &str) -> Result<Vec<Person>, sqlx::Error> {
     // If the term has numbers, it's likely an ID, so skip name search
     if term.chars().any(|c| c.is_ascii_digit()) {
-        return Vec::new();
+        return Ok(Vec::new());
     }
 
     sqlx::query_as::<_, Person>(
-        r#"
+        r"
         SELECT p.person_id, p.name, c.iso2 AS country_iso2
         FROM persons p
         LEFT JOIN countries c ON c.id = p.country_id
         WHERE p.name ILIKE $1
         LIMIT 16
-        "#,
+        ",
     )
-    .bind(format!("%{}%", term))
+    .bind(format!("%{term}%"))
     .fetch_all(pool)
     .await
-    .unwrap_or_default()
 }
 
-async fn query_id(pool: &PgPool, term: &str) -> Vec<Person> {
+async fn query_id(pool: &PgPool, term: &str) -> Result<Vec<Person>, sqlx::Error> {
     sqlx::query_as::<_, Person>(
-        r#"
+        r"
         SELECT p.person_id, p.name, c.iso2 AS country_iso2
         FROM persons p
         LEFT JOIN countries c ON c.id = p.country_id
         WHERE p.person_id ILIKE $1
         LIMIT 16
-        "#,
+        ",
     )
-    .bind(format!("%{}%", term))
+    .bind(format!("%{term}%"))
     .fetch_all(pool)
     .await
-    .unwrap_or_default()
 }
 
 pub async fn search_handler(
@@ -67,23 +63,19 @@ pub async fn search_handler(
     query: Query<SearchQuery>,
 ) -> Result<impl IntoResponse, AppError> {
     let search_term = match &query.q {
-        Some(q) if !q.trim().is_empty() => q.trim().to_string(),
+        Some(q) if !q.trim().is_empty() => q.trim(),
         _ => return Ok(Json(Vec::<Person>::new())),
     };
 
-    let id_future = query_id(&pool, &search_term);
-    let name_future = query_name(&pool, &search_term);
+    let id_future = query_id(&pool, search_term);
+    let name_future = query_name(&pool, search_term);
 
     let (id_results, name_results) = tokio::join!(id_future, name_future);
 
-    let mut persons_map: HashMap<String, Person> = HashMap::new();
-
-    for p in id_results.into_iter().chain(name_results) {
-        persons_map.insert(p.person_id.clone(), p);
-    }
-
-    let mut final_persons: Vec<Person> = persons_map.into_values().collect();
-
+    let mut final_persons = id_results?;
+    final_persons.extend(name_results?);
+    final_persons.sort_unstable_by(|a, b| a.person_id.cmp(&b.person_id));
+    final_persons.dedup_by(|a, b| a.person_id == b.person_id);
     final_persons.sort_by(|a, b| a.name.cmp(&b.name));
 
     Ok(Json(final_persons))

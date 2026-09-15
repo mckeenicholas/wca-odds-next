@@ -21,7 +21,7 @@ pub async fn simulation_handler(
         payload.end_date,
     )?;
 
-    let mut ctx = CompetitorContext::load(
+    let ctx = CompetitorContext::load(
         &pool,
         &payload.competitor_ids,
         &payload.event_id,
@@ -31,16 +31,22 @@ pub async fn simulation_handler(
     )
     .await?;
 
-    if let Some(entries) = payload.entered_times {
-        ctx = ctx.with_manual_entries(entries);
-    }
+    let ctx = match payload.entered_times {
+        Some(entries) => ctx.with_manual_entries(entries),
+        None => ctx,
+    };
 
     let include_dnf = payload.include_dnf.unwrap_or(false);
     let event_type = ctx.event_type;
-    let competitors = ctx.competitors.clone();
+    let competitors = ctx.competitors;
     let response = tokio::task::spawn_blocking(move || {
-        let results =
-            simulation::run_simulations(&competitors, &event_type, include_dnf, SIMULATION_COUNT);
+        let results = simulation::run_simulations(
+            &competitors,
+            event_type,
+            include_dnf,
+            SIMULATION_COUNT,
+            true,
+        );
 
         simulation::format_results(competitors, results, matches!(event_type, EventType::Fmc))
     })

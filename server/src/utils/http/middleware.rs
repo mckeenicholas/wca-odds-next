@@ -57,7 +57,7 @@ pub async fn timer_middleware(req: Request<Body>, next: Next) -> Response {
     response
 }
 
-pub type ResponseCache = Cache<u64, Vec<u8>>;
+pub type ResponseCache = Cache<u64, axum::body::Bytes>;
 
 pub async fn caching_middleware(
     State(cache): State<ResponseCache>,
@@ -68,12 +68,10 @@ pub async fn caching_middleware(
         return Ok(next.run(req).await);
     }
 
-    let method = req.method().clone();
-    let uri = req.uri().to_string();
-
     let mut hasher = DefaultHasher::new();
-    method.hash(&mut hasher);
-    uri.hash(&mut hasher);
+    req.method().hash(&mut hasher);
+    req.uri().path().hash(&mut hasher);
+    req.uri().query().hash(&mut hasher);
 
     let (parts, body) = req.into_parts();
 
@@ -111,7 +109,7 @@ pub async fn caching_middleware(
             }
         };
 
-        cache.insert(key, bytes.to_vec()).await;
+        cache.insert(key, bytes.clone()).await;
 
         Ok(Response::from_parts(parts, Body::from(bytes)))
     } else {
