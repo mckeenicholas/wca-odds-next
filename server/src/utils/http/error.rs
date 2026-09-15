@@ -63,8 +63,9 @@ impl IntoResponse for AppError {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
     use http_body_util::BodyExt;
+
+    use super::*;
 
     #[tokio::test]
     async fn test_bad_request_response() {

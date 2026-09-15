@@ -1,5 +1,5 @@
-use rand::prelude::*;
-use rand_distr::Normal;
+use rand::{prelude::*, rngs::SmallRng};
+use rand_distr::{Distribution, Normal};
 
 use super::results::SimulationResult;
 use crate::utils::{
@@ -61,7 +61,7 @@ impl CompetitorAccumulator {
 
 fn generate_skewnorm_value(
     stats: &CompetitorStats,
-    rng: &mut ThreadRng,
+    rng: &mut SmallRng,
     normal: Normal<f32>,
     include_dnf: bool,
 ) -> i32 {
@@ -76,17 +76,17 @@ fn generate_skewnorm_value(
     let u0 = normal.sample(rng);
     let v = normal.sample(rng);
 
-    let u1 = stats.delta * u0 + stats.delta_factor * v;
-    let z = if u0 >= 0.0 { u1 } else { -u1 };
+    let u1 = stats.delta.mul_add(u0, stats.delta_factor * v);
+    let z = u1.copysign(u0);
 
-    let result = stats.location + (stats.shape * z);
+    let result = z.mul_add(stats.shape, stats.location);
     (result as i32).max(1)
 }
 
 fn simulate_round(
     competitor: &Competitor,
     event_type: EventType,
-    rng: &mut rand::rngs::ThreadRng,
+    rng: &mut SmallRng,
     normal: Normal<f32>,
     include_dnf: bool,
     acc: &mut CompetitorAccumulator,
@@ -129,7 +129,7 @@ pub fn run_simulations(
     record_histograms: bool,
 ) -> Vec<SimulationResult> {
     let num_competitors = competitors.len();
-    let mut rng = rand::rng();
+    let mut rng = SmallRng::from_rng(&mut rand::rng());
     let normal = Normal::new(0.0f32, 1.0f32).expect("Failed to init normal dist");
 
     let mut accumulators: Vec<CompetitorAccumulator> = (0..num_competitors)
