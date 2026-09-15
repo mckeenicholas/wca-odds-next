@@ -82,6 +82,7 @@
     "sort-keys": "off",
     "switch-case-braces": "off",
     "max-nested-calls": "off",
-    "one-var": "off"
+    "one-var": "off",
+    "capitalized-comments": "off"
   }
 }
