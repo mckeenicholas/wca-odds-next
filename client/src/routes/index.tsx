@@ -101,7 +101,7 @@ function Home() {
             itemComponent={(props) => (
               <Search.Item
                 item={props.item}
-                class="flex w-full cursor-pointer flex-col rounded-md px-3 py-2 text-left text-sm transition-colors outline-none hover:bg-accent hover:text-accent-foreground data-[highlighted]:bg-muted data-[highlighted]:text-accent-foreground"
+                class="flex w-full cursor-pointer flex-col rounded-md px-3 py-2 text-left text-sm transition-colors outline-none hover:bg-accent hover:text-accent-foreground data-highlighted:bg-muted data-highlighted:text-accent-foreground"
               >
                 <Search.ItemLabel>{props.item.rawValue.name}</Search.ItemLabel>
                 <span class="text-xs text-muted-foreground">

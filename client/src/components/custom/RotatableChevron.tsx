@@ -10,7 +10,7 @@ export function RotatableChevron(props: ChevronProps) {
   return (
     <ChevronUp
       class={cn(
-        "scale-75 duration-[450ms]",
+        "scale-75 duration-450",
         props.up && "-rotate-180",
         props.animate !== false && "transition-transform",
       )}

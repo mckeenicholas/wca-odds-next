@@ -147,7 +147,7 @@ function CustomPage() {
           itemComponent={(props) => (
             <Search.Item
               item={props.item}
-              class="flex w-full cursor-pointer items-center gap-2 rounded-md px-3 py-2 text-left text-sm transition-colors outline-none hover:bg-accent hover:text-accent-foreground data-[highlighted]:bg-muted data-[highlighted]:text-accent-foreground"
+              class="flex w-full cursor-pointer items-center gap-2 rounded-md px-3 py-2 text-left text-sm transition-colors outline-none hover:bg-accent hover:text-accent-foreground data-highlighted:bg-muted data-highlighted:text-accent-foreground"
             >
               <FlagIcon code={props.item.rawValue.country.iso2} />
               <Search.ItemLabel class="truncate">{props.item.rawValue.name}</Search.ItemLabel>

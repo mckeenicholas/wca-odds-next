@@ -98,7 +98,7 @@ export function IndividualHistogram(props: IndividualHistogramProps) {
 
   return (
     <div class="mx-4 mt-2 mb-4">
-      <div class="h-[240px]">
+      <div class="h-60">
         <VisXYContainer data={histData()} height={240}>
           <svg width="0" height="0">
             <defs>

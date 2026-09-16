@@ -90,7 +90,7 @@ export function PersonalRankingsSearch(props: PersonalRankingsSearchProps) {
           itemComponent={(itemProps) => (
             <Search.Item
               item={itemProps.item}
-              class="flex w-full cursor-pointer items-center gap-2 rounded-md px-3 py-2 text-left text-sm transition-colors outline-none hover:bg-accent hover:text-accent-foreground data-[highlighted]:bg-muted data-[highlighted]:text-accent-foreground"
+              class="flex w-full cursor-pointer items-center gap-2 rounded-md px-3 py-2 text-left text-sm transition-colors outline-none hover:bg-accent hover:text-accent-foreground data-highlighted:bg-muted data-highlighted:text-accent-foreground"
             >
               <Show when={itemProps.item.rawValue.country_iso2}>
                 <FlagIcon code={itemProps.item.rawValue.country_iso2 ?? ""} showTooltip={false} />

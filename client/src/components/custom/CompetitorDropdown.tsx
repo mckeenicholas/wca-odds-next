@@ -42,7 +42,7 @@ export function CompetitorDropdown(props: CompetitorDropdownProps) {
         aria-label={`Details for ${props.result.id}`}
         class="flex w-full items-center justify-between rounded-md p-2 ps-1 text-left hover:bg-secondary focus:outline-none focus-visible:bg-secondary"
       >
-        <div class="flex min-w-0 flex-[2] items-center gap-3 lg:flex-[1.5]">
+        <div class="flex min-w-0 flex-2 items-center gap-3 lg:flex-[1.5]">
           <ColoredCircle color={props.color} class="ms-2 shrink-0" />
 
           <CompetitorLink
@@ -68,7 +68,7 @@ export function CompetitorDropdown(props: CompetitorDropdownProps) {
         <RotatableChevron up={props.isOpen} />
       </Collapsible.Trigger>
 
-      <Collapsible.Content class="mt-1 space-y-4 overflow-hidden rounded-md px-2 py-3 duration-200 ease-out animate-in fade-in-0 data-[expanded]:overflow-visible">
+      <Collapsible.Content class="mt-1 space-y-4 overflow-hidden rounded-md px-2 py-3 duration-200 ease-out animate-in fade-in-0 data-expanded:overflow-visible">
         <IndividualHistogram
           color={props.color}
           data={props.result.histogram}

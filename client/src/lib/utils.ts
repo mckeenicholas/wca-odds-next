@@ -4,6 +4,7 @@ import type {
   SupportedWCAEvent,
   ChartPoint,
 } from "./types";
+export { cn } from "cn";
 
 // const API_URL = import.meta.env.VITE_API_URL ?? "http://localhost:3000";
 const API_URL = import.meta.env.VITE_API_URL ?? "https://odds.nmckee.org";
@@ -24,8 +25,6 @@ export function buildUrl(
 
   return url.href;
 }
-
-export { cn } from "cn";
 
 export const fetchWCAInfo = async <T>(url: string | URL): Promise<T> => {
   const response = await fetch(url);

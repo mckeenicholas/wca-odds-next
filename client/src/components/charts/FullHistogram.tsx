@@ -215,7 +215,7 @@ export function FullHistogram(props: SimulationResultProps) {
               <span>Competitors</span>
               <ChevronDown class="ml-2 h-4 w-4 shrink-0 opacity-50" />
             </PopoverTrigger>
-            <PopoverContent class="max-h-[300px] w-[var(--kb-popper-anchor-width)] overflow-y-auto">
+            <PopoverContent class="max-h-75 w-(--kb-popper-anchor-width) overflow-y-auto">
               <ul class="space-y-2">
                 <Index each={names()}>
                   {(name, idx) => (
