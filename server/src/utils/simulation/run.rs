@@ -3,7 +3,7 @@ use rand_distr::{Distribution, Normal};
 
 use super::results::SimulationResult;
 use crate::utils::{
-    charts::{HistogramAccumulator, RankAccumulator},
+    charts::{HistogramAccumulator, HistogramData, RankAccumulator},
     competitor::{Competitor, CompetitorStats},
     wca::{DNF_VALUE, EventType, calculate_average},
 };
@@ -11,28 +11,40 @@ use crate::utils::{
 const HIST_INCLUDE_THRESHOLD: f64 = 0.0001;
 
 struct CompetitorAccumulator {
-    hist_single: HistogramAccumulator,
-    hist_average: HistogramAccumulator,
+    hist_single: Option<HistogramAccumulator>,
+    hist_average: Option<HistogramAccumulator>,
     ranks: RankAccumulator,
 }
 
 impl CompetitorAccumulator {
-    fn new(num_competitors: usize) -> Self {
+    fn new(num_competitors: usize, record_histograms: bool) -> Self {
         Self {
-            hist_single: HistogramAccumulator::new(),
-            hist_average: HistogramAccumulator::new(),
+            hist_single: if record_histograms {
+                Some(HistogramAccumulator::new())
+            } else {
+                None
+            },
+            hist_average: if record_histograms {
+                Some(HistogramAccumulator::new())
+            } else {
+                None
+            },
             ranks: RankAccumulator::new(num_competitors),
         }
     }
 
     fn record_single(&mut self, solve: i32, is_fmc: bool) {
-        let hist_value = Self::truncate_for_histogram(solve, is_fmc);
-        self.hist_single.record(hist_value);
+        if let Some(hist) = &mut self.hist_single {
+            let hist_value = Self::truncate_for_histogram(solve, is_fmc);
+            hist.record(hist_value);
+        }
     }
 
     fn record_average(&mut self, solve: i32, is_fmc: bool) {
-        let hist_value = Self::truncate_for_histogram(solve, is_fmc);
-        self.hist_average.record(hist_value);
+        if let Some(hist) = &mut self.hist_average {
+            let hist_value = Self::truncate_for_histogram(solve, is_fmc);
+            hist.record(hist_value);
+        }
     }
 
     fn add_rank(&mut self, rank: usize) {
@@ -44,13 +56,12 @@ impl CompetitorAccumulator {
 
         SimulationResult::new(
             self.ranks.into_rank_stats(simulation_count),
-            self.hist_single.into_histogram_data(
-                simulation_count,
-                single_scale,
-                HIST_INCLUDE_THRESHOLD,
-            ),
-            self.hist_average
-                .into_histogram_data(simulation_count, 100, HIST_INCLUDE_THRESHOLD),
+            self.hist_single.map_or_else(HistogramData::default, |h| {
+                h.into_histogram_data(simulation_count, single_scale, HIST_INCLUDE_THRESHOLD)
+            }),
+            self.hist_average.map_or_else(HistogramData::default, |h| {
+                h.into_histogram_data(simulation_count, 100, HIST_INCLUDE_THRESHOLD)
+            }),
         )
     }
 
@@ -88,6 +99,26 @@ struct PreparedCompetitor {
     stats: Option<CompetitorStats>,
     manual_results: [i32; 5],
     has_manual_results: bool,
+}
+
+impl PreparedCompetitor {
+    pub fn from_competitor(c: &Competitor) -> Self {
+        let mut manual_results = [0; 5];
+        let mut has_manual_results = false;
+
+        for (slot, &res) in manual_results.iter_mut().zip(&c.entered_results) {
+            if res != 0 {
+                *slot = if res < 0 { DNF_VALUE } else { res };
+                has_manual_results = true;
+            }
+        }
+
+        Self {
+            stats: c.stats,
+            manual_results,
+            has_manual_results,
+        }
+    }
 }
 
 fn simulate_round(
@@ -145,7 +176,7 @@ struct CompetitorScore(u64);
 impl CompetitorScore {
     #[inline(always)]
     fn new(average: i32, best: i32) -> Self {
-        Self(((average as u64) << 32) | (best as u32 as u64))
+        Self(((average as u64) << 32) | (best.cast_unsigned() as u64))
     }
 }
 
@@ -167,37 +198,20 @@ pub fn run_simulations(
     let normal = Normal::new(0.0f32, 1.0f32).expect("Failed to init normal dist");
     let is_fmc = event_type.is_fmc();
 
-    let prepared_competitors: Vec<PreparedCompetitor> = competitors
+    let prepared: Vec<PreparedCompetitor> = competitors
         .iter()
-        .map(|c| {
-            let mut manual = [0; 5];
-            let mut has_manual = false;
-            for (i, &res) in c.entered_results.iter().take(5).enumerate() {
-                if res != 0 {
-                    manual[i] = if res < 0 { DNF_VALUE } else { res };
-                    has_manual = true;
-                }
-            }
-            PreparedCompetitor {
-                stats: c.stats,
-                manual_results: manual,
-                has_manual_results: has_manual,
-            }
-        })
+        .map(PreparedCompetitor::from_competitor)
         .collect();
 
     let mut accumulators: Vec<CompetitorAccumulator> = (0..num_competitors)
-        .map(|_| CompetitorAccumulator::new(num_competitors))
+        .map(|_| CompetitorAccumulator::new(num_competitors, record_histograms))
         .collect();
-
-    let mut round_results: Vec<RoundEntry> = Vec::with_capacity(num_competitors);
+    let mut round_results = Vec::with_capacity(num_competitors);
 
     for _ in 0..simulation_count {
         round_results.clear();
 
-        for (idx, comp) in prepared_competitors.iter().enumerate() {
-            let acc = &mut accumulators[idx];
-
+        for (idx, (comp, acc)) in prepared.iter().zip(&mut accumulators).enumerate() {
             let (avg, best) = simulate_round(
                 comp,
                 event_type,
@@ -220,12 +234,17 @@ pub fn run_simulations(
 
         round_results.sort_unstable_by_key(|entry| entry.score);
 
-        let mut rank = 0;
-        for (i, entry) in round_results.iter().enumerate() {
-            if i > 0 && entry.score != round_results[i - 1].score {
-                rank = i;
+        // Track running rank to handle tied scores correctly
+        if let Some(first) = round_results.first() {
+            let mut current_rank = 0;
+            let mut prev_score = first.score;
+            for (i, entry) in round_results.iter().enumerate() {
+                if entry.score != prev_score {
+                    current_rank = i;
+                    prev_score = entry.score;
+                }
+                accumulators[entry.idx].add_rank(current_rank);
             }
-            accumulators[entry.idx].add_rank(rank);
         }
     }
 

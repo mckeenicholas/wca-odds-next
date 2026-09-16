@@ -37,14 +37,14 @@ impl CompetitorStats {
         mean: f32,
         num_non_dnf_results: u32,
     ) -> Self {
-        let is_valid = ![location, shape, skew]
-            .iter()
-            .any(|&x| x.is_nan() || x.is_infinite());
+        let is_valid = location.is_finite() && shape.is_finite() && skew.is_finite();
+
         let delta = if is_valid {
             skew / (1.0 + skew.powi(2)).sqrt()
         } else {
             0.0
         };
+
         let delta_factor = if is_valid {
             (1.0 - delta.powi(2)).max(0.0).sqrt()
         } else {
@@ -82,6 +82,15 @@ impl Competitor {
         halflife: f32,
     ) -> Self {
         let stats = Self::calculate_stats(results, halflife);
+        Self::from_stats(name, id, country_iso2, stats)
+    }
+
+    pub fn from_stats(
+        name: String,
+        id: String,
+        country_iso2: String,
+        stats: Option<CompetitorStats>,
+    ) -> Self {
         Self {
             name,
             id,
@@ -91,23 +100,18 @@ impl Competitor {
         }
     }
 
-    pub fn calculate_stats(
-        results: &[DatedCompetitionResult],
-        halflife: f32,
-    ) -> Option<CompetitorStats> {
-        let total_results: usize = results.iter().map(|r| r.results.len()).sum();
-        if total_results == 0 {
-            return None;
-        }
-
+    pub fn calculate_stats_iter<'a, I>(results: I, halflife: f32) -> Option<CompetitorStats>
+    where
+        I: IntoIterator<Item = (i32, &'a [i32])>,
+    {
         let decay_rate = std::f32::consts::LN_2 / halflife;
-        let mut valid_times = Vec::with_capacity(total_results);
+        let mut valid_times = Vec::new();
         let mut total_w = 0.0f32;
         let mut dnf_sum = 0.0f32;
 
-        for set in results {
-            let weight = (-decay_rate * set.days_since as f32).exp();
-            for &val in &set.results {
+        for (days_since, solves) in results {
+            let weight = (-decay_rate * days_since as f32).exp();
+            for &val in solves {
                 total_w += weight;
                 if val < 0 {
                     dnf_sum += weight;
@@ -140,6 +144,16 @@ impl Competitor {
             stats.mean,
             num_non_dnf_results,
         ))
+    }
+
+    pub fn calculate_stats(
+        results: &[DatedCompetitionResult],
+        halflife: f32,
+    ) -> Option<CompetitorStats> {
+        Self::calculate_stats_iter(
+            results.iter().map(|r| (r.days_since, r.results.as_slice())),
+            halflife,
+        )
     }
 
     #[cfg(test)]

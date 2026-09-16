@@ -14,9 +14,9 @@ pub struct CompetitorRow {
     pub value: i32,
 }
 
-pub async fn fetch_competitor_results<T: AsRef<str>>(
+pub async fn fetch_competitor_results(
     pool: &PgPool,
-    competitor_ids: &[T],
+    competitor_ids: &[String],
     event_id: &str,
     start_date: NaiveDate,
     end_date: NaiveDate,
@@ -30,12 +30,7 @@ pub async fn fetch_competitor_results<T: AsRef<str>>(
         AND competition_date BETWEEN $3 AND $4
         ",
     )
-    .bind(
-        competitor_ids
-            .iter()
-            .map(std::convert::AsRef::as_ref)
-            .collect::<Vec<_>>(),
-    )
+    .bind(competitor_ids)
     .bind(event_id)
     .bind(start_date)
     .bind(end_date)
@@ -43,9 +38,9 @@ pub async fn fetch_competitor_results<T: AsRef<str>>(
     .await
 }
 
-pub async fn fetch_competitor_names<T: AsRef<str>>(
+pub async fn fetch_competitor_names(
     pool: &PgPool,
-    competitor_ids: &[T],
+    competitor_ids: &[String],
 ) -> Result<Vec<(String, String, String)>, sqlx::Error> {
     sqlx::query_as::<_, (String, String, String)>(
         r"
@@ -55,12 +50,7 @@ pub async fn fetch_competitor_names<T: AsRef<str>>(
         WHERE p.person_id = ANY($1)
         ",
     )
-    .bind(
-        competitor_ids
-            .iter()
-            .map(std::convert::AsRef::as_ref)
-            .collect::<Vec<_>>(),
-    )
+    .bind(competitor_ids)
     .fetch_all(pool)
     .await
 }

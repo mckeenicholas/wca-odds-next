@@ -121,6 +121,7 @@ impl HistogramData {
     }
 }
 
+#[derive(Clone)]
 pub struct RankAccumulator {
     counts: Vec<u32>,
 }

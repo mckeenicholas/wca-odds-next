@@ -55,28 +55,24 @@ pub fn calculate_average(solves: &[i32], event_type: EventType) -> (i32, i32) {
     }
 
     match event_type {
-        EventType::Ao5 => {
-            if solves.len() < 5 {
-                let best = solves.iter().copied().min().unwrap_or(DNF_VALUE);
-                return (DNF_VALUE, best);
+        EventType::Ao5 => match solves {
+            &[s0, s1, s2, s3, s4, ..] => {
+                let best_time = s0.min(s1).min(s2).min(s3).min(s4);
+                let dnf_count = (s0 >= DNF_VALUE) as u32
+                    + (s1 >= DNF_VALUE) as u32
+                    + (s2 >= DNF_VALUE) as u32
+                    + (s3 >= DNF_VALUE) as u32
+                    + (s4 >= DNF_VALUE) as u32;
+                if dnf_count >= 2 {
+                    (DNF_VALUE, best_time)
+                } else {
+                    let worst_time = s0.max(s1).max(s2).max(s3).max(s4);
+                    let middle_sum = s0 + s1 + s2 + s3 + s4 - best_time - worst_time;
+                    ((middle_sum + 1) / 3, best_time)
+                }
             }
-            let (s0, s1, s2, s3, s4) = (solves[0], solves[1], solves[2], solves[3], solves[4]);
-            let best_time = s0.min(s1).min(s2).min(s3).min(s4);
-
-            let dnf_count = (s0 >= DNF_VALUE) as u32
-                + (s1 >= DNF_VALUE) as u32
-                + (s2 >= DNF_VALUE) as u32
-                + (s3 >= DNF_VALUE) as u32
-                + (s4 >= DNF_VALUE) as u32;
-
-            if dnf_count >= 2 {
-                (DNF_VALUE, best_time)
-            } else {
-                let worst_time = s0.max(s1).max(s2).max(s3).max(s4);
-                let middle_sum = s0 + s1 + s2 + s3 + s4 - best_time - worst_time;
-                ((middle_sum + 1) / 3, best_time)
-            }
-        }
+            _ => (DNF_VALUE, solves.iter().copied().min().unwrap_or(DNF_VALUE)),
+        },
         EventType::Mo3 | EventType::Fmc => {
             if solves.len() < 3 {
                 let best_time = solves.iter().copied().min().unwrap_or(DNF_VALUE);

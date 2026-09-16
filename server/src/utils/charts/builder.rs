@@ -84,7 +84,7 @@ impl<'a> HistogramChartBuilder<'a> {
             return points;
         }
 
-        let merge_factor = 2_usize.pow((log_len - 8) as u32);
+        let merge_factor = 2_usize.pow((log_len - 8).cast_unsigned());
         points
             .chunks(merge_factor)
             .map(|chunk| {

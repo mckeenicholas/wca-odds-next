@@ -3,7 +3,9 @@ use std::collections::HashMap;
 use chrono::{Months, NaiveDate};
 use sqlx::PgPool;
 
-use super::model::{Competitor, DatedCompetitionResult};
+use super::model::Competitor;
+#[cfg(test)]
+use super::model::DatedCompetitionResult;
 use crate::utils::{
     database,
     http::AppError,
@@ -121,11 +123,15 @@ impl HistoryContext {
         self.valid_ids
             .iter()
             .map(|id| {
-                let dated_results = self
-                    .grouped_results
-                    .get(id)
-                    .map(|data| filter_and_convert_relative(data, window_start, window_end))
-                    .unwrap_or_default();
+                let stats = self.grouped_results.get(id).and_then(|raw_data| {
+                    let iter = raw_data
+                        .iter()
+                        .filter(|(date, _)| **date >= window_start && **date <= window_end)
+                        .map(|(date, times)| {
+                            ((window_end - *date).num_days() as i32, times.as_slice())
+                        });
+                    Competitor::calculate_stats_iter(iter, self.half_life)
+                });
 
                 let (name, country_iso2) = self
                     .names_map
@@ -133,13 +139,7 @@ impl HistoryContext {
                     .cloned()
                     .unwrap_or_else(|| (id.clone(), String::new()));
 
-                Competitor::new(
-                    name,
-                    id.clone(),
-                    country_iso2,
-                    &dated_results,
-                    self.half_life,
-                )
+                Competitor::from_stats(name, id.clone(), country_iso2, stats)
             })
             .collect()
     }
@@ -201,6 +201,7 @@ pub fn validate_date_range(
     Ok(())
 }
 
+#[cfg(test)]
 fn filter_and_convert_relative(
     raw_data: &HashMap<NaiveDate, Vec<i32>>,
     window_start: NaiveDate,

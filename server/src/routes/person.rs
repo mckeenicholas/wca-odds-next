@@ -76,7 +76,7 @@ pub async fn search_handler(
     final_persons.extend(name_results?);
     final_persons.sort_unstable_by(|a, b| a.person_id.cmp(&b.person_id));
     final_persons.dedup_by(|a, b| a.person_id == b.person_id);
-    final_persons.sort_by(|a, b| a.name.cmp(&b.name));
+    final_persons.sort_unstable_by(|a, b| a.name.cmp(&b.name));
 
     Ok(Json(final_persons))
 }
