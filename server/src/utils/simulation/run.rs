@@ -88,7 +88,7 @@ fn generate_skewnorm_value(
     let v = normal.sample(rng);
 
     let u1 = stats.delta.mul_add(u0, stats.delta_factor * v);
-    let z = u1.copysign(u0);
+    let z = if u0 >= 0.0 { u1 } else { -u1 };
 
     let result = z.mul_add(stats.shape, stats.location);
     (result as i32).max(1)
